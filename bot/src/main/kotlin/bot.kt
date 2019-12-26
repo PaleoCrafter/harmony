@@ -56,7 +56,6 @@ inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispa
     }
 }
 
-
 @ImplicitReflectionSerializer
 inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispatcher.flatMap(
     producer: KafkaProducer<String, GenericRecord>,

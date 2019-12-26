@@ -36,6 +36,7 @@ fun ChannelInfo.Companion.of(channel: GuildMessageChannel) =
             ServerInfo.of(it)
         }.map {
             ChannelInfo(
+                channel.id.asString(),
                 it,
                 channel.name,
                 if (channel.type == Channel.Type.GUILD_NEWS)

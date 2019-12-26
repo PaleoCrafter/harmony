@@ -14,7 +14,7 @@ data class ServerDeletion(
 )
 
 @Serializable
-data class ChannelInfo(val server: ServerInfo, val name: String, val type: Type) {
+data class ChannelInfo(val id: String, val server: ServerInfo, val name: String, val type: Type) {
     @Serializable(with = Type.Serializer::class)
     enum class Type {
         TEXT, NEWS;

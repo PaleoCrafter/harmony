@@ -14,6 +14,9 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Duration
 import java.util.*
 
@@ -58,6 +61,12 @@ class EventHandler(init: EventHandler.() -> Unit) {
 }
 
 fun main() {
+    Database.connect("jdbc:postgresql://localhost/harmony", "org.postgresql.Driver", "harmony_imports", "imp0rt5")
+
+    transaction {
+        SchemaUtils.createMissingTablesAndColumns(Servers, Channels, Users, MessageVersions)
+    }
+
     val events = EventHandler {
         listen<ServerInfo> { id, event ->
             println("$id: $event")

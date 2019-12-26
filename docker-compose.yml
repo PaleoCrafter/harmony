@@ -6,10 +6,10 @@ services:
     container_name: harmony-db
     environment:
       - POSTGRES_PASSWORD=example
-      - DB_MIGRATION_USER=booksearch_migrations
-      - DB_MIGRATION_PASSWORD=migr4tion5
-      - DB_DATA_USER=booksearch
-      - DB_DATA_PASSWORD=b00kse4rch
+      - DB_IMPORT_USER=harmony_imports
+      - DB_IMPORT_PASSWORD=imp0rt5
+      - DB_DATA_USER=harmony
+      - DB_DATA_PASSWORD=h4rm0ny
     ports:
       - "5432:5432"
     volumes:

@@ -14,6 +14,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-core:0.19.3")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.19.3")
     implementation("org.jetbrains.exposed:exposed-java-time:0.19.3")
+    implementation("org.postgresql:postgresql:42.2.5")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

@@ -1,5 +1,7 @@
 package com.seventeenthshard.harmony.dbimport
 
+import com.seventeenthshard.harmony.dbimport.MessageVersions.index
+import com.seventeenthshard.harmony.dbimport.MessageVersions.primaryKey
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.`java-time`.datetime
 import org.jetbrains.exposed.sql.vendors.currentDialect
@@ -28,7 +30,7 @@ object Servers: Table() {
     val id = snowflake("id").primaryKey()
     val name = varchar("name", 255)
     val iconUrl = varchar("iconUrl", 255).nullable()
-    val active = bool("active")
+    val active = bool("active").default(true)
 }
 
 object Channels: Table() {
@@ -43,10 +45,16 @@ object Users: Table() {
     val discriminator = varchar("discriminator", 4)
 }
 
-object MessageVersions: Table() {
-    val id = snowflake("id").primaryKey(0)
-    val timestamp = datetime("timestamp").primaryKey(1)
+object Messages : Table() {
+    val id = snowflake("id").primaryKey()
     val server = snowflake("server").index()
     val channel = snowflake("channel").index()
+    val user = snowflake("user")
+    val deletedAt = datetime("deletedAt").nullable()
+}
+
+object MessageVersions: Table() {
+    val message = snowflake("message").primaryKey(0)
+    val timestamp = datetime("timestamp").primaryKey(1)
     val content = text("content")
 }

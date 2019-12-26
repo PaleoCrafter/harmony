@@ -52,7 +52,7 @@ data class UserNicknameChange(
 data class NewMessage(
     val channel: ChannelInfo,
     val user: UserInfo,
-    val content: String?,
+    val content: String,
     @Serializable(with = InstantSerializer::class) val timestamp: Instant
 )
 

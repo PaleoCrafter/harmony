@@ -1,9 +1,6 @@
 package com.seventeenthshard.harmony.dbimport
 
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.events.ServerInfo
+import com.seventeenthshard.harmony.events.*
 import com.sksamuel.avro4k.Avro
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
@@ -14,10 +11,11 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Duration
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.*
 
 class EventHandler(init: EventHandler.() -> Unit) {
@@ -64,21 +62,79 @@ fun main() {
     Database.connect("jdbc:postgresql://localhost/harmony", "org.postgresql.Driver", "harmony_imports", "imp0rt5")
 
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Servers, Channels, Users, MessageVersions)
+        SchemaUtils.createMissingTablesAndColumns(Servers, Channels, Users, Messages, MessageVersions)
     }
 
     val events = EventHandler {
-        listen<ServerInfo> { id, event ->
-            println("$id: $event")
+        listen<ServerInfo> { serverId, event ->
+            transaction {
+                Servers.replace {
+                    it[id] = serverId
+                    it[name] = event.name
+                    it[iconUrl] = event.iconUrl
+                    it[active] = true
+                }
+            }
         }
-        listen<NewMessage> { id, event ->
-            println("$id: $event")
+        listen<ServerDeletion> { serverId, _ ->
+            transaction {
+                Servers.update({ Servers.id eq serverId }) {
+                    it[active] = false
+                }
+            }
         }
-        listen<MessageEdit> { id, event ->
-            println("$id: $event")
+        listen<ChannelInfo> { channelId, event ->
+            transaction {
+                Channels.replace {
+                    it[id] = channelId
+                    it[server] = event.server.id
+                    it[name] = event.name
+                }
+            }
         }
-        listen<MessageDeletion> { id, event ->
-            println("$id: $event")
+        listen<NewMessage> { messageId, event ->
+            transaction {
+                Users.replace {
+                    it[id] = event.user.id
+                    it[name] = event.user.username
+                    it[discriminator] = event.user.discriminator
+                }
+
+                Channels.replace {
+                    it[id] = event.channel.id
+                    it[server] = event.channel.server.id
+                    it[name] = event.channel.name
+                }
+
+                Messages.insert {
+                    it[id] = messageId
+                    it[server] = event.channel.server.id
+                    it[channel] = event.channel.id
+                    it[user] = event.user.id
+                }
+
+                MessageVersions.insert {
+                    it[message] = messageId
+                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[content] = event.content
+                }
+            }
+        }
+        listen<MessageEdit> { messageId, event ->
+            transaction {
+                MessageVersions.insert {
+                    it[message] = messageId
+                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[content] = event.content
+                }
+            }
+        }
+        listen<MessageDeletion> { messageId, event ->
+            transaction {
+                Messages.update({ Messages.id eq messageId }) {
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                }
+            }
         }
     }
 

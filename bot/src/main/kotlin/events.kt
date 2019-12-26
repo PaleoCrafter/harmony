@@ -88,7 +88,7 @@ fun NewMessage.Companion.of(message: Message) =
             NewMessage(
                 it.t1,
                 it.t2,
-                message.content.orElse(null),
+                message.content.orElse(""),
                 message.timestamp
             )
         }

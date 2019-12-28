@@ -1,27 +1,27 @@
-const express = require('express');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
+const express = require('express')
+const cookieParser = require('cookie-parser')
+const logger = require('morgan')
 
-const { init: initAuth, checkAuth, getPermissions } = require('./auth');
-const { init: initGraphQL } = require('./graphql');
+const { init: initAuth, checkAuth, getPermissions } = require('./auth')
+const { init: initGraphQL } = require('./graphql')
 
-const app = express();
+const app = express()
 
-app.use(logger('dev'));
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-initAuth(app);
-initGraphQL(app);
+app.use(logger('dev'))
+app.use(express.json())
+app.use(express.urlencoded({ extended: false }))
+app.use(cookieParser())
+initAuth(app)
+initGraphQL(app)
 
 app.get('/', checkAuth, async function (req, res) {
-  res.json(await getPermissions(req.user, '606562167407378442'));
-});
+  res.json(await getPermissions(req.user, '606562167407378442'))
+})
 app.get('/success', function (req, res) {
-  res.json({ 'message': 'it worked' });
-});
+  res.json({ message: 'it worked' })
+})
 app.get('/failed', function (req, res) {
-  res.json({ 'message': 'shit' });
-});
+  res.json({ message: 'shit' })
+})
 
-module.exports = app;
+module.exports = app

@@ -15,6 +15,7 @@ type Server {
 type Channel {
   id: ID!
   name: String!
+  type: String!
 }
 
 type User {

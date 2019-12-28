@@ -14,7 +14,8 @@ export default {
       { hid: 'description', name: 'description', content: process.env.npm_package_description || '' }
     ],
     link: [
-      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
+      { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i&display=swap' }
     ]
   },
   /*
@@ -44,6 +45,7 @@ export default {
   ],
   apollo: {
     authenticationType: 'Session',
+    errorHandler: '@/apollo/error-handler',
     clientConfigs: {
       default: {
         tokenName: 'connect.sid',
@@ -56,6 +58,9 @@ export default {
     filenames: {
       app: ({ isDev }) => isDev ? '[name].[hash].js' : '[chunkhash].js',
       chunk: ({ isDev }) => isDev ? '[name].[hash].js' : '[chunkhash].js'
+    },
+    babel: {
+      plugins: ['@babel/plugin-proposal-optional-chaining']
     }
   }
 }

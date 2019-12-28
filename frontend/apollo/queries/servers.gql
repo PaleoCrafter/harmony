@@ -2,5 +2,6 @@
   servers {
     id
     name
+    iconUrl
   }
 }

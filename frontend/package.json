@@ -15,13 +15,18 @@
     "@nuxtjs/apollo": "^4.0.0-rc19",
     "@nuxtjs/auth": "^4.8.5",
     "@nuxtjs/axios": "^5.3.6",
-    "nuxt": "^2.0.0"
+    "nuxt": "^2.0.0",
+    "vue-feather-icons": "^5.0.0",
+    "vuebar": "^0.0.20"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-optional-chaining": "^7.7.5",
     "@nuxtjs/eslint-config": "^1.0.1",
     "@nuxtjs/eslint-module": "^1.0.0",
     "babel-eslint": "^10.0.1",
     "eslint": "^6.1.0",
-    "eslint-plugin-nuxt": ">=0.4.2"
+    "eslint-plugin-nuxt": ">=0.4.2",
+    "node-sass": "^4.13.0",
+    "sass-loader": "^8.0.0"
   }
 }

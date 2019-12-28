@@ -99,7 +99,7 @@ module.exports = {
       next()
     })
     app.use(session({
-      secret: process.env.SESSION_SECRET || 'rust and ruin',
+      secret: process.env.APPLICATION_SECRET || 'rust and ruin',
       resave: false,
       saveUninitialized: false,
       store: new FileStore({})
@@ -107,18 +107,38 @@ module.exports = {
     app.use(passport.initialize())
     app.use(passport.session())
 
-    app.get('/api/auth/login', passport.authenticate('discord', { scope: scopes }))
-    app.get('/api/auth/callback', passport.authenticate('discord', { successRedirect: '/api/success', failureRedirect: '/api/failed' }))
-    app.get('/api/auth/logout', function (req, res) {
-      req.logout()
-      res.redirect('/')
-    })
+    app.get(
+      '/api/auth/login',
+      (req, res, next) => {
+        if (req.query.redirect) {
+          res.cookie('auth_redirect', req.query.redirect, { maxAge: 900000, httpOnly: true, signed: true })
+        }
+        next()
+      },
+      passport.authenticate('discord', { scope: scopes })
+    )
+    app.get(
+      '/api/auth/callback',
+      passport.authenticate('discord', { failureRedirect: '/api/failed' }),
+      (req, res) => {
+        res.clearCookie('auth_redirect')
+        res.redirect(req.signedCookies.auth_redirect || '/')
+      }
+    )
+    app.get(
+      '/api/auth/logout',
+      (req, res) => {
+        req.logout()
+        res.redirect('/')
+      }
+    )
   },
   checkAuth (req, res, next) {
     if (req.isAuthenticated()) {
       return next()
     }
-    res.redirect('/api/auth/login')
+    res.status(401)
+    res.json({ errors: [{ message: 'Unauthorized' }], data: null })
   },
   async getPermissions (user, server) {
     let cached = user.permissionsCache[server]

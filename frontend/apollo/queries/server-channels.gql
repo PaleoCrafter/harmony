@@ -1,0 +1,9 @@
+query ServerChannels($id: ID!) {
+  server(id: $id) {
+    channels {
+      id
+      name
+      type
+    }
+  }
+}

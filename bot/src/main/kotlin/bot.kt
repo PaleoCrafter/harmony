@@ -1,20 +1,37 @@
 package com.seventeenthshard.harmony.bot
 
+import com.seventeenthshard.harmony.events.ChannelDeletion
+import com.seventeenthshard.harmony.events.ChannelInfo
 import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.NewMessage
+import com.seventeenthshard.harmony.events.RoleDeletion
+import com.seventeenthshard.harmony.events.RoleInfo
+import com.seventeenthshard.harmony.events.ServerDeletion
 import com.seventeenthshard.harmony.events.ServerInfo
+import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
+import discord4j.core.event.domain.channel.NewsChannelCreateEvent
+import discord4j.core.event.domain.channel.NewsChannelDeleteEvent
+import discord4j.core.event.domain.channel.NewsChannelUpdateEvent
+import discord4j.core.event.domain.channel.TextChannelCreateEvent
+import discord4j.core.event.domain.channel.TextChannelDeleteEvent
+import discord4j.core.event.domain.channel.TextChannelUpdateEvent
 import discord4j.core.event.domain.guild.GuildCreateEvent
+import discord4j.core.event.domain.guild.GuildDeleteEvent
 import discord4j.core.event.domain.guild.GuildUpdateEvent
+import discord4j.core.event.domain.guild.MemberUpdateEvent
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.event.domain.message.MessageDeleteEvent
 import discord4j.core.event.domain.message.MessageUpdateEvent
+import discord4j.core.event.domain.role.RoleCreateEvent
+import discord4j.core.event.domain.role.RoleDeleteEvent
+import discord4j.core.event.domain.role.RoleUpdateEvent
 import io.confluent.kafka.serializers.KafkaAvroSerializer
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
 import io.confluent.kafka.serializers.subject.RecordNameStrategy
@@ -113,6 +130,76 @@ fun main() {
         it.current.id to ServerInfo.of(it.current)
     }
 
+    client.eventDispatcher.map<GuildDeleteEvent, ServerDeletion>(
+        producer,
+        "servers"
+    ) {
+        it.guildId to ServerDeletion.of(Instant.now())
+    }
+
+    client.eventDispatcher.map<RoleCreateEvent, RoleInfo>(
+        producer,
+        "roles"
+    ) {
+        it.role.id to RoleInfo.of(it.role)
+    }
+
+    client.eventDispatcher.map<RoleUpdateEvent, RoleInfo>(
+        producer,
+        "roles"
+    ) {
+        it.current.id to RoleInfo.of(it.current)
+    }
+
+    client.eventDispatcher.map<RoleDeleteEvent, RoleDeletion>(
+        producer,
+        "roles"
+    ) {
+        it.roleId to RoleDeletion.of(Instant.now())
+    }
+
+    client.eventDispatcher.map<TextChannelCreateEvent, ChannelInfo>(
+        producer,
+        "channels"
+    ) {
+        it.channel.id to ChannelInfo.of(it.channel)
+    }
+
+    client.eventDispatcher.map<TextChannelUpdateEvent, ChannelInfo>(
+        producer,
+        "channels"
+    ) {
+        it.current.id to ChannelInfo.of(it.current)
+    }
+
+    client.eventDispatcher.map<TextChannelDeleteEvent, ChannelDeletion>(
+        producer,
+        "channels"
+    ) {
+        it.channel.id to ChannelDeletion.of(Instant.now())
+    }
+
+    client.eventDispatcher.map<NewsChannelCreateEvent, ChannelInfo>(
+        producer,
+        "channels"
+    ) {
+        it.channel.id to ChannelInfo.of(it.channel)
+    }
+
+    client.eventDispatcher.map<NewsChannelUpdateEvent, ChannelInfo>(
+        producer,
+        "channels"
+    ) {
+        it.current.id to ChannelInfo.of(it.current)
+    }
+
+    client.eventDispatcher.map<NewsChannelDeleteEvent, ChannelDeletion>(
+        producer,
+        "channels"
+    ) {
+        it.channel.id to ChannelDeletion.of(Instant.now())
+    }
+
     client.eventDispatcher.map<MessageCreateEvent, NewMessage>(
         producer,
         "messages"
@@ -143,6 +230,19 @@ fun main() {
     ) { event ->
         Flux.fromIterable(event.messageIds).flatMap { id ->
             MessageDeletion.of(Instant.now()).map { id to it }
+        }
+    }
+
+    client.eventDispatcher.map<MemberUpdateEvent, UserNicknameChange>(
+        producer,
+        "users"
+    ) { event ->
+        event.memberId to Mono.zip(
+            event.client.getUserById(event.memberId),
+            event.guild,
+            Mono.just(event.old.map { it.nickname }.filter { it != event.currentNickname }.flatMap { it })
+        ).flatMap {
+            UserNicknameChange.of(it.t1, it.t2, it.t3.orElse(null))
         }
     }
 

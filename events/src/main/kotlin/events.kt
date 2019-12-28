@@ -14,7 +14,20 @@ data class ServerDeletion(
 )
 
 @Serializable
-data class ChannelInfo(val id: String, val server: ServerInfo, val name: String, val type: Type) {
+data class RoleInfo(
+    val id: String,
+    val server: ServerInfo,
+    val name: String,
+    val permissions: Long
+)
+
+@Serializable
+data class RoleDeletion(
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant
+)
+
+@Serializable
+data class ChannelInfo(val id: String, val server: ServerInfo, val name: String, val type: Type, val permissionOverrides: List<PermissionOverride>) {
     @Serializable(with = Type.Serializer::class)
     enum class Type {
         TEXT, NEWS;
@@ -25,11 +38,24 @@ data class ChannelInfo(val id: String, val server: ServerInfo, val name: String,
             choicesNames = arrayOf("TEXT", "NEWS")
         )
     }
+
+    @Serializable
+    data class PermissionOverride(val type: Type, val targetId: String, val allowed: Long, val denied: Long) {
+        @Serializable(with = Type.Serializer::class)
+        enum class Type {
+            UNKNOWN, ROLE, USER;
+
+            companion object Serializer : CommonEnumSerializer<Type>(
+                serialName = "ChannelPermissionOverrideType",
+                choices = values(),
+                choicesNames = arrayOf("UNKNOWN", "ROLE", "USER")
+            )
+        }
+    }
 }
 
 @Serializable
 data class ChannelDeletion(
-    val user: UserInfo,
     @Serializable(with = InstantSerializer::class) val timestamp: Instant
 )
 
@@ -44,7 +70,7 @@ data class UserInfo(
 data class UserNicknameChange(
     val user: UserInfo,
     val server: ServerInfo,
-    val nickname: String,
+    val nickname: String?,
     @Serializable(with = InstantSerializer::class) val timestamp: Instant
 )
 

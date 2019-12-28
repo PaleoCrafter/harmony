@@ -11,6 +11,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
+import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.Duration
@@ -20,6 +21,7 @@ import java.util.*
 
 class EventHandler(init: EventHandler.() -> Unit) {
     private val handlers = mutableMapOf<String, Handler<*>>()
+    private val logger = LogManager.getLogger("EventHandler")
 
     init {
         this.init()
@@ -48,7 +50,9 @@ class EventHandler(init: EventHandler.() -> Unit) {
                 consumer.poll(Duration.ofMillis(100)).forEach {
                     val record = it.value()
                     (handlers[it.value().schema.fullName] as? Handler<Any>)?.let { handler ->
-                        handler.run(it.key(), Avro.default.fromRecord(handler.deserializer, record))
+                        val event = Avro.default.fromRecord(handler.deserializer, record)
+                        handler.run(it.key(), event)
+                        logger.info("Handled ${event.javaClass}")
                     }
                 }
             }
@@ -62,7 +66,16 @@ fun main() {
     Database.connect("jdbc:postgresql://localhost/harmony", "org.postgresql.Driver", "harmony_imports", "imp0rt5")
 
     transaction {
-        SchemaUtils.createMissingTablesAndColumns(Servers, Channels, Users, Messages, MessageVersions)
+        SchemaUtils.createMissingTablesAndColumns(
+            Servers,
+            Channels,
+            Users,
+            UserNicknames,
+            Roles,
+            PermissionOverrides,
+            Messages,
+            MessageVersions
+        )
     }
 
     val events = EventHandler {
@@ -83,15 +96,64 @@ fun main() {
                 }
             }
         }
+
+        listen<RoleInfo> { roleId, event ->
+            transaction {
+                Roles.replace {
+                    it[id] = roleId
+                    it[server] = event.server.id
+                    it[name] = event.name
+                    it[permissions] = event.permissions
+                }
+            }
+        }
+        listen<RoleDeletion> { roleId, event ->
+            transaction {
+                Roles.update({ Roles.id eq roleId }) {
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                }
+            }
+        }
+
         listen<ChannelInfo> { channelId, event ->
             transaction {
                 Channels.replace {
                     it[id] = channelId
                     it[server] = event.server.id
                     it[name] = event.name
+                    it[type] = event.type
+                }
+
+                PermissionOverrides.deleteWhere { PermissionOverrides.channel eq channelId }
+
+                PermissionOverrides.batchInsert(event.permissionOverrides) {
+                    this[PermissionOverrides.channel] = event.id
+                    this[PermissionOverrides.type] = it.type
+                    this[PermissionOverrides.target] = it.targetId
+                    this[PermissionOverrides.allowed] = it.allowed
+                    this[PermissionOverrides.denied] = it.denied
                 }
             }
         }
+        listen<ChannelDeletion> { channelId, event ->
+            transaction {
+                Channels.update({ Channels.id eq channelId }) {
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                }
+            }
+        }
+
+        listen<UserNicknameChange> { userId, event ->
+            transaction {
+                UserNicknames.replace {
+                    it[server] = event.server.id
+                    it[user] = userId
+                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[nickname] = event.nickname
+                }
+            }
+        }
+
         listen<NewMessage> { messageId, event ->
             transaction {
                 Users.replace {
@@ -100,20 +162,14 @@ fun main() {
                     it[discriminator] = event.user.discriminator
                 }
 
-                Channels.replace {
-                    it[id] = event.channel.id
-                    it[server] = event.channel.server.id
-                    it[name] = event.channel.name
-                }
-
-                Messages.insert {
+                Messages.replace {
                     it[id] = messageId
                     it[server] = event.channel.server.id
                     it[channel] = event.channel.id
                     it[user] = event.user.id
                 }
 
-                MessageVersions.insert {
+                MessageVersions.replace {
                     it[message] = messageId
                     it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
                     it[content] = event.content
@@ -122,7 +178,7 @@ fun main() {
         }
         listen<MessageEdit> { messageId, event ->
             transaction {
-                MessageVersions.insert {
+                MessageVersions.replace {
                     it[message] = messageId
                     it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
                     it[content] = event.content
@@ -150,6 +206,6 @@ fun main() {
             KafkaAvroDeserializerConfig.VALUE_SUBJECT_NAME_STRATEGY to RecordNameStrategy::class.java,
             KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to "http://localhost:8081"
         ),
-        "servers", "messages"
+        "servers", "messages", "channels", "users", "roles"
     )
 }

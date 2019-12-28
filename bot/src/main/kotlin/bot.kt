@@ -12,6 +12,7 @@ import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
+import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
@@ -43,19 +44,22 @@ import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.StringSerializer
+import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
 import java.util.Properties
 import java.util.function.BiFunction
 
+val logger = LogManager.getLogger("bot")
+
 @ImplicitReflectionSerializer
 inline fun <reified T : Any> producerRecord(
     topic: String,
-    id: String,
+    id: Snowflake,
     value: T
 ): ProducerRecord<String, GenericRecord> =
-    ProducerRecord(topic, id, Avro.default.toRecord(T::class.serializer(), value))
+    ProducerRecord(topic, id.asString(), Avro.default.toRecord(T::class.serializer(), value))
 
 @ImplicitReflectionSerializer
 inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispatcher.map(
@@ -79,17 +83,28 @@ inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispa
     topic: String,
     noinline mapper: (DiscordEvent) -> Flux<Pair<Snowflake, EmittedEvent>>
 ) {
+    listen<DiscordEvent>(producer) { event ->
+        mapper(event).map {
+            producerRecord(
+                topic,
+                it.first,
+                it.second
+            )
+        }
+    }
+}
+
+@ImplicitReflectionSerializer
+inline fun <reified DiscordEvent : Event> EventDispatcher.listen(
+    producer: KafkaProducer<String, GenericRecord>,
+    noinline emitter: (event: DiscordEvent) -> Flux<ProducerRecord<String, GenericRecord>>
+) {
     on(DiscordEvent::class.java)
-        .flatMap { mapper(it) }
+        .flatMap { emitter(it) }
         .map {
             try {
-                producer.send(
-                    producerRecord(
-                        topic,
-                        it.first.asString(),
-                        it.second
-                    )
-                )
+                producer.send(it)
+                logger.info("Emitted ${it.value().schema.name} to ${it.topic()}")
             } catch (e: SerializationException) {
                 e.printStackTrace()
             } catch (e: InterruptedException) {
@@ -116,11 +131,23 @@ fun main() {
     props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = "http://localhost:8081"
     val producer = KafkaProducer<String, GenericRecord>(props)
 
-    client.eventDispatcher.map<GuildCreateEvent, ServerInfo>(
-        producer,
-        "servers"
-    ) {
-        it.guild.id to ServerInfo.of(it.guild)
+    client.eventDispatcher.listen<GuildCreateEvent>(producer) { event ->
+        val guild = event.guild
+
+        Flux.merge(
+            ServerInfo.of(guild).map { producerRecord("servers", guild.id, it) },
+            guild.channels
+                .filter { it is GuildMessageChannel }
+                .flatMap {
+                    Mono.just(it.id).zipWith(ChannelInfo.of(it as GuildMessageChannel))
+                }
+                .map { producerRecord("channels", it.t1, it.t2) },
+            guild.roles
+                .flatMap {
+                    Mono.just(it.id).zipWith(RoleInfo.of(it))
+                }
+                .map { producerRecord("roles", it.t1, it.t2) }
+        )
     }
 
     client.eventDispatcher.map<GuildUpdateEvent, ServerInfo>(
@@ -240,7 +267,7 @@ fun main() {
         event.memberId to Mono.zip(
             event.client.getUserById(event.memberId),
             event.guild,
-            Mono.just(event.old.map { it.nickname }.filter { it != event.currentNickname }.flatMap { it })
+            Mono.justOrEmpty(event.old.filter { it.nickname != event.currentNickname }.map { event.currentNickname })
         ).flatMap {
             UserNicknameChange.of(it.t1, it.t2, it.t3.orElse(null))
         }

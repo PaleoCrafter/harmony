@@ -1,8 +1,9 @@
 package com.seventeenthshard.harmony.dbimport
 
-import com.seventeenthshard.harmony.dbimport.MessageVersions.index
-import com.seventeenthshard.harmony.dbimport.MessageVersions.primaryKey
-import org.jetbrains.exposed.sql.*
+import com.seventeenthshard.harmony.events.ChannelInfo
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.ColumnType
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.`java-time`.datetime
 import org.jetbrains.exposed.sql.vendors.currentDialect
 
@@ -26,23 +27,48 @@ object SnowflakeColumnType : ColumnType() {
 
 fun Table.snowflake(name: String): Column<String> = registerColumn(name, SnowflakeColumnType)
 
-object Servers: Table() {
+object Servers : Table() {
     val id = snowflake("id").primaryKey()
     val name = varchar("name", 255)
     val iconUrl = varchar("iconUrl", 255).nullable()
     val active = bool("active").default(true)
 }
 
-object Channels: Table() {
+object Channels : Table() {
     val id = snowflake("id").primaryKey()
     val server = snowflake("server").index()
     val name = varchar("name", 255)
+    val type = enumerationByName("type", 16, ChannelInfo.Type::class)
+    val deletedAt = datetime("deletedAt").nullable()
 }
 
-object Users: Table() {
+object Users : Table() {
     val id = snowflake("id").primaryKey()
     val name = varchar("name", 255)
     val discriminator = varchar("discriminator", 4)
+}
+
+object UserNicknames : Table() {
+    val server = snowflake("server").primaryKey(0)
+    val user = snowflake("user").primaryKey(1)
+    val timestamp = datetime("timestamp").primaryKey(2)
+    val nickname = varchar("name", 255).nullable()
+}
+
+object Roles : Table() {
+    val id = snowflake("id").primaryKey()
+    val server = snowflake("server").index()
+    val name = varchar("name", 64)
+    val permissions = long("permissions")
+    val deletedAt = datetime("deletedAt").nullable()
+}
+
+object PermissionOverrides : Table() {
+    val channel = snowflake("channel").primaryKey(0)
+    val type = enumerationByName("type", 16, ChannelInfo.PermissionOverride.Type::class).primaryKey(1)
+    val target = snowflake("target").primaryKey(2)
+    val allowed = long("allowed")
+    val denied = long("denied")
 }
 
 object Messages : Table() {
@@ -53,7 +79,7 @@ object Messages : Table() {
     val deletedAt = datetime("deletedAt").nullable()
 }
 
-object MessageVersions: Table() {
+object MessageVersions : Table() {
     val message = snowflake("message").primaryKey(0)
     val timestamp = datetime("timestamp").primaryKey(1)
     val content = text("content")

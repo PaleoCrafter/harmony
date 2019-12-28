@@ -88,7 +88,7 @@ fun UserInfo.Companion.of(user: User) =
         )
     )
 
-fun UserNicknameChange.Companion.of(user: User, guild: Guild, nickname: String) =
+fun UserNicknameChange.Companion.of(user: User, guild: Guild, nickname: String?) =
     Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
         .map {
             UserNicknameChange(

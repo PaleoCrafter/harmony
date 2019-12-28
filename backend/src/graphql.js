@@ -70,7 +70,7 @@ const root = {
     return (await request.loaders.servers.loadMany(request.user.servers.map(server => server.id))).filter(s => s !== null);
   },
   server({ id: requestedId }, request) {
-    return request.loaders.servers.load(requestedId);
+    return request.user.servers.find(s => s.id === requestedId) ? request.loaders.servers.load(requestedId) : null;
   },
 };
 

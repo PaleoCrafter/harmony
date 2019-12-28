@@ -1,6 +1,44 @@
 ---
-version: '2'
+version: '3.4'
 services:
+  proxy:
+    image: 'harmony/proxy:latest'
+    build:
+      context: .
+    ports:
+      - 9000:80
+    depends_on:
+      - frontend
+      - backend
+
+  frontend:
+    image: 'harmony/frontend:latest-${ENV:-dev}'
+    build:
+      context: frontend
+      target: ${ENV:-dev}
+    volumes:
+      - ./frontend:/app
+      - frontend_modules:/app/node_modules
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+  backend:
+    image: 'harmony/backend:latest-${ENV:-dev}'
+    build:
+      context: backend
+      target: ${ENV:-dev}
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ./backend:/app
+      - backend_modules:/app/node_modules
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+
   db:
     image: postgres:12
     container_name: harmony-db
@@ -59,3 +97,7 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
       SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL: forward
+
+volumes:
+  frontend_modules:
+  backend_modules:

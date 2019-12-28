@@ -1,35 +1,12 @@
+const path = require('path')
+const fs = require('fs')
 const graphqlHTTP = require('express-graphql')
 const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
 const { Server, Channel } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
-const schema = buildSchema(`
-  type Query {
-    identity: User!
-
-    servers: [Server!]!
-    server(id: ID!): Server
-  }
-
-  type Server {
-    id: ID!
-    name: String!
-    iconUrl: String
-    channels: [Channel!]
-  }
-
-  type Channel {
-    id: ID!
-    name: String!
-  }
-
-  type User {
-    id: ID!
-    name: String!
-    discriminator: String!
-  }
-`)
+const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
 
 function initLoaders (user) {
   const channelLoader = new DataLoader(async (ids) => {
@@ -80,7 +57,7 @@ module.exports = {
       req.loaders = initLoaders(req.user)
       next()
     })
-    app.use('/graphql', checkAuth, graphqlHTTP({
+    app.use('/api/graphql', checkAuth, graphqlHTTP({
       schema,
       rootValue: root,
       graphiql: true

@@ -36,7 +36,7 @@ Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
       return channels.reduce((acc, channel) => ({ ...acc, [channel.id]: new Eris.Permission(Permissions.all) }), {})
     }
 
-    const channelPermissions = await Promise.all(channels.map(async channel => {
+    const channelPermissions = await Promise.all(channels.map(async (channel) => {
       const overrides = await channel.getPermissionOverrides()
       const serverOverride = overrides.find(override => override.target === serverId)
       if (serverOverride) {
@@ -79,7 +79,7 @@ module.exports = {
     passport.use(new Strategy({
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      callbackURL: 'http://localhost:3000/auth/callback',
+      callbackURL: 'http://localhost:9000/api/auth/callback',
       scope: scopes
     }, function (accessToken, refreshToken, profile, done) {
       done(null, {
@@ -91,6 +91,13 @@ module.exports = {
       })
     }))
 
+    app.use((req, res, next) => {
+      const authHeader = req.header('authorization')
+      if (authHeader && authHeader.startsWith('Session ')) {
+        req.signedCookies['connect.sid'] = authHeader.substring(8)
+      }
+      next()
+    })
     app.use(session({
       secret: process.env.SESSION_SECRET || 'rust and ruin',
       resave: false,
@@ -100,9 +107,9 @@ module.exports = {
     app.use(passport.initialize())
     app.use(passport.session())
 
-    app.get('/auth/login', passport.authenticate('discord', { scope: scopes }))
-    app.get('/auth/callback', passport.authenticate('discord', { successRedirect: '/success', failureRedirect: '/failed' }))
-    app.get('/auth/logout', function (req, res) {
+    app.get('/api/auth/login', passport.authenticate('discord', { scope: scopes }))
+    app.get('/api/auth/callback', passport.authenticate('discord', { successRedirect: '/api/success', failureRedirect: '/api/failed' }))
+    app.get('/api/auth/logout', function (req, res) {
       req.logout()
       res.redirect('/')
     })
@@ -111,7 +118,7 @@ module.exports = {
     if (req.isAuthenticated()) {
       return next()
     }
-    res.redirect('/auth/login')
+    res.redirect('/api/auth/login')
   },
   async getPermissions (user, server) {
     let cached = user.permissionsCache[server]

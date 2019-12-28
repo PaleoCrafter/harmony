@@ -1,5 +1,5 @@
 const Sequelize = require('sequelize')
-const db = new Sequelize('postgres://harmony:h4rm0ny@localhost/harmony')
+const db = new Sequelize('postgres://harmony:h4rm0ny@db/harmony')
 
 const Server = db.define('server', {
   id: {

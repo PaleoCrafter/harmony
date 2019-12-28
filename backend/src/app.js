@@ -14,13 +14,13 @@ app.use(cookieParser())
 initAuth(app)
 initGraphQL(app)
 
-app.get('/', checkAuth, async function (req, res) {
+app.get('/api', checkAuth, async function (req, res) {
   res.json(await getPermissions(req.user, '606562167407378442'))
 })
-app.get('/success', function (req, res) {
+app.get('/api/success', function (req, res) {
   res.json({ message: 'it worked' })
 })
-app.get('/failed', function (req, res) {
+app.get('/api/failed', function (req, res) {
   res.json({ message: 'shit' })
 })
 

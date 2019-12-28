@@ -1,0 +1,24 @@
+type Query {
+  identity: User!
+
+  servers: [Server!]!
+  server(id: ID!): Server
+}
+
+type Server {
+  id: ID!
+  name: String!
+  iconUrl: String
+  channels: [Channel!]
+}
+
+type Channel {
+  id: ID!
+  name: String!
+}
+
+type User {
+  id: ID!
+  name: String!
+  discriminator: String!
+}

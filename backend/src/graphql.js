@@ -4,7 +4,7 @@ const graphqlHTTP = require('express-graphql')
 const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
 const { Op, QueryTypes } = require('sequelize')
-const { database, Server, Channel, User, Message, MessageVersion, UserNickname, Role } = require('./db')
+const { database, Server, Channel, User, Message, MessageVersion, Role } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
 const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))

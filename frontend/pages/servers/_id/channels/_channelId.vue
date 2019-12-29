@@ -6,7 +6,7 @@
     <div
       v-infinite-scroll="loadMore"
       infinite-scroll-disabled="mayNotLoad"
-      infinite-scroll-distance="10"
+      infinite-scroll-distance="100"
       infinite-scroll-listen-for-event="reset-infinite"
       class="channel__messages"
     >
@@ -119,13 +119,47 @@ export default {
   }
 
   &__messages {
-    padding: 0 1rem 1rem;
     display: flex;
-    overflow-y: auto;
-    flex: 1;
-    flex-basis: 0;
     flex-direction: column;
     align-items: center;
+    padding: 0 1rem 1rem;
+    position: relative;
+    flex: 1;
+    flex-basis: 0;
+    overflow-y: scroll;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track {
+    border-width: initial;
+    background-color: transparent;
+    border-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-thumb {
+    background-clip: padding-box;
+    border-width: 3px;
+    border-style: solid;
+    border-radius: 7px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #202225;
+    border-color: transparent;
+  }
+
+  ::-webkit-scrollbar-track-piece {
+    background-color: #2f3136;
+    border: 3px solid #36393f;
+    border-radius: 7px;
   }
 
   &__loading {

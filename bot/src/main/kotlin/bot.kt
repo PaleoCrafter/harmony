@@ -9,6 +9,7 @@ import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
 import com.seventeenthshard.harmony.events.ServerDeletion
 import com.seventeenthshard.harmony.events.ServerInfo
+import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
@@ -25,6 +26,7 @@ import discord4j.core.event.domain.channel.TextChannelUpdateEvent
 import discord4j.core.event.domain.guild.GuildCreateEvent
 import discord4j.core.event.domain.guild.GuildDeleteEvent
 import discord4j.core.event.domain.guild.GuildUpdateEvent
+import discord4j.core.event.domain.guild.MemberJoinEvent
 import discord4j.core.event.domain.guild.MemberUpdateEvent
 import discord4j.core.event.domain.message.MessageBulkDeleteEvent
 import discord4j.core.event.domain.message.MessageCreateEvent
@@ -146,7 +148,24 @@ fun main() {
                 .flatMap {
                     Mono.just(it.id).zipWith(RoleInfo.of(it))
                 }
-                .map { producerRecord("roles", it.t1, it.t2) }
+                .map { producerRecord("roles", it.t1, it.t2) },
+            guild.members
+                .flatMap {
+                    Mono.just(it.nickname).zipWith(event.client.getUserById(it.id))
+                }
+                .flatMap {
+                    Mono.zip(
+                        Mono.just(it.t2.id),
+                        UserInfo.of(it.t2),
+                        UserNicknameChange.of(it.t2, guild, it.t1.orElse(null))
+                    )
+                }
+                .flatMap {
+                    Flux.just(
+                        producerRecord("users", it.t1, it.t2),
+                        producerRecord("users", it.t1, it.t3)
+                    )
+                }
         )
     }
 
@@ -260,6 +279,15 @@ fun main() {
         }
     }
 
+    client.eventDispatcher.map<MemberJoinEvent, UserInfo>(
+        producer,
+        "users"
+    ) { event ->
+        event.member.id to event.client.getUserById(event.member.id)
+            .flatMap {
+                UserInfo.of(it)
+            }
+    }
     client.eventDispatcher.map<MemberUpdateEvent, UserNicknameChange>(
         producer,
         "users"

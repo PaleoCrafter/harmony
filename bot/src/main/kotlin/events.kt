@@ -20,6 +20,7 @@ import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Image
 import reactor.core.publisher.Mono
+import java.awt.Color
 import java.time.Instant
 
 fun ServerInfo.Companion.of(guild: Guild) =
@@ -34,13 +35,20 @@ fun ServerInfo.Companion.of(guild: Guild) =
 fun ServerDeletion.Companion.of(timestamp: Instant) =
     Mono.just(ServerDeletion(timestamp))
 
+private fun Color.toHex(): String {
+    val format = "%02x"
+
+    return "${format.format(red)}${format.format(green)}${format.format(blue)}"
+}
+
 fun RoleInfo.Companion.of(role: Role) =
     role.guild
         .flatMap {
-            ServerInfo.of(it)
+            Mono.zip(ServerInfo.of(it), role.position)
         }
         .map {
-            RoleInfo(role.id.asString(), it, role.name, role.permissions.rawValue)
+            role.position
+            RoleInfo(role.id.asString(), it.t1, role.name, role.color.toHex(), it.t2, role.permissions.rawValue)
         }
 
 fun RoleDeletion.Companion.of(timestamp: Instant) =

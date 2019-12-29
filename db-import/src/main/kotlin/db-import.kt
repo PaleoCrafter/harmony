@@ -103,6 +103,8 @@ fun main() {
                     it[id] = roleId
                     it[server] = event.server.id
                     it[name] = event.name
+                    it[color] = event.color
+                    it[position] = event.position
                     it[permissions] = event.permissions
                 }
             }
@@ -110,7 +112,7 @@ fun main() {
         listen<RoleDeletion> { roleId, event ->
             transaction {
                 Roles.update({ Roles.id eq roleId }) {
-                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                 }
             }
         }
@@ -138,18 +140,38 @@ fun main() {
         listen<ChannelDeletion> { channelId, event ->
             transaction {
                 Channels.update({ Channels.id eq channelId }) {
-                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                 }
             }
         }
 
+        listen<UserInfo> { _, event ->
+            transaction {
+                Users.replace {
+                    it[id] = event.id
+                    it[name] = event.username
+                    it[discriminator] = event.discriminator
+                }
+            }
+        }
         listen<UserNicknameChange> { userId, event ->
             transaction {
-                UserNicknames.replace {
-                    it[server] = event.server.id
-                    it[user] = userId
-                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
-                    it[nickname] = event.nickname
+                val currentNickname = UserNicknames
+                    .select {
+                        (UserNicknames.server eq event.server.id) and (UserNicknames.user eq userId)
+                    }
+                    .orderBy(UserNicknames.timestamp to SortOrder.DESC)
+                    .limit(1)
+                    .firstOrNull()
+                    ?.get(UserNicknames.nickname)
+
+                if (currentNickname != event.nickname) {
+                    UserNicknames.replace {
+                        it[server] = event.server.id
+                        it[user] = userId
+                        it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+                        it[nickname] = event.nickname
+                    }
                 }
             }
         }
@@ -162,16 +184,19 @@ fun main() {
                     it[discriminator] = event.user.discriminator
                 }
 
+                val creationTimestamp = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+
                 Messages.replace {
                     it[id] = messageId
                     it[server] = event.channel.server.id
                     it[channel] = event.channel.id
                     it[user] = event.user.id
+                    it[createdAt] = creationTimestamp
                 }
 
                 MessageVersions.replace {
                     it[message] = messageId
-                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[timestamp] = creationTimestamp
                     it[content] = event.content
                 }
             }
@@ -180,7 +205,7 @@ fun main() {
             transaction {
                 MessageVersions.replace {
                     it[message] = messageId
-                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                     it[content] = event.content
                 }
             }
@@ -188,7 +213,7 @@ fun main() {
         listen<MessageDeletion> { messageId, event ->
             transaction {
                 Messages.update({ Messages.id eq messageId }) {
-                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.systemDefault())
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                 }
             }
         }

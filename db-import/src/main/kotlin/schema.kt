@@ -60,6 +60,8 @@ object Roles : Table() {
     val server = snowflake("server").index()
     val name = varchar("name", 64)
     val permissions = long("permissions")
+    val color = varchar("color", 6).default("FFFFFF")
+    val position = integer("position").default(0)
     val deletedAt = datetime("deletedAt").nullable()
 }
 
@@ -76,6 +78,7 @@ object Messages : Table() {
     val server = snowflake("server").index()
     val channel = snowflake("channel").index()
     val user = snowflake("user")
+    val createdAt = datetime("createdAt").nullable()
     val deletedAt = datetime("deletedAt").nullable()
 }
 

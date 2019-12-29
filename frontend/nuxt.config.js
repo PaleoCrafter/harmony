@@ -29,7 +29,10 @@ export default {
   /*
   ** Plugins to load before mounting the App
   */
-  plugins: ['@/plugins/message-components'],
+  plugins: [
+    { src: '@/plugins/message-components.js' },
+    { src: '@/plugins/client.js', mode: 'client' }
+  ],
   /*
   ** Nuxt.js dev-modules
   */

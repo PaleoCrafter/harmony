@@ -18,6 +18,7 @@
     "discord-markdown": "^2.2.0",
     "nuxt": "^2.0.0",
     "vue-feather-icons": "^5.0.0",
+    "vue-infinite-scroll": "^2.0.2",
     "vuebar": "^0.0.20"
   },
   "devDependencies": {

@@ -58,9 +58,6 @@ export default {
 
 <style lang="scss">
 .message-list {
-  padding: 0 1rem 1rem;
-  overflow-y: auto;
-  flex: 1;
-  flex-basis: 0;
+  align-self: stretch;
 }
 </style>

@@ -11,7 +11,7 @@ export default {
     }
   },
   computed: {
-    annotatedVersions () {
+    parsedVersions () {
       return this.message.versions.map(version => ({
         ...version,
         content: parser(version.content)
@@ -19,7 +19,7 @@ export default {
     }
   },
   render (h) {
-    const { content } = this.annotatedVersions[0]
+    const { content } = this.parsedVersions[0]
     const children = content.map(node => renderNode(node, h, this.message))
 
     const properties = [
@@ -52,6 +52,7 @@ export default {
   white-space: pre-wrap;
   vertical-align: baseline;
   unicode-bidi: plaintext;
+  color: #dcddde;
 
   a {
     color: #00b0f4;
@@ -66,6 +67,7 @@ export default {
     position: relative;
     padding: 0 0.5rem 0 1rem;
     margin: 0.5rem 0;
+    max-width: 90%;
 
     &:before {
       position: absolute;
@@ -77,6 +79,20 @@ export default {
       border-radius: 4px;
       width: 4px;
     }
+  }
+
+  &__code {
+    width: auto;
+    height: auto;
+    padding: .2em;
+    margin: -.2em 0;
+    border-radius: 3px;
+    font-size: 1rem;
+    font-family: Consolas, Andale Mono WT, Andale Mono, Lucida Console, Lucida Sans Typewriter, DejaVu Sans Mono, Bitstream Vera Sans Mono, Liberation Mono, Nimbus Mono L, Monaco, Courier New, Courier, monospace;
+    text-indent: 0;
+    border: none;
+    white-space: pre-wrap;
+    background: #2f3136;
   }
 
   &__note {

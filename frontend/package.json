@@ -16,6 +16,7 @@
     "@nuxtjs/auth": "^4.8.5",
     "@nuxtjs/axios": "^5.3.6",
     "discord-markdown": "^2.2.0",
+    "highlight.js": "^9.17.1",
     "nuxt": "^2.0.0",
     "vue-feather-icons": "^5.0.0",
     "vue-infinite-scroll": "^2.0.2"

@@ -11,7 +11,7 @@
       class="channel__messages"
     >
       <MessageList :messages="messages || []" />
-      <div v-if="$apollo.loading" class="channel__loading">
+      <div v-if="$apollo.loading || messages === undefined" class="channel__loading">
         <LoadingSpinner />
       </div>
     </div>
@@ -42,7 +42,14 @@ export default {
   },
   computed: {
     mayNotLoad () {
-      return this.$apollo.loading || this.endReached || this.messages.length === 0
+      return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
+    }
+  },
+  watch: {
+    '$route.params.channelId': {
+      handler () {
+        this.messages = undefined
+      }
     }
   },
   apollo: {

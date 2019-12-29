@@ -3,6 +3,7 @@ import UserMention from '@/components/message/UserMention.vue'
 import ChannelMention from '@/components/message/ChannelMention.vue'
 import GenericMention from '@/components/message/GenericMention.vue'
 import RoleMention from '@/components/message/RoleMention.vue'
+import CodeBlock from '@/components/message/CodeBlock.vue'
 
 export default function renderNode (node, h, message) {
   switch (node.type) {
@@ -17,6 +18,10 @@ export default function renderNode (node, h, message) {
       return h(Spoiler, node.content.map(child => renderNode(child, h, message)))
     case 'blockQuote':
       return h('blockquote', node.content.map(child => renderNode(child, h, message)))
+    case 'inlineCode':
+      return h('code', { class: 'message__code' }, [node.content])
+    case 'codeBlock':
+      return h(CodeBlock, { props: { language: node.lang } }, [node.content])
     case 'discordUser':
       return h(UserMention, { props: { id: node.id.toString(), server: message.server } })
     case 'discordChannel':
@@ -32,8 +37,6 @@ export default function renderNode (node, h, message) {
     case 'br':
       return h('br')
   }
-
-  console.log(node)
 
   return h('span')
 }

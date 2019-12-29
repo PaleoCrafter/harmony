@@ -20,5 +20,7 @@ CMD yarn install && yarn dev
 FROM node:alpine AS prod
 
 COPY --from=dev /app /app
+RUN chmod +X /app/bin/www
 
-CMD yarn start
+WORKDIR /app
+CMD node /app/bin/www

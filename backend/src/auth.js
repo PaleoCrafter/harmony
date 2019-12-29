@@ -86,7 +86,7 @@ module.exports = {
     passport.use(new Strategy({
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      callbackURL: 'http://localhost:9000/api/auth/callback',
+      callbackURL: '/api/auth/callback',
       scope: scopes
     }, function (accessToken, refreshToken, profile, done) {
       done(null, {

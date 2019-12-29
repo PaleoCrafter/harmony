@@ -1,6 +1,19 @@
+@file:JvmName("DBImport")
+
 package com.seventeenthshard.harmony.dbimport
 
-import com.seventeenthshard.harmony.events.*
+import com.seventeenthshard.harmony.events.ChannelDeletion
+import com.seventeenthshard.harmony.events.ChannelInfo
+import com.seventeenthshard.harmony.events.MessageDeletion
+import com.seventeenthshard.harmony.events.MessageEdit
+import com.seventeenthshard.harmony.events.NewMessage
+import com.seventeenthshard.harmony.events.RoleDeletion
+import com.seventeenthshard.harmony.events.RoleInfo
+import com.seventeenthshard.harmony.events.ServerDeletion
+import com.seventeenthshard.harmony.events.ServerInfo
+import com.seventeenthshard.harmony.events.UserInfo
+import com.seventeenthshard.harmony.events.UserNicknameChange
+import com.seventeenthshard.harmony.events.UserRolesChange
 import com.sksamuel.avro4k.Avro
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
@@ -12,12 +25,20 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.replace
+import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import org.jetbrains.exposed.sql.update
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.*
+import java.util.Properties
 
 class EventHandler(init: EventHandler.() -> Unit) {
     private val handlers = mutableMapOf<String, Handler<*>>()
@@ -63,7 +84,12 @@ class EventHandler(init: EventHandler.() -> Unit) {
 }
 
 fun main() {
-    Database.connect("jdbc:postgresql://localhost/harmony", "org.postgresql.Driver", "harmony_imports", "imp0rt5")
+    Database.connect(
+        System.getenv("DB_CONNECTION") ?: throw IllegalArgumentException("DB_CONNECTION env variable must be set!"),
+        System.getenv("DB_DRIVER") ?: throw IllegalArgumentException("DB_DRIVER env variable must be set!"),
+        System.getenv("DB_USER") ?: throw IllegalArgumentException("DB_USER env variable must be set!"),
+        System.getenv("DB_PASSWORD") ?: throw IllegalArgumentException("DB_PASSWORD env variable must be set!")
+    )
 
     transaction {
         SchemaUtils.createMissingTablesAndColumns(
@@ -233,7 +259,8 @@ fun main() {
 
     events.consume(
         mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to "localhost:9092",
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to (System.getenv("BROKER_URLS")
+                ?: throw IllegalArgumentException("BROKER_URLS env variable must be set!")),
             ConsumerConfig.GROUP_ID_CONFIG to "db-import",
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true",
             ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG to "1000",
@@ -241,7 +268,8 @@ fun main() {
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
             KafkaAvroDeserializerConfig.VALUE_SUBJECT_NAME_STRATEGY to RecordNameStrategy::class.java,
-            KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to "http://localhost:8081"
+            KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to (System.getenv("SCHEMA_REGISTRY_URL")
+                ?: throw IllegalArgumentException("SCHEMA_REGISTRY_URL env variable must be set!"))
         ),
         "servers", "messages", "channels", "users", "roles"
     )

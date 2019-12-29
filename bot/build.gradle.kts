@@ -1,6 +1,8 @@
 plugins {
+    application
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
 version = "1.0-SNAPSHOT"
@@ -12,4 +14,19 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients:2.4.0")
     implementation("io.confluent:kafka-avro-serializer:5.3.0")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.13.0")
+}
+
+application {
+    mainClassName = "com.seventeenthshard.harmony.bot.Bot"
+}
+
+tasks.withType<Jar> {
+    archiveFileName.set("harmony-bot.jar")
+    manifest {
+        attributes(
+            mapOf(
+                "Main-Class" to application.mainClassName
+            )
+        )
+    }
 }

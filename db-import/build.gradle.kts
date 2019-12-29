@@ -1,6 +1,8 @@
 plugins {
+    application
     kotlin("jvm")
     kotlin("plugin.serialization")
+    id("com.github.johnrengelman.shadow") version "5.0.0"
 }
 
 version = "1.0-SNAPSHOT"
@@ -19,4 +21,19 @@ dependencies {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     kotlinOptions.freeCompilerArgs += "-Xuse-experimental=kotlinx.serialization.ImplicitReflectionSerializer"
+}
+
+application {
+    mainClassName = "com.seventeenthshard.harmony.dbimport.DBImport"
+}
+
+tasks.withType<Jar> {
+    archiveFileName.set("harmony-db-import.jar")
+    manifest {
+        attributes(
+            mapOf(
+                "Main-Class" to application.mainClassName
+            )
+        )
+    }
 }

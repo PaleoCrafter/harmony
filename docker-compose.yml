@@ -2,7 +2,7 @@
 version: '3.4'
 services:
   proxy:
-    image: 'harmony/proxy:latest'
+    image: 'marvinroesch/harmony-proxy:latest'
     build:
       context: .
     ports:
@@ -12,7 +12,7 @@ services:
       - backend
 
   frontend:
-    image: 'harmony/frontend:latest-${ENV:-dev}'
+    image: 'marvinroesch/harmony-frontend:latest'
     build:
       context: frontend
       target: ${ENV:-dev}
@@ -25,12 +25,14 @@ services:
     tty: true
 
   backend:
-    image: 'harmony/backend:latest-${ENV:-dev}'
+    image: 'marvinroesch/harmony-backend:latest'
     build:
       context: backend
       target: ${ENV:-dev}
     env_file:
       - ./backend/.env
+    environment:
+      - DB_URL=postgres://harmony:h4rm0ny@db/harmony
     volumes:
       - ./backend:/app
       - backend_modules:/app/node_modules
@@ -38,6 +40,43 @@ services:
       - db
     stdin_open: true
     tty: true
+
+  bot:
+    image: 'marvinroesch/harmony-bot:latest'
+    container_name: harmony-bot
+    build:
+      context: .
+      dockerfile: Dockerfile-gradle
+      target: bot
+    env_file:
+      - ./bot/.env
+    environment:
+      - BROKER_URLS=broker:29092
+      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
+    depends_on:
+      - broker
+      - schema-registry
+
+  db-import:
+    image: 'marvinroesch/harmony-db-import:latest'
+    container_name: harmony-db-import
+    build:
+      context: .
+      dockerfile: Dockerfile-gradle
+      target: db-import
+    env_file:
+      - ./db-import/.env
+    environment:
+      - DB_CONNECTION=jdbc:postgresql://db/harmony
+      - DB_DRIVER=org.postgresql.Driver
+      - DB_USER=harmony_imports
+      - DB_PASSWORD=imp0rt5
+      - BROKER_URLS=broker:29092
+      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
+    depends_on:
+      - db
+      - broker
+      - schema-registry
 
   db:
     image: postgres:12
@@ -57,8 +96,6 @@ services:
     image: confluentinc/cp-zookeeper:5.3.2
     hostname: zookeeper
     container_name: harmony-zookeeper
-    ports:
-      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -69,8 +106,6 @@ services:
     container_name: harmony-broker
     depends_on:
       - zookeeper
-    ports:
-      - "9092:9092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
@@ -91,8 +126,6 @@ services:
     depends_on:
       - zookeeper
       - broker
-    ports:
-      - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'

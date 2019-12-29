@@ -1,3 +1,5 @@
+@file:JvmName("Bot")
+
 package com.seventeenthshard.harmony.bot
 
 import com.seventeenthshard.harmony.events.ChannelDeletion
@@ -125,13 +127,15 @@ fun main() {
     ).build()
 
     val props = Properties()
-    props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = "localhost:9092"
+    props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = System.getenv("BROKER_URLS")
+        ?: throw IllegalArgumentException("BROKER_URLS env variable must be set!")
     props[ProducerConfig.ACKS_CONFIG] = "all"
     props[ProducerConfig.RETRIES_CONFIG] = 0
     props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
     props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = KafkaAvroSerializer::class.java
     props[KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY] = RecordNameStrategy::class.java
-    props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = "http://localhost:8081"
+    props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = System.getenv("SCHEMA_REGISTRY_URL")
+        ?: throw IllegalArgumentException("SCHEMA_REGISTRY_URL env variable must be set!")
     val producer = KafkaProducer<String, GenericRecord>(props)
 
     client.eventDispatcher.listen<GuildCreateEvent>(producer) { event ->

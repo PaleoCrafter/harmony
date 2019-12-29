@@ -7,6 +7,9 @@
       <ChannelList :server="$route.params.id" :channels="server.channels" />
     </div>
     <nuxt-child v-if="server" />
+    <div v-else-if="$apollo.loading" class="server__loading">
+      <LoadingSpinner />
+    </div>
     <div v-else class="server__error">
       <AlertCircleIcon class="server__error-icon" size="4x" />
       The requested server does not exist!
@@ -18,9 +21,10 @@
 import { AlertCircleIcon } from 'vue-feather-icons'
 import channelsQuery from '@/apollo/queries/server-channels.gql'
 import ChannelList from '@/components/ChannelList.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default {
-  components: { ChannelList, AlertCircleIcon },
+  components: { LoadingSpinner, ChannelList, AlertCircleIcon },
   apollo: {
     server: {
       query: channelsQuery,
@@ -54,6 +58,15 @@ export default {
     box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
     padding: 1rem;
     font-weight: 600;
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    flex-direction: column;
+    font-size: 4rem;
   }
 
   &__error {

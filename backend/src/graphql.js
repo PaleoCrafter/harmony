@@ -3,8 +3,8 @@ const fs = require('fs')
 const graphqlHTTP = require('express-graphql')
 const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
-const Op = require('sequelize').Op
-const { Server, Channel, User, Message, MessageVersion, UserNickname, Role } = require('./db')
+const { Op, QueryTypes } = require('sequelize')
+const { database, Server, Channel, User, Message, MessageVersion, UserNickname, Role } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
 const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
@@ -58,6 +58,75 @@ function initLoaders (user) {
     }
   )
 
+  const roles = new DataLoader(
+    async (keys) => {
+      const roles = await Role.findAll({ where: { id: keys.map(key => key.id) } })
+
+      return Promise.all(
+        keys.map(async ({ server, id }) => {
+          const role = roles.find(r => r.id === id)
+          if (role && (role.deletedAt !== null || (await getPermissions(user, server)).server.has('manageRoles'))) {
+            return {
+              id: role.id,
+              name: role.name,
+              color: mapColor(role.color),
+              deletedAt: role.deletedAt
+            }
+          }
+          return null
+        })
+      )
+    },
+    {
+      cacheKeyFn: ({ server, id }) => `${server}-${id}`
+    }
+  )
+
+  const userRoles = new DataLoader(
+    async (keys) => {
+      const variables = keys.map(({ server, id }, index) => ({
+        query: `($server${index}::bigint, $user${index}::bigint)`,
+        values: {
+          [`server${index}`]: server,
+          [`user${index}`]: id
+        }
+      }))
+      const roles = await database.query(
+        `
+        SELECT
+          "userroles"."server" AS "server",
+          "userroles"."user" AS "user",
+          "roles"."name" AS "name",
+          "roles"."color" AS "color",
+          "roles"."position" AS "position",
+          "roles"."deletedAt" AS "deletedAt"
+        FROM "userroles"
+        JOIN "roles" ON "roles"."id" = "userroles"."role"
+        JOIN (VALUES ${variables.map(v => v.query).join(', ')}) AS conditions (s, u)
+          ON "userroles"."server" = s AND "userroles"."user" = u
+        ORDER BY "roles"."position" DESC
+        `,
+        {
+          bind: variables.reduce((acc, v) => ({ ...acc, ...v.values }), {}),
+          type: QueryTypes.SELECT
+        }
+      )
+
+      return keys.map(({ server, id }) => {
+        const userRoles = roles.filter(r => r.server === server && r.user === id)
+        return userRoles.map(role => ({
+          id: role.id,
+          name: role.name,
+          color: mapColor(role.color),
+          deletedAt: role.deletedAt
+        }))
+      })
+    },
+    {
+      cacheKeyFn: ({ server, id }) => `${server}-${id}`
+    }
+  )
+
   return {
     servers: new DataLoader(async (ids) => {
       const servers = await Server.findAll({ where: { active: true, id: ids } })
@@ -68,7 +137,7 @@ function initLoaders (user) {
       async (keys) => {
         const users = await User.findAll({ where: { id: keys.map(key => key.id) } })
 
-        function addUserNickname (user, server) {
+        function addAdditionalInfo (user, server) {
           if (user === undefined) {
             return null
           }
@@ -77,39 +146,18 @@ function initLoaders (user) {
             id: user.id,
             name: user.name,
             discriminator: user.discriminator,
+            color: userRoles.load({ server, id: user.id }).then(roles => roles.map(role => role.color)[0] || null),
             nickname: userNicknames.load({ server, id: user.id }).then(nicks => nicks.map(nick => nick.name)[0] || null)
           }
         }
 
-        return keys.map(({ server, id }) => addUserNickname(users.find(s => s.id === id), server))
+        return keys.map(({ server, id }) => addAdditionalInfo(users.find(s => s.id === id), server))
       },
       {
         cacheKeyFn: ({ server, id }) => `${server}-${id}`
       }
     ),
-    roles: new DataLoader(
-      async (keys) => {
-        const roles = await Role.findAll({ where: { id: keys.map(key => key.id) } })
-
-        return Promise.all(
-          keys.map(async ({ server, id }) => {
-            const role = roles.find(r => r.id === id)
-            if (role && (role.deletedAt !== null || (await getPermissions(user, server)).server.has('manageRoles'))) {
-              return {
-                id: role.id,
-                name: role.name,
-                color: mapColor(role.color),
-                deletedAt: role.deletedAt
-              }
-            }
-            return null
-          })
-        )
-      },
-      {
-        cacheKeyFn: ({ server, id }) => `${server}-${id}`
-      }
-    ),
+    roles,
     messageVersions: new DataLoader(async (ids) => {
       const versions = await MessageVersion.findAll({
         where: {

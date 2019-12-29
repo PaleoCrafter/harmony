@@ -19,7 +19,7 @@ export default {
   computed: {
     groupedMessages () {
       if (this.messages === undefined) {
-        return undefined
+        return []
       }
 
       const groups = []

@@ -1,5 +1,5 @@
 <template>
-  <span class="role-mention" :style="roleStyle">@{{ roleName }}</span>
+  <span :style="roleStyle" class="role-mention">@{{ roleName }}</span>
 </template>
 
 <script>
@@ -19,13 +19,13 @@ export default {
   },
   computed: {
     roleName () {
-      return this.role.name ?? this.id
+      return this.role?.name ?? this.id
     },
     roleStyle () {
       const defaultColor = [114, 137, 218, 0.7]
       let [r, g, b, hoverAlpha] = defaultColor
 
-      if (this.role !== null) {
+      if (this.role !== undefined && this.role !== null) {
         ({ r, g, b } = this.role.color)
         hoverAlpha = 0.3
 

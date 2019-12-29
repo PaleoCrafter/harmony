@@ -9,8 +9,8 @@
 </template>
 
 <script>
-import identityQuery from '@/apollo/queries/identity'
-import serversQuery from '@/apollo/queries/servers'
+import identityQuery from '@/apollo/queries/identity.gql'
+import serversQuery from '@/apollo/queries/servers.gql'
 import ServerList from '~/components/ServerList.vue'
 import UserPanel from '@/components/UserPanel.vue'
 

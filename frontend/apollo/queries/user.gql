@@ -2,5 +2,10 @@ query User($server: ID!, $id: ID!) {
   user(server: $server, id: $id) {
     name
     nickname
+    color {
+      r
+      g
+      b
+    }
   }
 }

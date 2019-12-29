@@ -201,6 +201,7 @@ const MessageVersion = db.define('messageversion', {
 Message.hasMany(MessageVersion, { as: 'versions', foreignKey: 'message', foreignKeyConstraint: false, constraints: false })
 
 module.exports = {
+  database: db,
   Server,
   Role,
   Channel,

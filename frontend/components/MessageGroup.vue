@@ -1,12 +1,7 @@
 <template>
   <section class="message-group">
     <div class="message-group__header">
-      <template v-if="group.author.nickname !== null">
-        {{ group.author.nickname }}
-      </template>
-      <template v-else>
-        {{ group.author.name }}
-      </template>
+      <UserName :user="group.author" />
 
       <time :datetime="group.firstTimestamp">{{ formattedTime }}</time>
     </div>
@@ -20,10 +15,11 @@
 
 <script>
 import Message from '@/components/Message.vue'
+import UserName from '@/components/UserName.vue'
 
 export default {
   name: 'MessageGroup',
-  components: { Message },
+  components: { UserName, Message },
   props: {
     group: {
       type: Object,

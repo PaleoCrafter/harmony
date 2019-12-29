@@ -4,6 +4,11 @@ query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
       name
       discriminator
       nickname
+      color {
+        r
+        g
+        b
+      }
     }
 
     server

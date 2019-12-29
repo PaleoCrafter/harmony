@@ -1,5 +1,5 @@
 <script>
-import { parser, toHTML } from 'discord-markdown'
+import { parser } from 'discord-markdown'
 import renderNode from '@/components/message/message-renderer'
 
 export default {
@@ -12,29 +12,35 @@ export default {
   },
   computed: {
     annotatedVersions () {
-      const properties = [
-        this.message.editedAt !== null ? `<time datetime="${this.message.editedAt}">edited</time>` : undefined,
-        this.message.deletedAt !== null ? `<time datetime="${this.message.deletedAt}">deleted</time>` : undefined
-      ].filter(prop => prop !== undefined)
-
       return this.message.versions.map(version => ({
         ...version,
-        parsed: parser(version.content),
-        content: toHTML(
-          version.content
-        ) + (properties.length > 0 ? ` <span class="message__note">(${properties.join(', ')})</span>` : '')
+        content: parser(version.content)
       }))
     }
   },
   render (h) {
-    const content = this.annotatedVersions[0].parsed
+    const { content } = this.annotatedVersions[0]
+    const children = content.map(node => renderNode(node, h, this.message))
+
+    const properties = [
+      this.message.editedAt !== null ? h('time', { attrs: { datetime: this.message.editedAt } }, ['edited']) : undefined,
+      this.message.deletedAt !== null ? h('time', { attrs: { datetime: this.message.deletedAt } }, ['deleted']) : undefined
+    ].filter(prop => prop !== undefined)
+      .reduce((acc, prop, index) => [...acc, index === 0 ? '(' : ', ', prop], [])
+
+    if (properties.length > 0) {
+      children.push(
+        ' ',
+        h('span', { class: 'message__note' }, [...properties, ')'])
+      )
+    }
 
     return h(
       'article',
       {
         class: ['message', { 'message--deleted': this.message.deletedAt !== null }]
       },
-      content.map(node => renderNode(node, h, this.message))
+      children
     )
   }
 }

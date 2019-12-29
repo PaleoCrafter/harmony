@@ -41,13 +41,28 @@ function initLoaders (user) {
 
   const userNicknames = new DataLoader(
     async (keys) => {
-      const nicknames = await UserNickname.findAll(
+      const variables = keys.map(({ server, id }, index) => ({
+        query: `($server${index}::bigint, $user${index}::bigint)`,
+        values: {
+          [`server${index}`]: server,
+          [`user${index}`]: id
+        }
+      }))
+      const nicknames = await database.query(
+        `
+        SELECT
+          "usernicknames"."server" AS "server",
+          "usernicknames"."user" AS "user",
+          "usernicknames"."name" AS "name",
+          "usernicknames"."timestamp" AS "timestamp"
+        FROM "usernicknames"
+        JOIN (VALUES ${variables.map(v => v.query).join(', ')}) AS conditions (s, u)
+          ON "usernicknames"."server" = s AND "usernicknames"."user" = u
+        ORDER BY "usernicknames"."timestamp" DESC
+        `,
         {
-          where: { [Op.and]: { user: keys.map(key => key.id), server: keys.map(key => key.server) } },
-          order: [['timestamp', 'DESC']]
-        },
-        {
-          cacheKeyFn: ({ server, id }) => `${server}-${id}`
+          bind: variables.reduce((acc, v) => ({ ...acc, ...v.values }), {}),
+          type: QueryTypes.SELECT
         }
       )
 

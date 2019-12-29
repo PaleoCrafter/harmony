@@ -55,9 +55,12 @@ export default {
   }
 
   &__header {
+    display: flex;
+    align-items: center;
     box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
     padding: 1rem;
     font-weight: 600;
+    height: 4rem;
   }
 
   &__loading {

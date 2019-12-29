@@ -26,7 +26,13 @@ export default {
       return true
     }
 
-    return /\d{4}-\d{2}-\d{2}/.test(date)
+    return /\d+-\d{2}-\d{2}/.test(date)
+  },
+  props: {
+    date: {
+      type: Date,
+      required: true
+    }
   },
   data () {
     return {
@@ -70,19 +76,11 @@ export default {
     }
   },
   methods: {
-    getBaseDate () {
-      if (this.$route.params.date === undefined) {
-        return new Date()
-      }
-
-      const [, year, month, day] = this.$route.params.date.match(/(\d{4})-(\d{2})-(\d{2})/)
-      return new Date(year, parseInt(month) - 1, day)
-    },
     getInitialDates () {
-      const startDate = this.getBaseDate()
+      const startDate = new Date(this.date.getTime())
       startDate.setHours(23, 59, 59, 59)
       startDate.setDate(startDate.getDate() - 1)
-      const endDate = this.getBaseDate()
+      const endDate = new Date(this.date.getTime())
       endDate.setHours(0, 0, 0, 0)
       endDate.setDate(endDate.getDate() + 1)
       return { startDate, endDate }

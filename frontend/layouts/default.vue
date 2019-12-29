@@ -28,6 +28,7 @@ body {
   min-height: 100vh;
   background: #36393F;
   color: white;
+  overflow: hidden;
 }
 
 .site {

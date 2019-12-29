@@ -1,6 +1,11 @@
 <template>
   <div class="server">
-    <ChannelList v-if="server" :server="$route.params.id" :channels="server.channels" />
+    <div v-if="server" class="server__sidebar">
+      <header class="server__header">
+        {{ server.name }}
+      </header>
+      <ChannelList :server="$route.params.id" :channels="server.channels" />
+    </div>
     <nuxt-child v-if="server" />
     <div v-else class="server__error">
       <AlertCircleIcon class="server__error-icon" size="4x" />
@@ -40,6 +45,16 @@ export default {
   display: flex;
   align-items: stretch;
   flex-grow: 1;
+
+  &__sidebar {
+    background: #2F3136;
+  }
+
+  &__header {
+    box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
+    padding: 1rem;
+    font-weight: 600;
+  }
 
   &__error {
     display: flex;

@@ -15,11 +15,13 @@
     "@nuxtjs/apollo": "^4.0.0-rc19",
     "@nuxtjs/auth": "^4.8.5",
     "@nuxtjs/axios": "^5.3.6",
+    "discord-markdown": "^2.2.0",
     "nuxt": "^2.0.0",
     "vue-feather-icons": "^5.0.0",
     "vuebar": "^0.0.20"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-nullish-coalescing-operator": "^7.7.4",
     "@babel/plugin-proposal-optional-chaining": "^7.7.5",
     "@nuxtjs/eslint-config": "^1.0.1",
     "@nuxtjs/eslint-module": "^1.0.0",

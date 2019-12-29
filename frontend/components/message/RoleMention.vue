@@ -1,9 +1,9 @@
 <template>
-  <span class="user-mention">@{{ userName }}</span>
+  <span class="role-mention" :style="roleStyle">@{{ roleName }}</span>
 </template>
 
 <script>
-import userQuery from '@/apollo/queries/user.gql'
+import roleQuery from '@/apollo/queries/role.gql'
 
 export default {
   name: 'UserMention',
@@ -18,13 +18,32 @@ export default {
     }
   },
   computed: {
-    userName () {
-      return this.user?.nickname ?? this.user?.name ?? this.id
+    roleName () {
+      return this.role.name ?? this.id
+    },
+    roleStyle () {
+      const defaultColor = [114, 137, 218, 0.7]
+      let [r, g, b, hoverAlpha] = defaultColor
+
+      if (this.role !== null) {
+        ({ r, g, b } = this.role.color)
+        hoverAlpha = 0.3
+
+        if (r === 0 && g === 0 && b === 0) {
+          [r, g, b, hoverAlpha] = defaultColor
+        }
+      }
+
+      return {
+        '--mention-bg-color': `rgba(${r}, ${g}, ${b}, .1)`,
+        '--mention-text-color': `rgba(${r}, ${g}, ${b}, 1)`,
+        '--mention-hover-bg-color': `rgba(${r}, ${g}, ${b}, ${hoverAlpha})`
+      }
     }
   },
   apollo: {
-    user: {
-      query: userQuery,
+    role: {
+      query: roleQuery,
       variables () {
         return {
           server: this.server,
@@ -37,15 +56,15 @@ export default {
 </script>
 
 <style lang="scss">
-.user-mention {
-  color: #7289da;
-  background-color: rgba(114, 137, 218, .1);
+.role-mention {
+  color: var(--mention-text-color);
+  background-color: var(--mention-bg-color);
   transition: background-color 50ms ease-out, color 50ms ease-out;
   cursor: pointer;
 
   &:hover {
     color: white;
-    background-color: rgba(114, 137, 218, 0.7);
+    background-color: var(--mention-hover-bg-color);
   }
 }
 </style>

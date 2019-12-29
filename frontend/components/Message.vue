@@ -1,53 +1,76 @@
-<template>
-  <section class="message-group">
-    <div class="message-group__header">
-      {{ group.author.name }}#{{ group.author.discriminator }}
-
-      <time :datetime="group.firstTimestamp">{{ formattedTime }}</time>
-    </div>
-    <article
-      v-for="message in group.messages"
-      v-html="message.versions[0].content"
-      :class="['message', { 'message--deleted': message.deletedAt !== null }]"
-    />
-  </section>
-</template>
-
 <script>
+import { parser, toHTML } from 'discord-markdown'
+import renderNode from '@/components/message/message-renderer'
 
 export default {
-  name: 'MessageGroup',
+  name: 'Message',
   props: {
-    group: {
+    message: {
       type: Object,
       required: true
     }
   },
   computed: {
-    formattedTime () {
-      const format = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: 'numeric' })
-      return format.format(this.group.firstTimestamp)
+    annotatedVersions () {
+      const properties = [
+        this.message.editedAt !== null ? `<time datetime="${this.message.editedAt}">edited</time>` : undefined,
+        this.message.deletedAt !== null ? `<time datetime="${this.message.deletedAt}">deleted</time>` : undefined
+      ].filter(prop => prop !== undefined)
+
+      return this.message.versions.map(version => ({
+        ...version,
+        parsed: parser(version.content),
+        content: toHTML(
+          version.content
+        ) + (properties.length > 0 ? ` <span class="message__note">(${properties.join(', ')})</span>` : '')
+      }))
     }
+  },
+  render (h) {
+    const content = this.annotatedVersions[0].parsed
+
+    return h(
+      'article',
+      {
+        class: ['message', { 'message--deleted': this.message.deletedAt !== null }]
+      },
+      content.map(node => renderNode(node, h, this.message))
+    )
   }
 }
 </script>
 
 <style lang="scss">
-.message-group {
-  padding: 2rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.message {
+  line-height: 1.57;
+  white-space: pre-wrap;
+  vertical-align: baseline;
+  unicode-bidi: plaintext;
 
-  &__header {
-    time {
-      color: #72767d;
-      font-size: 0.8rem;
+  a {
+    color: #00b0f4;
+    text-decoration: none;
+
+    &:hover, &:focus {
+      text-decoration: underline;
     }
   }
 
-  article {
-    line-height: 1.57;
-    white-space: pre-wrap;
-    vertical-align: baseline;
+  blockquote {
+    position: relative;
+    padding: 0 0.5rem 0 1rem;
+    margin: 0.5rem 0;
+
+    &:before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      content: '';
+      background-color: #4f545c;
+      border-radius: 4px;
+      width: 4px;
+    }
   }
 
   &__note {

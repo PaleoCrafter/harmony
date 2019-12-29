@@ -1,43 +1,60 @@
 <template>
-  <span :class="['spoiler', { 'spoiler--visible': visible }]" @click="visible = !visible">
-    <span class="spoiler__content">
-      <slot />
-    </span>
+  <span class="channel-mention">
+    <template v-if="channel === null">
+      #{{ channelName }}
+    </template>
+    <nuxt-link v-else :to="`/servers/${channel.server}/channels/${id}`" class="channel-mention">#{{ channelName }}</nuxt-link>
   </span>
 </template>
 
 <script>
+import channelQuery from '@/apollo/queries/channel.gql'
+
 export default {
-  name: 'Spoiler',
-  data () {
-    return {
-      visible: false
+  name: 'ChannelMention',
+  props: {
+    id: {
+      type: String,
+      required: true
+    }
+  },
+  computed: {
+    channelName () {
+      return this.channel?.name ?? this.id
+    }
+  },
+  apollo: {
+    channel: {
+      query: channelQuery,
+      variables () {
+        return {
+          id: this.id
+        }
+      }
     }
   }
 }
 </script>
 
 <style lang="scss">
-.spoiler {
-  background: #202225;
-  border-radius: 3px;
-  transition: all .1s ease;
+.channel-mention {
+  color: #7289da;
+  background-color: rgba(114, 137, 218, .1);
+  transition: background-color 50ms ease-out, color 50ms ease-out;
   cursor: pointer;
 
   &:hover {
-    background: rgba(32, 34, 37, .8);
+    color: white;
+    background-color: rgba(114, 137, 218, 0.7);
   }
 
-  &__content {
-    opacity: 0;
-    transition: all .1s ease;
-  }
+  a {
+    color: #7289da !important;
+    text-decoration: none !important;
+    transition: color 50ms ease-out;
 
-  &--visible {
-    background-color: hsla(0, 0%, 100%, .1);
-
-    .spoiler__content {
-      opacity: 1;
+    &:hover {
+      color: white !important;
     }
   }
 }

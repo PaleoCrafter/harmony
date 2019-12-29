@@ -2,11 +2,12 @@ const passport = require('passport')
 const session = require('express-session')
 const Strategy = require('passport-discord').Strategy
 const Eris = require('eris')
+const Permission = Eris.Permission
 const Permissions = Eris.Constants.Permissions
 const FileStore = require('session-file-store')(session)
 const { Channel } = require('./db')
 
-const PERMISSIONS_TIMEOUT = 1
+const PERMISSIONS_TIMEOUT = 60 * 1000
 
 Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
   value: async function getUserPermissions (serverId, userId) {
@@ -33,7 +34,10 @@ Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
 
     let permission = member.permission.allow
     if (permission & Permissions.administrator) {
-      return channels.reduce((acc, channel) => ({ ...acc, [channel.id]: new Eris.Permission(Permissions.all) }), {})
+      return {
+        server: member.permission,
+        channels: channels.reduce((acc, channel) => ({ ...acc, [channel.id]: new Eris.Permission(Permissions.all) }), {})
+      }
     }
 
     const channelPermissions = await Promise.all(channels.map(async (channel) => {
@@ -59,7 +63,10 @@ Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
       return { id: channel.id, permissions: new Eris.Permission(permission) }
     }))
 
-    return channelPermissions.reduce((acc, channel) => ({ ...acc, [channel.id]: channel.permissions }), {})
+    return {
+      server: member.permission,
+      channels: channelPermissions.reduce((acc, channel) => ({ ...acc, [channel.id]: channel.permissions }), {})
+    }
   }
 })
 
@@ -151,6 +158,12 @@ module.exports = {
       user.permissionsCache[server] = cached
     }
 
-    return cached.permissions
+    return {
+      server: new Permission(cached.permissions.server.allow, cached.permissions.server.deny),
+      channels: Object.keys(cached.permissions.channels).reduce((acc, key) => ({
+        ...acc,
+        [key]: new Permission(cached.permissions.channels[key].allow, cached.permissions.channels[key].deny)
+      }), {})
+    }
   }
 }

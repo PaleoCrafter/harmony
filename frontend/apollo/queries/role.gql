@@ -1,6 +1,10 @@
-query User($server: ID!, $id: ID!) {
-  user(server: $server, id: $id) {
+query Role($server: ID!, $id: ID!) {
+  role(server: $server, id: $id) {
     name
-    nickname
+    color {
+      r
+      g
+      b
+    }
   }
 }

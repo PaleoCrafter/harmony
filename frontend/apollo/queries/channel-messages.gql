@@ -1,6 +1,20 @@
-query Channel($id: ID!) {
-  channel(id: $id) {
-    name
-    type
+query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
+  messages(channel: $channel, after: $after, before: $before, limit: 100) {
+    author {
+      name
+      discriminator
+      nickname
+    }
+
+    server
+
+    versions {
+      content
+      timestamp
+    }
+
+    createdAt
+    editedAt
+    deletedAt
   }
 }

@@ -18,6 +18,8 @@ data class RoleInfo(
     val id: String,
     val server: ServerInfo,
     val name: String,
+    val color: String,
+    val position: Int,
     val permissions: Long
 )
 

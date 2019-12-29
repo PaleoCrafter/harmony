@@ -29,7 +29,7 @@ export default {
   /*
   ** Plugins to load before mounting the App
   */
-  plugins: [],
+  plugins: ['@/plugins/message-components'],
   /*
   ** Nuxt.js dev-modules
   */
@@ -60,7 +60,7 @@ export default {
       chunk: ({ isDev }) => isDev ? '[name].[hash].js' : '[chunkhash].js'
     },
     babel: {
-      plugins: ['@babel/plugin-proposal-optional-chaining']
+      plugins: ['@babel/plugin-proposal-optional-chaining', '@babel/plugin-proposal-nullish-coalescing-operator']
     }
   }
 }

@@ -1,11 +1,7 @@
-query ServerChannels($id: ID!) {
-  server(id: $id) {
+query Channel($id: ID!) {
+  channel(id: $id) {
     name
-
-    channels {
-      id
-      name
-      type
-    }
+    server
+    type
   }
 }

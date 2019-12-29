@@ -1,6 +1,6 @@
-query Channel($id: ID!) {
-  channel(id: $id) {
+query User($server: ID!, $id: ID!) {
+  user(server: $server, id: $id) {
     name
-    type
+    nickname
   }
 }

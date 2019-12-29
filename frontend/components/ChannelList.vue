@@ -2,20 +2,18 @@
   <ul class="channel-list">
     <li v-for="channel in channels" :key="channel.id">
       <nuxt-link :to="`/servers/${server}/channels/${channel.id}`" class="channel-list__item">
-        <HashIcon v-if="channel.type === 'TEXT'" size="1.25x" class="channel-list__icon" />
-        <HashIcon v-else size="1x" class="channel-list__icon" />
-        {{ channel.name }}
+        <ChannelName :channel="channel" />
       </nuxt-link>
     </li>
   </ul>
 </template>
 
 <script>
-import { HashIcon } from 'vue-feather-icons'
+import ChannelName from '@/components/ChannelName.vue'
 
 export default {
   name: 'ChannelList',
-  components: { HashIcon },
+  components: { ChannelName },
   props: {
     server: {
       type: String,
@@ -35,7 +33,6 @@ export default {
   flex-direction: column;
   align-items: stretch;
   list-style-type: none;
-  background: #2F3136;
   padding: 0;
   margin: 0;
   width: 240px;
@@ -54,19 +51,12 @@ export default {
     padding: 1rem 1rem 0.5rem;
   }
 
-  &__icon {
-    margin-right: 0.25rem;
-    transition: border-radius 0.2s ease-in-out;
-    color: #72767d;
-  }
-
   &__item {
     display: flex;
     align-items: center;
     padding: 0.5rem 0.5rem;
     color: #72767d;
     text-decoration: none;
-    font-weight: 600;
     border-radius: 0.25rem;
 
     &:hover {

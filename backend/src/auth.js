@@ -87,7 +87,8 @@ module.exports = {
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
       callbackURL: '/api/auth/callback',
-      scope: scopes
+      scope: scopes,
+      proxy: true
     }, function (accessToken, refreshToken, profile, done) {
       done(null, {
         id: profile.id,

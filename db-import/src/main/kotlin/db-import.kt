@@ -72,6 +72,7 @@ fun main() {
             Users,
             UserNicknames,
             Roles,
+            UserRoles,
             PermissionOverrides,
             Messages,
             MessageVersions
@@ -172,6 +173,17 @@ fun main() {
                         it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                         it[nickname] = event.nickname
                     }
+                }
+            }
+        }
+        listen<UserRolesChange> { userId, event ->
+            transaction {
+                UserRoles.deleteWhere { (UserRoles.server eq event.server.id) and (UserRoles.user eq userId) }
+
+                UserRoles.batchInsert(event.roles) {
+                    this[UserRoles.server] = event.server.id
+                    this[UserRoles.user] = userId
+                    this[UserRoles.role] = it
                 }
             }
         }

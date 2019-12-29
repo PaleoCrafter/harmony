@@ -65,6 +65,12 @@ object Roles : Table() {
     val deletedAt = datetime("deletedAt").nullable()
 }
 
+object UserRoles : Table() {
+    val server = snowflake("server").primaryKey(0)
+    val user = snowflake("user").primaryKey(1)
+    val role = snowflake("role").primaryKey(2)
+}
+
 object PermissionOverrides : Table() {
     val channel = snowflake("channel").primaryKey(0)
     val type = enumerationByName("type", 16, ChannelInfo.PermissionOverride.Type::class).primaryKey(1)

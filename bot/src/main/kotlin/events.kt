@@ -11,6 +11,7 @@ import com.seventeenthshard.harmony.events.ServerDeletion
 import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
+import com.seventeenthshard.harmony.events.UserRolesChange
 import discord4j.core.`object`.PermissionOverwrite
 import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.entity.Guild
@@ -19,6 +20,7 @@ import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Image
+import discord4j.core.`object`.util.Snowflake
 import reactor.core.publisher.Mono
 import java.awt.Color
 import java.time.Instant
@@ -103,6 +105,17 @@ fun UserNicknameChange.Companion.of(user: User, guild: Guild, nickname: String?)
                 it.t1,
                 it.t2,
                 nickname,
+                Instant.now()
+            )
+        }
+
+fun UserRolesChange.Companion.of(user: User, guild: Guild, roles: List<Snowflake>) =
+    Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
+        .map {
+            UserRolesChange(
+                it.t1,
+                it.t2,
+                roles.map { role -> role.asString() },
                 Instant.now()
             )
         }

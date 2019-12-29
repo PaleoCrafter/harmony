@@ -11,6 +11,7 @@ import com.seventeenthshard.harmony.events.ServerDeletion
 import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
+import com.seventeenthshard.harmony.events.UserRolesChange
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
@@ -151,19 +152,21 @@ fun main() {
                 .map { producerRecord("roles", it.t1, it.t2) },
             guild.members
                 .flatMap {
-                    Mono.just(it.nickname).zipWith(event.client.getUserById(it.id))
+                    Mono.zip(event.client.getUserById(it.id), Mono.just(it.nickname), Mono.just(it.roleIds))
                 }
                 .flatMap {
                     Mono.zip(
-                        Mono.just(it.t2.id),
-                        UserInfo.of(it.t2),
-                        UserNicknameChange.of(it.t2, guild, it.t1.orElse(null))
+                        Mono.just(it.t1.id),
+                        UserInfo.of(it.t1),
+                        UserNicknameChange.of(it.t1, guild, it.t2.orElse(null)),
+                        UserRolesChange.of(it.t1, guild, it.t3.toList())
                     )
                 }
                 .flatMap {
                     Flux.just(
                         producerRecord("users", it.t1, it.t2),
-                        producerRecord("users", it.t1, it.t3)
+                        producerRecord("users", it.t1, it.t3),
+                        producerRecord("users", it.t1, it.t4)
                     )
                 }
         )
@@ -298,6 +301,17 @@ fun main() {
             Mono.justOrEmpty(event.old.filter { it.nickname != event.currentNickname }.map { event.currentNickname })
         ).flatMap {
             UserNicknameChange.of(it.t1, it.t2, it.t3.orElse(null))
+        }
+    }
+    client.eventDispatcher.map<MemberUpdateEvent, UserRolesChange>(
+        producer,
+        "users"
+    ) { event ->
+        event.memberId to Mono.zip(
+            event.client.getUserById(event.memberId),
+            event.guild
+        ).flatMap {
+            UserRolesChange.of(it.t1, it.t2, event.currentRoles.toList())
         }
     }
 

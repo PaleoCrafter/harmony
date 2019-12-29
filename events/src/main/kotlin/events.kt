@@ -77,6 +77,14 @@ data class UserNicknameChange(
 )
 
 @Serializable
+data class UserRolesChange(
+    val user: UserInfo,
+    val server: ServerInfo,
+    val roles: List<String>,
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant
+)
+
+@Serializable
 data class NewMessage(
     val channel: ChannelInfo,
     val user: UserInfo,

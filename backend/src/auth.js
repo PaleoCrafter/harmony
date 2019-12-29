@@ -126,7 +126,7 @@ module.exports = {
     )
     app.get(
       '/api/auth/callback',
-      passport.authenticate('discord', { failureRedirect: '/api/failed' }),
+      passport.authenticate('discord', { failureRedirect: '/' }),
       (req, res) => {
         res.clearCookie('auth_redirect')
         res.redirect(req.signedCookies.auth_redirect || '/')

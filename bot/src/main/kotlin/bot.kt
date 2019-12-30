@@ -20,6 +20,7 @@ import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
+import discord4j.core.event.domain.channel.CategoryUpdateEvent
 import discord4j.core.event.domain.channel.NewsChannelCreateEvent
 import discord4j.core.event.domain.channel.NewsChannelDeleteEvent
 import discord4j.core.event.domain.channel.NewsChannelUpdateEvent
@@ -251,6 +252,16 @@ fun main() {
         "channels"
     ) {
         it.channel.id to ChannelDeletion.of(Instant.now())
+    }
+
+    client.eventDispatcher.flatMap<CategoryUpdateEvent, ChannelInfo>(
+        producer,
+        "channels"
+    ) { event ->
+        event.current.channels
+            .filter { it is GuildMessageChannel }
+            .flatMap { Mono.just(it.id).zipWith(ChannelInfo.of(it as GuildMessageChannel)) }
+            .map { it.t1 to it.t2 }
     }
 
     client.eventDispatcher.map<MessageCreateEvent, NewMessage>(

@@ -11,18 +11,21 @@
     </transition-group>
     <transition name="user-panel__dropdown">
       <div v-if="expanded" class="user-panel__dropdown">
-        Test
+        <a @click="logout" href="#" class="user-panel__logout">
+          Logout
+          <LogOutIcon size="1.6x" class="user-panel__logout-icon" />
+        </a>
       </div>
     </transition>
   </div>
 </template>
 
 <script>
-import { ChevronUpIcon, UserIcon, XIcon } from 'vue-feather-icons'
+import { ChevronUpIcon, LogOutIcon, UserIcon, XIcon } from 'vue-feather-icons'
 
 export default {
   name: 'UserPanel',
-  components: { UserIcon, ChevronUpIcon, XIcon },
+  components: { UserIcon, ChevronUpIcon, XIcon, LogOutIcon },
   props: {
     user: {
       type: Object,
@@ -32,6 +35,12 @@ export default {
   data () {
     return {
       expanded: false
+    }
+  },
+  methods: {
+    logout () {
+      this.$apolloHelpers.onLogout()
+      window.location.href = '/api/auth/logout'
     }
   }
 }
@@ -108,7 +117,7 @@ export default {
     background: #0b0b0d;
     left: 0.75rem;
     right: 0.75rem;
-    padding: 1rem;
+    padding: 0.5rem 0.5rem;
     transform-origin: center bottom;
     border-radius: 0.25rem;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
@@ -120,6 +129,25 @@ export default {
 
     &-enter, &-leave-to {
       transform: scale(0);
+    }
+  }
+
+  &__logout {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.5rem;
+    margin: 0.125rem 0;
+    border-radius: 2px;
+    color: #f04747;
+    text-decoration: none;
+    font-size: 0.9rem;
+
+    &:hover, &:active, &:focus {
+      background: rgba(79, 84, 92, 0.16);
+    }
+
+    &-icon {
+      margin-left: auto;
     }
   }
 }

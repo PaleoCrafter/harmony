@@ -40,7 +40,7 @@ export default function ({ store, route, redirect }) {
     if (route.query.redirect) {
       redirect(route.query.redirect)
     } else {
-      redirect('/')
+      redirect('/servers')
     }
   } else if (!store.state.loggedIn && !routeOption(route, 'auth', 'guest')) {
     redirect(`/login?redirect=${encodeURIComponent(route.fullPath)}`)

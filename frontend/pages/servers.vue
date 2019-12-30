@@ -1,6 +1,6 @@
 <template>
-  <div class="index">
-    <div class="index__sidebar">
+  <div class="servers">
+    <div class="servers__sidebar">
       <ServerList :servers="servers" />
       <UserPanel :user="identity" />
     </div>
@@ -28,7 +28,7 @@ export default {
 </script>
 
 <style lang="scss">
-.index {
+.servers {
   display: flex;
   align-items: stretch;
   flex-grow: 1;

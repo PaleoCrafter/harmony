@@ -10,6 +10,9 @@
     <div v-if="$apollo.loading || messages === undefined" class="channel__loading">
       <LoadingSpinner />
     </div>
+    <div v-if="!$apollo.loading && messages !== undefined && messages.length === 0" class="channel__empty">
+      There are currently no messages in this channel for the selected date.
+    </div>
   </div>
 </template>
 
@@ -128,7 +131,7 @@ export default {
     overflow-y: scroll;
   }
 
-  &__loading {
+  &__loading, &__empty {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -136,6 +139,10 @@ export default {
     flex-direction: column;
     font-size: 4rem;
     padding: 1rem
+  }
+
+  &__empty {
+    font-size: 1rem;
   }
 }
 </style>

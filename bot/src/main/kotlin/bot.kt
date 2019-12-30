@@ -17,6 +17,7 @@ import com.seventeenthshard.harmony.events.UserRolesChange
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
+import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
@@ -267,8 +268,8 @@ fun main() {
     client.eventDispatcher.map<MessageCreateEvent, NewMessage>(
         producer,
         "messages"
-    ) {
-        it.message.id to NewMessage.of(it.message)
+    ) { event ->
+        event.message.id to NewMessage.of(event.message).filter { event.message.type == Message.Type.DEFAULT }
     }
 
     client.eventDispatcher.map<MessageUpdateEvent, MessageEdit>(

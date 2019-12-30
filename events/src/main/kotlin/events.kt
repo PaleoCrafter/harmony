@@ -34,6 +34,7 @@ data class ChannelInfo(
     val server: ServerInfo,
     val name: String,
     val category: String,
+    val position: Int,
     val type: Type,
     val permissionOverrides: List<PermissionOverride>
 ) {

@@ -39,6 +39,7 @@ object Channels : Table() {
     val server = snowflake("server").index()
     val name = varchar("name", 255)
     val category = varchar("category", 255).default("Text Channels")
+    val position = integer("position").default(0)
     val type = enumerationByName("type", 16, ChannelInfo.Type::class)
     val deletedAt = datetime("deletedAt").nullable()
 }

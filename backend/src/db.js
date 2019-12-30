@@ -69,6 +69,10 @@ const Channel = db.define('channel', {
     type: Sequelize.STRING,
     allowNull: false
   },
+  category: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
   type: {
     type: Sequelize.ENUM('TEXT', 'NEWS'),
     allowNull: false

@@ -24,7 +24,9 @@ type Channel {
   id: ID!
   server: ID!
   name: String!
+  category: String!
   type: String!
+  deletedAt: Timestamp
 }
 
 type User {

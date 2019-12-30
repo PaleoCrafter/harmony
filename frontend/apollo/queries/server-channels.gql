@@ -5,7 +5,9 @@ query ServerChannels($id: ID!) {
     channels {
       id
       name
+      category
       type
+      deletedAt
     }
   }
 }

@@ -4,6 +4,14 @@
   </div>
 </template>
 
+<script>
+export default {
+  mounted () {
+    this.$store.commit('populateCategories')
+  }
+}
+</script>
+
 <style lang="scss">
 html {
   font-family: 'Open Sans', sans-serif;

@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "dev": "nodemon --watch src ./bin/www",
+    "dev": "nodemon --watch src --ext '*' ./bin/www",
     "lint": "eslint --ext .js --ignore-path .gitignore ."
   },
   "dependencies": {

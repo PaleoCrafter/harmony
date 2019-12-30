@@ -54,8 +54,16 @@ export default {
         tokenName: 'connect.sid',
         httpEndpoint: 'http://backend:3000/api/graphql',
         browserHttpEndpoint: '/api/graphql'
+      },
+      identityCheck: {
+        tokenName: 'connect.sid',
+        httpEndpoint: 'http://backend:3000/api/graphql',
+        browserHttpEndpoint: '/api/graphql'
       }
     }
+  },
+  router: {
+    middleware: ['auth']
   },
   build: {
     filenames: {

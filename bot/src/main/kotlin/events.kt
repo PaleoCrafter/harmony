@@ -59,13 +59,14 @@ fun RoleDeletion.Companion.of(timestamp: Instant) =
 fun ChannelInfo.Companion.of(channel: GuildMessageChannel) =
     channel.guild
         .flatMap {
-            ServerInfo.of(it)
+            ServerInfo.of(it).zipWith(channel.category)
         }
         .map {
             ChannelInfo(
                 channel.id.asString(),
-                it,
+                it.t1,
                 channel.name,
+                it.t2.name,
                 if (channel.type == Channel.Type.GUILD_NEWS)
                     ChannelInfo.Type.NEWS
                 else

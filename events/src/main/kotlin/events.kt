@@ -29,7 +29,14 @@ data class RoleDeletion(
 )
 
 @Serializable
-data class ChannelInfo(val id: String, val server: ServerInfo, val name: String, val type: Type, val permissionOverrides: List<PermissionOverride>) {
+data class ChannelInfo(
+    val id: String,
+    val server: ServerInfo,
+    val name: String,
+    val category: String,
+    val type: Type,
+    val permissionOverrides: List<PermissionOverride>
+) {
     @Serializable(with = Type.Serializer::class)
     enum class Type {
         TEXT, NEWS;

@@ -150,6 +150,7 @@ fun main() {
                     it[id] = channelId
                     it[server] = event.server.id
                     it[name] = event.name
+                    it[category] = event.category
                     it[type] = event.type
                 }
 

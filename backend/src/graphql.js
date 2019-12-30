@@ -230,9 +230,7 @@ const root = {
           permissions.has('manageMessages')
             ? {}
             : {
-              deletedAt: {
-                [Op.ne]: null
-              }
+              deletedAt: null
             }
         )
       },

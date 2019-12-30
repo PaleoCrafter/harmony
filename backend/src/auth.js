@@ -5,7 +5,7 @@ const Eris = require('eris')
 const Permission = Eris.Permission
 const Permissions = Eris.Constants.Permissions
 const FileStore = require('session-file-store')(session)
-const { Channel } = require('./db')
+const { Channel, PermissionOverride } = require('./db')
 
 const PERMISSIONS_TIMEOUT = 60 * 1000
 
@@ -32,19 +32,32 @@ Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
     const member = await this.getRESTGuildMember(serverId, userId)
     const channels = await Channel.findAll({ where: { server: serverId } })
 
-    let permission = member.permission.allow
-    if (permission & Permissions.administrator) {
+    if (member.permission.allow & Permissions.administrator) {
       return {
         server: member.permission,
         channels: channels.reduce((acc, channel) => ({ ...acc, [channel.id]: new Eris.Permission(Permissions.all) }), {})
       }
     }
 
-    const channelPermissions = await Promise.all(channels.map(async (channel) => {
-      const overrides = await channel.getPermissionOverrides()
+    const channelOverrides = (await PermissionOverride.findAll({ where: { channel: channels.map(c => c.id) } }))
+      .reduce(
+        (acc, override) => {
+          return ({ ...acc, [override.channel]: [...(acc[override.channel] || []), override] })
+        },
+        {}
+      )
+
+    const channelPermissions = channels.map((channel) => {
+      let permissions = member.permission.allow
+      const overrides = channelOverrides[channel.id]
+
+      if (overrides === undefined || overrides.length === 0) {
+        return { id: channel.id, permissions: new Eris.Permission(permissions) }
+      }
+
       const serverOverride = overrides.find(override => override.target === serverId)
       if (serverOverride) {
-        permission = (permission & ~serverOverride.denied) | serverOverride.allowed
+        permissions = (permissions & ~serverOverride.denied) | serverOverride.allowed
       }
       let deny = 0
       let allow = 0
@@ -55,13 +68,13 @@ Object.defineProperty(Eris.Client.prototype, 'getUserPermissions', {
           allow |= roleOverride.allowed
         }
       }
-      permission = (permission & ~deny) | allow
+      permissions = (permissions & ~deny) | allow
       const userOverride = overrides.find(override => override.type === 'USER' && override.target === userId)
       if (userOverride) {
-        permission = (permission & ~userOverride.denied) | userOverride.allowed
+        permissions = (permissions & ~userOverride.denied) | userOverride.allowed
       }
-      return { id: channel.id, permissions: new Eris.Permission(permission) }
-    }))
+      return { id: channel.id, permissions: new Eris.Permission(permissions) }
+    })
 
     return {
       server: member.permission,

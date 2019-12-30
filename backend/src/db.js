@@ -80,7 +80,7 @@ const Channel = db.define('channel', {
   timestamps: false
 })
 
-const PermissionOverride = db.define('permissionOverride', {
+const PermissionOverride = db.define('permissionoverride', {
   channel: {
     type: Sequelize.BIGINT,
     allowNull: false,
@@ -108,7 +108,7 @@ const PermissionOverride = db.define('permissionOverride', {
   timestamps: false
 })
 
-Channel.hasMany(PermissionOverride, { foreignKey: 'channel', foreignKeyConstraint: false, constraints: false })
+Channel.hasMany(PermissionOverride, { as: 'PermissionOverride', foreignKey: 'channel', foreignKeyConstraint: false, constraints: false })
 
 const User = db.define('user', {
   id: {

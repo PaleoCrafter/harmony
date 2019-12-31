@@ -3,9 +3,6 @@
     <transition name="site__sidebar">
       <div v-if="sidebarOpen" @click.self="$store.commit('closeSidebar')" class="site__sidebar">
         <div class="site__sidebar-container">
-          <div class="site__sidebar-header">
-            <XIcon @click="$store.commit('closeSidebar')" class="site__sidebar-close" />
-          </div>
           <portal-target name="sidebar" multiple class="site__sidebar-entries" />
           <UserPanel />
         </div>
@@ -16,12 +13,11 @@
 </template>
 
 <script>
-import { XIcon } from 'vue-feather-icons'
 import { mapState } from 'vuex'
 import UserPanel from '@/components/UserPanel.vue'
 
 export default {
-  components: { UserPanel, XIcon },
+  components: { UserPanel },
   computed: mapState(['sidebarOpen']),
   watch: {
     $route () {
@@ -79,23 +75,15 @@ body {
     z-index: 100;
     background: rgba(0, 0, 0, 0.5);
 
+    @media (min-width: 1200px) {
+      display: none;
+    }
+
     &-container {
       display: flex;
       flex-direction: column;
       position: relative;
       z-index: 101;
-    }
-
-    &-header {
-      display: flex;
-      align-items: center;
-      padding: 1rem;
-      background: #2b292f;
-      height: 4rem;
-    }
-
-    &-close {
-      cursor: pointer;
     }
 
     &-entries {

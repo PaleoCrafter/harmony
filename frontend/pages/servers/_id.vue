@@ -9,9 +9,12 @@
       </header>
       <ChannelList :server="$route.params.id" :channels="server.channels" />
     </div>
-    <portal v-if="server" :order="2" to="sidebar">
-      <div class="server__sidebar server__sidebar--mobile">
+    <portal v-if="server" :order="1" to="sidebar">
+      <div :class="['server__sidebar', 'server__sidebar--mobile', { 'server__sidebar--active': sidebarTab === 'channels' }]">
         <header class="server__header">
+          <a @click.prevent="$store.commit('setSidebarTab', 'servers')" href="#" class="server__header-menu-toggle">
+            <ArrowLeftIcon />
+          </a>
           {{ server.name }}
         </header>
         <ChannelList :server="$route.params.id" :channels="server.channels" />
@@ -29,13 +32,15 @@
 </template>
 
 <script>
-import { AlertCircleIcon, MenuIcon } from 'vue-feather-icons'
+import { AlertCircleIcon, MenuIcon, ArrowLeftIcon } from 'vue-feather-icons'
+import { mapState } from 'vuex'
 import channelsQuery from '@/apollo/queries/server-channels.gql'
 import ChannelList from '@/components/ChannelList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default {
-  components: { LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon },
+  components: { LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon, ArrowLeftIcon },
+  computed: mapState(['sidebarTab']),
   apollo: {
     server: {
       query: channelsQuery,
@@ -61,15 +66,38 @@ export default {
   align-items: stretch;
   flex-grow: 1;
 
+  &__header {
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
+    padding: 1rem;
+    font-weight: 600;
+    height: 4rem;
+    line-height: 1;
+
+    &-menu-toggle {
+      color: white;
+      margin-right: 0.25rem;
+
+      @media (min-width: 1200px) {
+        display: none;
+      }
+    }
+
+    @media (max-width: 767px) {
+      padding-left: 0.5rem;
+    }
+  }
+
   &__sidebar {
     display: flex;
     flex-direction: column;
     background: #2F3136;
 
-    @media (min-width: 768px) {
-      &--mobile {
-        display: none;
-      }
+    &--mobile {
+      display: none;
+      flex: 1;
+      padding-left: 0.25rem;
     }
 
     @media (max-width: 767px) {
@@ -77,8 +105,12 @@ export default {
         display: none;
       }
 
-      &--mobile {
-        flex: 1;
+      &--active {
+        display: flex;
+
+        & + .servers__sidebar {
+          display: none !important;
+        }
       }
     }
 
@@ -114,25 +146,6 @@ export default {
       border: 1px solid #36393f;
       border-bottom: none;
       border-top: none;
-    }
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
-    padding: 1rem;
-    font-weight: 600;
-    height: 4rem;
-    line-height: 1;
-
-    &-menu-toggle {
-      color: white;
-      margin-right: 0.25rem;
-
-      @media (min-width: 1200px) {
-        display: none;
-      }
     }
   }
 

@@ -5,6 +5,7 @@ export const state = () => ({
   loggedIn: false,
   identity: null,
   sidebarOpen: false,
+  sidebarTab: 'channels',
   collapsedCategories: {}
 })
 
@@ -15,9 +16,13 @@ export const mutations = {
   },
   openSidebar (state) {
     state.sidebarOpen = true
+    state.sidebarTab = 'channels'
   },
   closeSidebar (state) {
     state.sidebarOpen = false
+  },
+  setSidebarTab (state, tab) {
+    state.sidebarTab = tab
   },
   populateCategories (state) {
     state.collapsedCategories = JSON.parse(window.localStorage.getItem('collapsedCategories') ?? '{}')

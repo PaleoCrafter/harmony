@@ -1,7 +1,16 @@
 <template>
   <ul class="server-list">
     <li v-for="server in servers" :key="server.id">
-      <nuxt-link :to="`/servers/${server.id}`" class="server-list__item">
+      <a
+        v-if="isServerActive(server.id)"
+        @click.prevent="switchTab($event, server.id)"
+        :href="`/servers/${server.id}`"
+        class="server-list__item server-list__item--active"
+      >
+        <img :src="server.iconUrl" :alt="server.name" class="server-list__icon">
+        {{ server.name }}
+      </a>
+      <nuxt-link v-else :to="`/servers/${server.id}`" class="server-list__item">
         <img :src="server.iconUrl" :alt="server.name" class="server-list__icon">
         {{ server.name }}
       </nuxt-link>
@@ -16,6 +25,15 @@ export default {
     servers: {
       type: Array,
       required: true
+    }
+  },
+  methods: {
+    switchTab (event, id) {
+      this.$store.commit('setSidebarTab', 'channels')
+      event.preventDefault()
+    },
+    isServerActive (id) {
+      return this.$route.fullPath.startsWith(`/servers/${id}`)
     }
   }
 }
@@ -64,7 +82,7 @@ export default {
     text-decoration: none;
     font-weight: 600;
 
-    &:hover, &.nuxt-link-active {
+    &:hover, &--active {
       background: rgba(255, 255, 255, 0.05);
 
       .server-list__icon {

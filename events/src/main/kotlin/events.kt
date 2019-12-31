@@ -70,6 +70,11 @@ data class ChannelDeletion(
 )
 
 @Serializable
+data class ChannelRemoval(
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant
+)
+
+@Serializable
 data class UserInfo(
     val id: String,
     val username: String,

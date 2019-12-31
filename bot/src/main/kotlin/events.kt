@@ -2,6 +2,7 @@ package com.seventeenthshard.harmony.bot
 
 import com.seventeenthshard.harmony.events.ChannelDeletion
 import com.seventeenthshard.harmony.events.ChannelInfo
+import com.seventeenthshard.harmony.events.ChannelRemoval
 import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.NewMessage
@@ -90,6 +91,9 @@ fun ChannelInfo.Companion.of(channel: GuildMessageChannel) =
 
 fun ChannelDeletion.Companion.of(timestamp: Instant) =
     Mono.just(ChannelDeletion(timestamp))
+
+fun ChannelRemoval.Companion.of(timestamp: Instant) =
+    Mono.just(ChannelRemoval(timestamp))
 
 fun UserInfo.Companion.of(user: User) =
     Mono.just(

@@ -40,7 +40,7 @@ object Channels : Table() {
     val name = varchar("name", 255)
     val category = varchar("category", 255).default("Text Channels")
     val position = integer("position").default(0)
-    val type = enumerationByName("type", 16, ChannelInfo.Type::class)
+    val type = enumerationByName("type", 16, ChannelInfo.Type::class).default(ChannelInfo.Type.TEXT)
     val deletedAt = datetime("deletedAt").nullable()
 }
 

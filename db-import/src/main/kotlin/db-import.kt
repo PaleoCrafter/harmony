@@ -4,6 +4,7 @@ package com.seventeenthshard.harmony.dbimport
 
 import com.seventeenthshard.harmony.events.ChannelDeletion
 import com.seventeenthshard.harmony.events.ChannelInfo
+import com.seventeenthshard.harmony.events.ChannelRemoval
 import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.NewMessage
@@ -254,6 +255,29 @@ fun main() {
             transaction {
                 Messages.update({ Messages.id eq messageId }) {
                     it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+                }
+            }
+        }
+
+        listen<ChannelRemoval> { channelId, _ ->
+            transaction {
+                PermissionOverrides.deleteWhere {
+                    PermissionOverrides.channel eq channelId
+                }
+
+                val statement = connection.prepareStatement(
+                    "DELETE FROM messageversions USING messages WHERE messageversions.message = messages.id AND messages.channel = ?",
+                    false
+                )
+                statement.fillParameters(listOf(Messages.channel.columnType to channelId))
+                statement.executeUpdate()
+
+                Messages.deleteWhere {
+                    Messages.channel eq channelId
+                }
+
+                Channels.deleteWhere {
+                    Channels.id eq channelId
                 }
             }
         }

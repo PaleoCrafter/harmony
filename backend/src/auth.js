@@ -123,7 +123,12 @@ module.exports = {
       secret: process.env.APPLICATION_SECRET || 'rust and ruin',
       resave: false,
       saveUninitialized: false,
-      store: new FileStore({})
+      rolling: true,
+      store: new FileStore({}),
+      cookie: {
+        secure: app.get('env') === 'production',
+        maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+      }
     }))
     app.use(passport.initialize())
     app.use(passport.session())

@@ -1,8 +1,6 @@
 <template>
   <span class="channel-mention">
-    <template v-if="channel === null || channel === undefined">
-      #{{ channelName }}
-    </template>
+    <template v-if="channel === null || channel === undefined">#{{ channelName }}</template>
     <nuxt-link v-else :to="`/servers/${channel.server}/channels/${id}`" class="channel-mention">#{{ channelName }}</nuxt-link>
   </span>
 </template>

@@ -199,6 +199,9 @@ const root = {
   },
   async channel ({ id: requestedId }, request) {
     const channel = await request.loaders.channels.load(requestedId)
+    if (channel === null) {
+      return channel
+    }
     const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
     return permissions && permissions.has('readMessages') ? channel : null
   },

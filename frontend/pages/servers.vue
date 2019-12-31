@@ -1,5 +1,5 @@
 <template>
-  <div class="servers">
+  <div :class="['servers', { 'servers--index': isIndex }]">
     <div class="servers__sidebar servers__sidebar--desktop">
       <ServerList :servers="servers" />
       <UserPanel />
@@ -25,7 +25,12 @@ import UserPanel from '@/components/UserPanel.vue'
 
 export default {
   components: { UserPanel, ServerList, XIcon },
-  computed: mapState(['sidebarTab']),
+  computed: {
+    ...mapState(['sidebarTab']),
+    isIndex () {
+      return this.$route.path === '/servers' || this.$route.path === '/servers/'
+    }
+  },
   apollo: {
     servers: {
       query: serversQuery
@@ -98,6 +103,25 @@ export default {
 
       &--mobile {
         flex: 1;
+      }
+    }
+  }
+
+  &--index {
+    @media (max-width: 1199px) {
+      .servers__sidebar--desktop {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .servers__sidebar--desktop {
+        width: 100%;
+
+        .server-list {
+          width: 100%;
+          max-width: 100%;
+        }
       }
     }
   }

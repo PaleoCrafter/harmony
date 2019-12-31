@@ -1,5 +1,5 @@
 <template>
-  <div class="server">
+  <div :class="['server', { 'server--index': isIndex }]">
     <div v-if="server" class="server__sidebar server__sidebar--desktop">
       <header class="server__header">
         <a @click.prevent="$store.commit('openSidebar')" href="#" class="server__header-menu-toggle">
@@ -9,7 +9,7 @@
       </header>
       <ChannelList :server="$route.params.id" :channels="server.channels" />
     </div>
-    <portal v-if="server" :order="1" to="sidebar">
+    <portal v-if="server && !isIndex" :order="1" to="sidebar">
       <div :class="['server__sidebar', 'server__sidebar--mobile', { 'server__sidebar--active': sidebarTab === 'channels' }]">
         <header class="server__header">
           <a @click.prevent="$store.commit('setSidebarTab', 'servers')" href="#" class="server__header-menu-toggle">
@@ -40,19 +40,23 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default {
   components: { LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon, ArrowLeftIcon },
-  computed: mapState(['sidebarTab']),
+  computed: {
+    ...mapState(['sidebarTab']),
+    isIndex () {
+      const server = this.$route.params.id
+      let route = this.$route.path
+      if (route.endsWith('/')) {
+        route = route.substring(0, route.length - 1)
+      }
+      return this.$route.path === `/servers/${server}` || this.$route.path === `/servers/${server}/channels`
+    }
+  },
   apollo: {
     server: {
       query: channelsQuery,
       variables () {
         return {
           id: this.$route.params.id
-        }
-      },
-      result (result) {
-        const channels = result.data?.server?.channels
-        if (channels && this.$route.params.channelId === undefined) {
-          this.$router.replace(`/servers/${this.$route.params.id}/channels/${channels[0].id}`)
         }
       }
     }
@@ -97,7 +101,12 @@ export default {
     &--mobile {
       display: none;
       flex: 1;
-      padding-left: 0.25rem;
+    }
+
+    @media (max-width: 1199px) {
+      .channel-list {
+        padding-left: 0.25rem;
+      }
     }
 
     @media (max-width: 767px) {
@@ -168,6 +177,20 @@ export default {
 
     &-icon {
       opacity: 0.5;
+    }
+  }
+
+  &--index {
+    @media (max-width: 767px) {
+      .server__sidebar--desktop {
+        display: flex;
+        width: 100%;
+
+        .channel-list {
+          width: 100%;
+          max-width: 100%;
+        }
+      }
     }
   }
 }

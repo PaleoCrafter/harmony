@@ -1,11 +1,11 @@
 <template>
-  <div class="servers-index">
-    Select a server from the list to the left.
+  <div class="channels-index">
+    Select a channel from the list to the left.
   </div>
 </template>
 
 <style lang="scss">
-.servers-index {
+.channels-index {
   display: flex;
   align-items: center;
   justify-content: center;

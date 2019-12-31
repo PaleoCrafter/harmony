@@ -30,6 +30,7 @@ export default {
   ** Plugins to load before mounting the App
   */
   plugins: [
+    { src: '@/plugins/portal.js' },
     { src: '@/plugins/message-components.js' },
     { src: '@/plugins/client.js', mode: 'client' }
   ],

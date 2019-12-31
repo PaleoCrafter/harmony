@@ -30,6 +30,10 @@ export default {
   padding: 0;
   margin: 0;
   width: 240px;
+  max-width: calc(100vw - 2rem);
+  flex: 1;
+  flex-basis: 0;
+  overflow-y: auto;
 
   li {
     padding: 0.5rem 0;

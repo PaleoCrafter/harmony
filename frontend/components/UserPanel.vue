@@ -1,9 +1,9 @@
 <template>
   <div @click.self="expanded = !expanded" :class="['user-panel', { 'user-panel--expanded': expanded }]">
     <UserIcon size="2x" class="user-panel__icon" />
-    <div class="user-panel__info">
-      <span class="user-panel__name">{{ user.name }}</span>
-      <span class="user-panel__discriminator">#{{ user.discriminator }}</span>
+    <div v-if="identity !== null" class="user-panel__info">
+      <span class="user-panel__name">{{ identity.name }}</span>
+      <span class="user-panel__discriminator">#{{ identity.discriminator }}</span>
     </div>
     <transition-group class="user-panel__icon" name="user-panel__icon">
       <ChevronUpIcon key="expand" v-if="!expanded" class="user-panel__icon--expand" size="1.5x" />
@@ -22,21 +22,17 @@
 
 <script>
 import { ChevronUpIcon, LogOutIcon, UserIcon, XIcon } from 'vue-feather-icons'
+import { mapState } from 'vuex'
 
 export default {
   name: 'UserPanel',
   components: { UserIcon, ChevronUpIcon, XIcon, LogOutIcon },
-  props: {
-    user: {
-      type: Object,
-      required: true
-    }
-  },
   data () {
     return {
       expanded: false
     }
   },
+  computed: mapState(['identity']),
   methods: {
     logout () {
       this.$apolloHelpers.onLogout()

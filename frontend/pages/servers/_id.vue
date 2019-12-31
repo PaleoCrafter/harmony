@@ -1,11 +1,22 @@
 <template>
   <div class="server">
-    <div v-if="server" class="server__sidebar">
+    <div v-if="server" class="server__sidebar server__sidebar--desktop">
       <header class="server__header">
+        <a @click.prevent="$store.commit('openSidebar')" href="#" class="server__header-menu-toggle">
+          <MenuIcon />
+        </a>
         {{ server.name }}
       </header>
       <ChannelList :server="$route.params.id" :channels="server.channels" />
     </div>
+    <portal v-if="server" :order="2" to="sidebar">
+      <div class="server__sidebar server__sidebar--mobile">
+        <header class="server__header">
+          {{ server.name }}
+        </header>
+        <ChannelList :server="$route.params.id" :channels="server.channels" />
+      </div>
+    </portal>
     <nuxt-child v-if="server" />
     <div v-else-if="$apollo.loading" class="server__loading">
       <LoadingSpinner />
@@ -18,13 +29,13 @@
 </template>
 
 <script>
-import { AlertCircleIcon } from 'vue-feather-icons'
+import { AlertCircleIcon, MenuIcon } from 'vue-feather-icons'
 import channelsQuery from '@/apollo/queries/server-channels.gql'
 import ChannelList from '@/components/ChannelList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default {
-  components: { LoadingSpinner, ChannelList, AlertCircleIcon },
+  components: { LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon },
   apollo: {
     server: {
       query: channelsQuery,
@@ -51,7 +62,59 @@ export default {
   flex-grow: 1;
 
   &__sidebar {
+    display: flex;
+    flex-direction: column;
     background: #2F3136;
+
+    @media (min-width: 768px) {
+      &--mobile {
+        display: none;
+      }
+    }
+
+    @media (max-width: 767px) {
+      &--desktop {
+        display: none;
+      }
+
+      &--mobile {
+        flex: 1;
+      }
+    }
+
+    ::-webkit-scrollbar {
+      width: 0.5rem;
+      height: 0.5rem;
+    }
+
+    ::-webkit-scrollbar-corner {
+      background-color: transparent;
+    }
+
+    ::-webkit-scrollbar-track {
+      border-width: initial;
+      background-color: transparent;
+      border-color: transparent;
+    }
+
+    ::-webkit-scrollbar-track, ::-webkit-scrollbar-thumb {
+      background-clip: padding-box;
+      border-width: 1px;
+      border-style: solid;
+      border-radius: 7px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background-color: #202225;
+      border-color: transparent;
+    }
+
+    ::-webkit-scrollbar-track-piece {
+      background-color: #2f3136;
+      border: 1px solid #36393f;
+      border-bottom: none;
+      border-top: none;
+    }
   }
 
   &__header {
@@ -61,6 +124,16 @@ export default {
     padding: 1rem;
     font-weight: 600;
     height: 4rem;
+    line-height: 1;
+
+    &-menu-toggle {
+      color: white;
+      margin-right: 0.25rem;
+
+      @media (min-width: 1200px) {
+        display: none;
+      }
+    }
   }
 
   &__loading {

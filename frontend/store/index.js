@@ -3,12 +3,21 @@ import identityQuery from '@/apollo/queries/identity.gql'
 
 export const state = () => ({
   loggedIn: false,
+  identity: null,
+  sidebarOpen: false,
   collapsedCategories: {}
 })
 
 export const mutations = {
-  setLoginStatus (state, loggedIn) {
+  setLoginStatus (state, { loggedIn, identity }) {
     state.loggedIn = loggedIn
+    state.identity = identity
+  },
+  openSidebar (state) {
+    state.sidebarOpen = true
+  },
+  closeSidebar (state) {
+    state.sidebarOpen = false
   },
   populateCategories (state) {
     state.collapsedCategories = JSON.parse(window.localStorage.getItem('collapsedCategories') ?? '{}')
@@ -26,11 +35,11 @@ export const mutations = {
 export const actions = {
   async nuxtServerInit ({ commit }, { app }) {
     try {
-      await app.apolloProvider.clients.identityCheck.query({ query: identityQuery })
-      commit('setLoginStatus', true)
+      const { data: { identity } } = await app.apolloProvider.clients.identityCheck.query({ query: identityQuery })
+      commit('setLoginStatus', { loggedIn: true, identity })
     } catch (error) {
       if (error.networkError && error.networkError.statusCode === 401) {
-        commit('setLoginStatus', false)
+        commit('setLoginStatus', { loggedIn: false, identity: null })
       }
     }
   }

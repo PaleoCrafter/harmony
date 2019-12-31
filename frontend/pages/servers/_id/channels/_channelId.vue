@@ -1,6 +1,9 @@
 <template>
   <div class="channel">
     <header v-if="channel" class="channel__header">
+      <a @click.prevent="$store.commit('openSidebar')" href="#" class="channel__header-menu-toggle">
+        <MenuIcon />
+      </a>
       <ChannelName :channel="channel" />
       <Divider />
       <client-only>
@@ -23,12 +26,13 @@
 </template>
 
 <script>
+import { MenuIcon } from 'vue-feather-icons'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { Divider, ChannelName },
+  components: { Divider, ChannelName, MenuIcon },
   computed: {
     date () {
       if (this.$route.params.date === undefined) {
@@ -81,6 +85,16 @@ export default {
     box-shadow: 0 1px 0 rgba(4, 4, 5, 0.2), 0 1.5px 0 rgba(6, 6, 7, 0.05), 0 2px 0 rgba(4, 4, 5, 0.05);
     padding: 1rem;
     height: 4rem;
+    line-height: 1;
+
+    &-menu-toggle {
+      color: white;
+      margin-right: 0.25rem;
+
+      @media (min-width: 768px) {
+        display: none;
+      }
+    }
   }
 
   &__date {

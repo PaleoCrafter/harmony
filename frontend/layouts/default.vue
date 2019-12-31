@@ -1,11 +1,33 @@
 <template>
   <div class="site">
+    <transition name="site__sidebar">
+      <div v-if="sidebarOpen" @click.self="$store.commit('closeSidebar')" class="site__sidebar">
+        <div class="site__sidebar-container">
+          <div class="site__sidebar-header">
+            <XIcon @click="$store.commit('closeSidebar')" class="site__sidebar-close" />
+          </div>
+          <portal-target name="sidebar" multiple class="site__sidebar-entries" />
+          <UserPanel />
+        </div>
+      </div>
+    </transition>
     <nuxt />
   </div>
 </template>
 
 <script>
+import { XIcon } from 'vue-feather-icons'
+import { mapState } from 'vuex'
+import UserPanel from '@/components/UserPanel.vue'
+
 export default {
+  components: { UserPanel, XIcon },
+  computed: mapState(['sidebarOpen']),
+  watch: {
+    $route () {
+      this.$store.commit('closeSidebar')
+    }
+  },
   mounted () {
     this.$store.commit('populateCategories')
   }
@@ -45,5 +67,58 @@ body {
   display: flex;
   align-items: stretch;
   justify-items: stretch;
+
+  &__sidebar {
+    position: fixed;
+    display: flex;
+    align-items: stretch;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.5);
+
+    &-container {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 101;
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      padding: 1rem;
+      background: #2b292f;
+      height: 4rem;
+    }
+
+    &-close {
+      cursor: pointer;
+    }
+
+    &-entries {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    &-enter-active, &-leave-active {
+      transition: background .3s ease-in-out;
+
+      .site__sidebar-container {
+        transition: transform .3s ease-in-out;
+      }
+    }
+
+    &-enter, &-leave-to {
+      background: rgba(0, 0, 0, 0);
+
+      .site__sidebar-container {
+        transform: translateX(-100%);
+      }
+    }
+  }
 }
 </style>

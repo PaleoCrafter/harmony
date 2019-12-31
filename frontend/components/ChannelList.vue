@@ -81,6 +81,10 @@ export default {
   flex-direction: column;
   align-items: stretch;
   width: 240px;
+  max-width: calc(100vw - 2rem);
+  flex: 1;
+  flex-basis: 0;
+  overflow-y: auto;
 
   &__categories {
     display: flex;

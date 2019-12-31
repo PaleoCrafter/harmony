@@ -3,8 +3,8 @@
     <li v-for="server in servers" :key="server.id">
       <a
         v-if="isServerActive(server.id)"
-        @click.prevent="switchTab($event, server.id)"
-        :href="`/servers/${server.id}`"
+        @click.prevent="switchTab"
+        href="#"
         class="server-list__item server-list__item--active"
       >
         <img :src="server.iconUrl" :alt="server.name" class="server-list__icon">
@@ -25,12 +25,18 @@ export default {
     servers: {
       type: Array,
       required: true
+    },
+    index: {
+      type: Boolean,
+      required: true
     }
   },
   methods: {
-    switchTab (event, id) {
+    switchTab () {
+      if (this.index || window?.matchMedia('(min-width: 768px)')?.matches) {
+        this.$store.commit('closeSidebar')
+      }
       this.$store.commit('setSidebarTab', 'channels')
-      event.preventDefault()
     },
     isServerActive (id) {
       return this.$route.fullPath.startsWith(`/servers/${id}`)

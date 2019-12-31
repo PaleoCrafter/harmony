@@ -1,7 +1,7 @@
 <template>
   <div :class="['servers', { 'servers--index': isIndex }]">
     <div class="servers__sidebar servers__sidebar--desktop">
-      <ServerList :servers="servers" />
+      <ServerList :servers="servers" :index="isChannelIndex" />
       <UserPanel />
     </div>
     <portal :order="2" to="sidebar">
@@ -9,7 +9,7 @@
         <div class="servers__sidebar-header">
           <XIcon @click="$store.commit('closeSidebar')" class="servers__sidebar-close" />
         </div>
-        <ServerList :servers="servers" />
+        <ServerList :servers="servers" :index="isChannelIndex" />
       </div>
     </portal>
     <nuxt-child />
@@ -29,6 +29,14 @@ export default {
     ...mapState(['sidebarTab']),
     isIndex () {
       return this.$route.path === '/servers' || this.$route.path === '/servers/'
+    },
+    isChannelIndex () {
+      const server = this.$route.params.id
+      let route = this.$route.path
+      if (route.endsWith('/')) {
+        route = route.substring(0, route.length - 1)
+      }
+      return this.$route.path === `/servers/${server}` || this.$route.path === `/servers/${server}/channels`
     }
   },
   apollo: {

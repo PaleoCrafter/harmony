@@ -13,7 +13,15 @@
         </span>
         <ul class="channel-list__channels">
           <li v-for="channel in category.channels" :key="channel.id">
-            <nuxt-link :to="`/servers/${server}/channels/${channel.id}`" class="channel-list__item">
+            <a
+              v-if="isChannelActive(channel.id)"
+              @click.prevent="$store.commit('closeSidebar')"
+              href="#"
+              class="channel-list__item channel-list__item--active"
+            >
+              <ChannelName :channel="channel" />
+            </a>
+            <nuxt-link v-else :to="`/servers/${server}/channels/${channel.id}`" class="channel-list__item">
               <ChannelName :channel="channel" />
             </nuxt-link>
           </li>
@@ -70,6 +78,9 @@ export default {
       const categories = serverTypes[type] ?? {}
 
       return categories[category] ?? false
+    },
+    isChannelActive (id) {
+      return this.$route.fullPath.startsWith(`/servers/${this.server}/channels/${id}`)
     }
   }
 }
@@ -141,7 +152,7 @@ export default {
       .channel-list__item {
         display: none !important;
 
-        &.nuxt-link-active {
+        &--active {
           display: flex !important;
           margin: 0.0625rem 0;
         }
@@ -175,7 +186,7 @@ export default {
       color: white;
     }
 
-    &.nuxt-link-active {
+    &--active {
       background: rgba(255, 255, 255, 0.05);
       color: white;
     }

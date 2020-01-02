@@ -2,19 +2,7 @@
 
 package com.seventeenthshard.harmony.bot
 
-import com.seventeenthshard.harmony.events.ChannelDeletion
-import com.seventeenthshard.harmony.events.ChannelInfo
-import com.seventeenthshard.harmony.events.ChannelRemoval
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.events.RoleDeletion
-import com.seventeenthshard.harmony.events.RoleInfo
-import com.seventeenthshard.harmony.events.ServerDeletion
-import com.seventeenthshard.harmony.events.ServerInfo
-import com.seventeenthshard.harmony.events.UserInfo
-import com.seventeenthshard.harmony.events.UserNicknameChange
-import com.seventeenthshard.harmony.events.UserRolesChange
+import com.seventeenthshard.harmony.events.*
 import com.sksamuel.avro4k.Avro
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
@@ -23,22 +11,9 @@ import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
-import discord4j.core.event.domain.channel.CategoryUpdateEvent
-import discord4j.core.event.domain.channel.NewsChannelCreateEvent
-import discord4j.core.event.domain.channel.NewsChannelDeleteEvent
-import discord4j.core.event.domain.channel.NewsChannelUpdateEvent
-import discord4j.core.event.domain.channel.TextChannelCreateEvent
-import discord4j.core.event.domain.channel.TextChannelDeleteEvent
-import discord4j.core.event.domain.channel.TextChannelUpdateEvent
-import discord4j.core.event.domain.guild.GuildCreateEvent
-import discord4j.core.event.domain.guild.GuildDeleteEvent
-import discord4j.core.event.domain.guild.GuildUpdateEvent
-import discord4j.core.event.domain.guild.MemberJoinEvent
-import discord4j.core.event.domain.guild.MemberUpdateEvent
-import discord4j.core.event.domain.message.MessageBulkDeleteEvent
-import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.event.domain.message.MessageDeleteEvent
-import discord4j.core.event.domain.message.MessageUpdateEvent
+import discord4j.core.event.domain.channel.*
+import discord4j.core.event.domain.guild.*
+import discord4j.core.event.domain.message.*
 import discord4j.core.event.domain.role.RoleCreateEvent
 import discord4j.core.event.domain.role.RoleDeleteEvent
 import discord4j.core.event.domain.role.RoleUpdateEvent
@@ -56,16 +31,12 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.util.function.Tuple4
-import reactor.util.function.component1
-import reactor.util.function.component2
-import reactor.util.function.component3
-import reactor.util.function.component4
+import reactor.util.function.*
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.Properties
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.BiFunction
 
@@ -126,7 +97,7 @@ inline fun <reified DiscordEvent : Event> EventDispatcher.listen(
 fun KafkaProducer<String, GenericRecord>.emit(record: ProducerRecord<String, GenericRecord>) {
     try {
         send(record)
-        logger.info("Emitted ${record.value().schema.name} to ${record.topic()}")
+        logger.info("Emitted ${record.value().schema.name} for ${record.topic()}#${record.key()}")
     } catch (e: SerializationException) {
         e.printStackTrace()
     } catch (e: InterruptedException) {
@@ -288,45 +259,62 @@ fun main() {
             .map { it.t1 to it.t2 }
     }
 
-    client.eventDispatcher.map<MessageCreateEvent, NewMessage>(
-        producer,
-        "messages"
-    ) { event ->
-        event.message.id to NewMessage.of(event.message)
-            .filter { event.message.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.message.channelId.asString()) }
-    }
-
-    client.eventDispatcher.map<MessageUpdateEvent, MessageEdit>(
-        producer,
-        "messages"
-    ) { event ->
-        event.messageId to Mono.justOrEmpty(event.currentContent).zipWith(event.message)
-            .filter { it.t2.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.t2.channelId.asString()) }
-            .flatMap { tuple ->
-                MessageEdit.of(tuple.t1, tuple.t2.editedTimestamp.orElse(Instant.now()))
+    client.eventDispatcher.on(MessageEvent::class.java)
+        .flatMap { event ->
+            when (event) {
+                is MessageCreateEvent ->
+                    Mono.just(
+                        event.message.id to {
+                            NewMessage.of(event.message)
+                                .filter { event.message.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.message.channelId.asString()) }
+                                .map { producerRecord("messages", event.message.id, it) }
+                        }
+                    )
+                is MessageUpdateEvent ->
+                    Mono.just(
+                        event.messageId to {
+                            Mono.justOrEmpty(event.currentContent).zipWith(event.message)
+                                .filter { it.t2.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.t2.channelId.asString()) }
+                                .flatMap { tuple ->
+                                    MessageEdit.of(tuple.t1, tuple.t2.editedTimestamp.orElse(Instant.now()))
+                                }
+                                .map { producerRecord("messages", event.messageId, it) }
+                        }
+                    )
+                is MessageDeleteEvent ->
+                    Mono.just(
+                        event.messageId to {
+                            MessageDeletion.of(Instant.now())
+                                .filter {
+                                    event.message.orElse(null)?.type == Message.Type.DEFAULT && !ignoredChannels.contains(
+                                        event.channelId.asString()
+                                    )
+                                }
+                                .map { producerRecord("messages", event.messageId, it) }
+                        }
+                    )
+                is MessageBulkDeleteEvent ->
+                    Flux.fromIterable(event.messages)
+                        .filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.channelId.asString()) }
+                        .map { msg ->
+                            msg.id to {
+                                MessageDeletion.of(Instant.now())
+                                    .map { producerRecord("messages", msg.id, it) }
+                            }
+                        }
+                else -> Flux.empty()
             }
-    }
-
-    client.eventDispatcher.map<MessageDeleteEvent, MessageDeletion>(
-        producer,
-        "messages"
-    ) { event ->
-        event.messageId to MessageDeletion.of(Instant.now())
-            .filter { event.message.orElse(null)?.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.channelId.asString()) }
-    }
-
-    client.eventDispatcher.flatMap<MessageBulkDeleteEvent, MessageDeletion>(
-        producer,
-        "messages"
-    ) { event ->
-        Flux.fromIterable(event.messages)
-            .filter {
-                it.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.channelId.asString())
-            }
-            .flatMap { message ->
-                MessageDeletion.of(Instant.now()).map { message.id to it }
-            }
-    }
+        }
+        .groupBy { it.first }
+        .flatMap { group ->
+            group.flatMapSequential { (_, builder) -> builder() }
+                .flatMapSequential { record ->
+                    Mono.create<Unit> {
+                        it.success(producer.emit(record))
+                    }
+                }
+        }
+        .subscribe()
 
     client.eventDispatcher.map<MemberJoinEvent, UserInfo>(
         producer,

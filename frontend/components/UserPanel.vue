@@ -33,10 +33,21 @@ export default {
     }
   },
   computed: mapState(['identity']),
+  mounted () {
+    document.addEventListener('click', this.handleOutsideClick)
+  },
+  destroyed () {
+    document.removeEventListener('click', this.handleOutsideClick)
+  },
   methods: {
     logout () {
       this.$apolloHelpers.onLogout()
       window.location.href = '/api/auth/logout'
+    },
+    handleOutsideClick (event) {
+      if (!this.$el.contains(event.target)) {
+        this.expanded = false
+      }
     }
   }
 }

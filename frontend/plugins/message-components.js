@@ -6,6 +6,7 @@ import ChannelMention from '@/components/message/ChannelMention.vue'
 import RoleMention from '@/components/message/RoleMention.vue'
 import GenericMention from '@/components/message/GenericMention.vue'
 import CodeBlock from '@/components/message/CodeBlock.vue'
+import Emoji from '@/components/message/Emoji.vue'
 
 Vue.component('Spoiler', Spoiler)
 Vue.component('UserMention', UserMention)
@@ -13,6 +14,7 @@ Vue.component('ChannelMention', ChannelMention)
 Vue.component('RoleMention', RoleMention)
 Vue.component('GenericMention', GenericMention)
 Vue.component('CodeBlock', CodeBlock)
+Vue.component('Emoji', Emoji)
 Vue.directive('hljs', {
   deep: true,
   bind (el, binding) {

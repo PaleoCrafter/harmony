@@ -1,6 +1,6 @@
 <script>
 import { parser } from 'discord-markdown'
-import renderNode from '@/components/message/message-renderer'
+import renderNode, { expandUnicodeEmojis } from '@/components/message/message-renderer'
 
 export default {
   name: 'Message',
@@ -19,8 +19,9 @@ export default {
     }
   },
   render (h) {
-    const { content } = this.parsedVersions[0]
-    const children = content.map(node => renderNode(node, h, this.message))
+    const content = this.parsedVersions[0].content.flatMap(expandUnicodeEmojis)
+    const emojisOnly = content.every(n => n.type === 'discordEmoji' || n.type === 'emoji' || (n.type === 'text' && n.content === ' '))
+    const children = content.map(node => renderNode(node, h, this.message, emojisOnly))
 
     const properties = [
       this.message.editedAt !== null ? h('time', { attrs: { datetime: this.message.editedAt } }, ['edited']) : undefined,

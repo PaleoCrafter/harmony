@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="container"
     v-infinite-scroll="loadMore"
     infinite-scroll-disabled="mayNotLoad"
     infinite-scroll-distance="100"
@@ -112,6 +113,14 @@ export default {
           }
         )
       } catch {
+      }
+    }
+  },
+  provide () {
+    const self = this
+    return {
+      tooltipBounds () {
+        return self.$refs.container.getBoundingClientRect()
       }
     }
   }

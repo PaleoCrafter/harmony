@@ -8,10 +8,16 @@
     class="channel__messages"
   >
     <MessageList :messages="messages || []" />
-    <div v-if="$apollo.loading || messages === undefined" class="channel__loading">
+    <div
+      v-if="$apollo.loading || messages === undefined"
+      :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 }]"
+    >
       <LoadingSpinner />
     </div>
-    <div v-if="!$apollo.loading && (endReached && isToday || messages !== undefined && messages.length === 0)" class="channel__info">
+    <div
+      v-if="!$apollo.loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
+      :class="['channel__info', { 'channel__info--empty': messages.length === 0 }]"
+    >
       <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
         There are currently no messages in this channel for the selected date.
       </div>
@@ -142,7 +148,9 @@ export default {
             }
           }
         )
-      } catch {
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
       }
     },
     async performAutoRefresh () {
@@ -178,10 +186,13 @@ export default {
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-grow: 1;
     flex-direction: column;
     font-size: 4rem;
-    padding: 1rem
+    padding: 1rem;
+
+    &--empty {
+      flex-grow: 1;
+    }
   }
 
   &__info {
@@ -189,8 +200,11 @@ export default {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-    flex-grow: 1;
-    padding: 1rem
+    padding: 1rem;
+
+    &--empty {
+      flex-grow: 1;
+    }
   }
 
   &__empty, &__more {

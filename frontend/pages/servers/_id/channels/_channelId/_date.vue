@@ -11,18 +11,20 @@
     <div v-if="$apollo.loading || messages === undefined" class="channel__loading">
       <LoadingSpinner />
     </div>
-    <div v-if="!$apollo.loading && messages !== undefined && messages.length === 0" class="channel__empty">
-      There are currently no messages in this channel for the selected date.
-    </div>
-    <div v-if="!$apollo.loading && endReached && isToday" class="channel__more">
-      <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
-        Refresh
-      </button>
-      <Divider />
-      <span class="channel__auto-refresh">
-        <input id="channel__auto-refresh" v-model="autoRefresh" type="checkbox">
-        <label for="channel__auto-refresh">Auto-refresh every 30 seconds</label>
-      </span>
+    <div v-if="!$apollo.loading && (endReached && isToday || messages !== undefined && messages.length === 0)" class="channel__info">
+      <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
+        There are currently no messages in this channel for the selected date.
+      </div>
+      <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
+        <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
+          Refresh
+        </button>
+        <Divider />
+        <span class="channel__auto-refresh">
+          <input id="channel__auto-refresh" v-model="autoRefresh" type="checkbox">
+          <label for="channel__auto-refresh">Auto-refresh every 30 seconds</label>
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -115,7 +117,10 @@ export default {
       return { startDate, endDate }
     },
     async loadMore () {
-      this.startDate = new Date(this.messages[this.messages.length - 1].createdAt)
+      const lastMessage = this.messages[this.messages.length - 1]
+      if (lastMessage !== undefined) {
+        this.startDate = new Date(lastMessage.createdAt)
+      }
       // Fetch more data and transform the original result
       try {
         await this.$apollo.queries.messages.fetchMore(
@@ -132,7 +137,7 @@ export default {
               this.endReached = !hasMore
 
               return {
-                messages: [...previousResult.messages, ...newMessages]
+                messages: [...(previousResult?.messages ?? []), ...newMessages]
               }
             }
           }
@@ -169,7 +174,7 @@ export default {
     overflow-y: scroll;
   }
 
-  &__loading, &__empty, &__more {
+  &__loading {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -179,12 +184,24 @@ export default {
     padding: 1rem
   }
 
+  &__info {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 1rem
+  }
+
   &__empty, &__more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1rem;
   }
 
-  &__more {
-    flex-direction: row;
+  &__empty {
+    margin-bottom: 1rem;
   }
 
   &__button {

@@ -17,6 +17,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.19.3")
     implementation("org.jetbrains.exposed:exposed-java-time:0.19.3")
     implementation("org.postgresql:postgresql:42.2.5")
+    implementation("com.discord4j:discord4j-core:3.0.11")
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
@@ -24,7 +25,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 application {
-    mainClassName = "com.seventeenthshard.harmony.dbimport.DBImport"
+    mainClassName = "com.seventeenthshard.harmony.dbimport.DBTools"
 }
 
 tasks.withType<Jar> {

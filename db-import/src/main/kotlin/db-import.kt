@@ -26,8 +26,6 @@ import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.logging.log4j.LogManager
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
@@ -84,28 +82,7 @@ class EventHandler(init: EventHandler.() -> Unit) {
     private data class Handler<T>(val deserializer: DeserializationStrategy<T>, val run: (id: String, event: T) -> Unit)
 }
 
-fun main() {
-    Database.connect(
-        System.getenv("DB_CONNECTION") ?: throw IllegalArgumentException("DB_CONNECTION env variable must be set!"),
-        System.getenv("DB_DRIVER") ?: throw IllegalArgumentException("DB_DRIVER env variable must be set!"),
-        System.getenv("DB_USER") ?: throw IllegalArgumentException("DB_USER env variable must be set!"),
-        System.getenv("DB_PASSWORD") ?: throw IllegalArgumentException("DB_PASSWORD env variable must be set!")
-    )
-
-    transaction {
-        SchemaUtils.createMissingTablesAndColumns(
-            Servers,
-            Channels,
-            Users,
-            UserNicknames,
-            Roles,
-            UserRoles,
-            PermissionOverrides,
-            Messages,
-            MessageVersions
-        )
-    }
-
+fun runImport() {
     val events = EventHandler {
         listen<ServerInfo> { serverId, event ->
             transaction {

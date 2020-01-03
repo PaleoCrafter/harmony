@@ -4,7 +4,7 @@ const graphqlHTTP = require('express-graphql')
 const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
 const { Op, QueryTypes } = require('sequelize')
-const { database, Server, Channel, User, Message, MessageVersion, Role } = require('./db')
+const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
 const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
@@ -15,6 +15,18 @@ function mapColor (color) {
     g: parseInt(color.substr(2, 2), 16),
     b: parseInt(color.substr(4, 2), 16)
   }
+}
+
+function embedEntry (embed, prefix, fields) {
+  let nonNull = false
+  const obj = {}
+  fields.forEach((f) => {
+    const capitalized = f.charAt(0).toUpperCase() + f.slice(1)
+    const value = embed[`${prefix}${capitalized}`]
+    obj[f] = value
+    nonNull |= value !== null
+  })
+  return nonNull ? obj : null
 }
 
 function initLoaders (user) {
@@ -141,6 +153,11 @@ function initLoaders (user) {
     }
   )
 
+  const embedFields = new DataLoader(async (ids) => {
+    const fields = await EmbedField.findAll({ where: { embed: ids }, order: [['position', 'ASC']] })
+    return ids.map(id => fields.filter(f => f.embed === id))
+  })
+
   return {
     servers: new DataLoader(async (ids) => {
       const servers = await Server.findAll({ where: { active: true, id: ids } })
@@ -181,6 +198,28 @@ function initLoaders (user) {
       })
 
       return ids.map(id => versions.filter(v => v.message === id))
+    }),
+    embeds: new DataLoader(async (messages) => {
+      const embeds = await Promise.all(
+        (await Embed.findAll({ where: { message: messages } })).map(embed => ({
+          id: embed.id,
+          message: embed.message,
+          type: embed.type,
+          title: embed.title,
+          description: embed.description,
+          url: embed.url,
+          color: embed.color === null ? null : mapColor(embed.color),
+          footer: embedEntry(embed, 'footer', ['text', 'iconUrl', 'iconProxyUrl']),
+          image: embedEntry(embed, 'image', ['url', 'proxyUrl', 'width', 'height']),
+          thumbnail: embedEntry(embed, 'thumbnail', ['url', 'proxyUrl', 'width', 'height']),
+          video: embedEntry(embed, 'video', ['url', 'proxyUrl', 'width', 'height']),
+          provider: embedEntry(embed, 'provider', ['name', 'url']),
+          author: embedEntry(embed, 'author', ['name', 'url', 'iconUrl', 'iconProxyUrl']),
+          fields: () => embedFields.load(embed.id)
+        }))
+      )
+
+      return messages.map(id => embeds.filter(e => e.message === id))
     })
   }
 }
@@ -252,6 +291,21 @@ const root = {
         deletedAt: msg.deletedAt
       }
     }))
+  },
+  async embeds ({ message: messageId }, request) {
+    const message = await Message.findOne({ where: { id: messageId } })
+    if (message === undefined) {
+      return []
+    }
+
+    const channel = await request.loaders.channels.load(message.channel)
+    const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
+
+    if (permissions === undefined || !permissions.has('readMessages')) {
+      return []
+    }
+
+    return request.loaders.embeds.load(messageId)
   }
 }
 

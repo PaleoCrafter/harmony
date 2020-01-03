@@ -202,6 +202,132 @@ const MessageVersion = db.define('messageversion', {
   timestamps: false
 })
 
+const Embed = db.define('messageembed', {
+  id: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  message: {
+    type: Sequelize.BIGINT,
+    allowNull: false
+  },
+  type: {
+    type: Sequelize.ENUM('UNKNOWN', 'IMAGE', 'LINK', 'RICH', 'VIDEO'),
+    allowNull: false
+  },
+  title: {
+    type: Sequelize.STRING
+  },
+  description: {
+    type: Sequelize.STRING
+  },
+  url: {
+    type: Sequelize.STRING
+  },
+  color: {
+    type: Sequelize.STRING
+  },
+
+  footerText: {
+    type: Sequelize.STRING
+  },
+  footerIconUrl: {
+    type: Sequelize.STRING
+  },
+  footerIconProxyUrl: {
+    type: Sequelize.STRING
+  },
+
+  imageUrl: {
+    type: Sequelize.STRING
+  },
+  imageProxyUrl: {
+    type: Sequelize.STRING
+  },
+  imageWidth: {
+    type: Sequelize.STRING
+  },
+  imageHeight: {
+    type: Sequelize.STRING
+  },
+
+  thumbnailUrl: {
+    type: Sequelize.STRING
+  },
+  thumbnailProxyUrl: {
+    type: Sequelize.STRING
+  },
+  thumbnailWidth: {
+    type: Sequelize.STRING
+  },
+  thumbnailHeight: {
+    type: Sequelize.STRING
+  },
+
+  videoUrl: {
+    type: Sequelize.STRING
+  },
+  videoProxyUrl: {
+    type: Sequelize.STRING
+  },
+  videoWidth: {
+    type: Sequelize.STRING
+  },
+  videoHeight: {
+    type: Sequelize.STRING
+  },
+
+  providerName: {
+    type: Sequelize.STRING
+  },
+  providerUrl: {
+    type: Sequelize.STRING
+  },
+
+  authorName: {
+    type: Sequelize.STRING
+  },
+  authorUrl: {
+    type: Sequelize.STRING
+  },
+  authorIconUrl: {
+    type: Sequelize.STRING
+  },
+  authorIconProxyUrl: {
+    type: Sequelize.STRING
+  }
+}, {
+  timestamps: false
+})
+
+const EmbedField = db.define('messageembedfield', {
+  embed: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  position: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    primaryKey: true
+  },
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  value: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  inline: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false
+  }
+}, {
+  timestamps: false
+})
+
 Message.hasMany(MessageVersion, { as: 'versions', foreignKey: 'message', foreignKeyConstraint: false, constraints: false })
 
 module.exports = {
@@ -213,5 +339,7 @@ module.exports = {
   User,
   UserNickname,
   Message,
-  MessageVersion
+  MessageVersion,
+  Embed,
+  EmbedField
 }

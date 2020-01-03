@@ -9,6 +9,7 @@ type Query {
   role(server: ID!, id: ID!): Role
 
   messages(channel: ID!, after: Timestamp!, before: Timestamp!, limit: Int!): [Message!]!
+  embeds(message: ID!): [Embed!]!
 }
 
 scalar Timestamp
@@ -63,4 +64,51 @@ type Message {
 type MessageVersion {
   content: String!
   timestamp: Timestamp!
+}
+
+type Embed {
+  id: ID!
+  type: String!
+  title: String
+  description: String
+  url: String
+  color: Color
+  footer: EmbedFooter
+  image: EmbedMedia
+  thumbnail: EmbedMedia
+  video: EmbedMedia
+  provider: EmbedProvider
+  author: EmbedAuthor
+  fields: [EmbedField!]!
+}
+
+type EmbedFooter {
+  text: String!
+  iconUrl: String
+  proxyIconUrl: String
+}
+
+type EmbedMedia {
+  url: String
+  proxyUrl: String
+  width: Int
+  height: Int
+}
+
+type EmbedProvider {
+  name: String
+  url: String
+}
+
+type EmbedAuthor {
+  name: String
+  url: String
+  iconUrl: String
+  proxyIconUrl: String
+}
+
+type EmbedField {
+  name: String!
+  value: String!
+  inline: Boolean!
 }

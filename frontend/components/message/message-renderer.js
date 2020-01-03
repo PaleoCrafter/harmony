@@ -55,7 +55,7 @@ export default function renderNode (node, h, message, emojisOnly) {
     case 'blockQuote':
       return h('blockquote', node.content.map(child => renderNode(child, h, message, false)))
     case 'inlineCode':
-      return h('code', { class: 'message__code' }, [node.content])
+      return h('code', { class: 'markdown__code' }, [node.content])
     case 'codeBlock':
       return h(CodeBlock, { props: { language: node.lang } }, [node.content])
     case 'discordUser':

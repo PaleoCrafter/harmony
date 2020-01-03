@@ -16,7 +16,7 @@
     </div>
     <div
       v-if="!$apollo.loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
-      :class="['channel__info', { 'channel__info--empty': messages.length === 0 }]"
+      :class="['channel__info', { 'channel__info--empty': messages === undefined || messages.length === 0 }]"
     >
       <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
         There are currently no messages in this channel for the selected date.

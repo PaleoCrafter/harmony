@@ -23,5 +23,7 @@ query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
     createdAt
     editedAt
     deletedAt
+
+    hasEmbeds
   }
 }

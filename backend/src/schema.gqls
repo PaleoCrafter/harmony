@@ -59,6 +59,7 @@ type Message {
   createdAt: Timestamp!
   editedAt: Timestamp
   deletedAt: Timestamp
+  hasEmbeds: Boolean
 }
 
 type MessageVersion {

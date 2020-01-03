@@ -3,7 +3,8 @@ const fs = require('fs')
 const graphqlHTTP = require('express-graphql')
 const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
-const { Op, QueryTypes } = require('sequelize')
+const Sequelize = require('sequelize')
+const { Op, QueryTypes } = Sequelize
 const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
@@ -281,6 +282,7 @@ const root = {
 
     return Promise.all(messages.map(async (msg) => {
       const versions = await request.loaders.messageVersions.load(msg.id)
+
       return {
         id: msg.id,
         author: request.loaders.users.load({ server: msg.server, id: msg.user }),
@@ -288,7 +290,11 @@ const root = {
         versions: permissions.has('manageMessages') ? versions : [versions[0]],
         createdAt: msg.createdAt,
         editedAt: versions.length > 1 ? versions[0].timestamp : null,
-        deletedAt: msg.deletedAt
+        deletedAt: msg.deletedAt,
+        hasEmbeds: async () => (await Embed.findOne({
+          attributes: [[Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+          where: { message: msg.id }
+        })).get('count') > 0
       }
     }))
   },

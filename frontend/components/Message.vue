@@ -1,9 +1,12 @@
 <script>
 import { parser } from 'discord-markdown'
 import renderNode, { expandUnicodeEmojis } from '@/components/message/message-renderer'
+import embedsQuery from '@/apollo/queries/embeds.gql'
+import Embed from '@/components/message/Embed.vue'
 
 export default {
   name: 'Message',
+  components: { Embed },
   props: {
     message: {
       type: Object,
@@ -16,6 +19,19 @@ export default {
         ...version,
         content: parser(version.content)
       }))
+    }
+  },
+  apollo: {
+    embeds: {
+      query: embedsQuery,
+      skip () {
+        return !this.message.hasEmbeds
+      },
+      variables () {
+        return {
+          message: this.message.id
+        }
+      }
     }
   },
   render (h) {
@@ -41,7 +57,10 @@ export default {
       {
         class: ['message', { 'message--deleted': this.message.deletedAt !== null }]
       },
-      children
+      [
+        h('div', { class: 'message__content' }, children),
+        h('div', { class: 'message__embeds' }, (this.embeds || []).map(embed => h(Embed, { props: { embed } })))
+      ]
     )
   }
 }
@@ -99,6 +118,10 @@ export default {
   &__note {
     color: rgba(255, 255, 255, 0.2);
     font-size: 0.625rem;
+  }
+
+  &__embeds {
+    padding: 0.5rem 0;
   }
 
   &--deleted {

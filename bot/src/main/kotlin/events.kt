@@ -3,8 +3,10 @@ package com.seventeenthshard.harmony.bot
 import com.seventeenthshard.harmony.events.ChannelDeletion
 import com.seventeenthshard.harmony.events.ChannelInfo
 import com.seventeenthshard.harmony.events.ChannelRemoval
+import com.seventeenthshard.harmony.events.Embed
 import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
+import com.seventeenthshard.harmony.events.MessageEmbedUpdate
 import com.seventeenthshard.harmony.events.NewMessage
 import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
@@ -13,6 +15,7 @@ import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.seventeenthshard.harmony.events.UserRolesChange
+import com.seventeenthshard.harmony.events.toHex
 import discord4j.core.`object`.PermissionOverwrite
 import discord4j.core.`object`.entity.Channel
 import discord4j.core.`object`.entity.Guild
@@ -23,8 +26,10 @@ import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.util.Image
 import discord4j.core.`object`.util.Snowflake
 import reactor.core.publisher.Mono
-import java.awt.Color
+import reactor.util.function.component1
+import reactor.util.function.component2
 import java.time.Instant
+import discord4j.core.`object`.Embed as DiscordEmbed
 
 fun ServerInfo.Companion.of(guild: Guild) =
     Mono.just(
@@ -37,12 +42,6 @@ fun ServerInfo.Companion.of(guild: Guild) =
 
 fun ServerDeletion.Companion.of(timestamp: Instant) =
     Mono.just(ServerDeletion(timestamp))
-
-private fun Color.toHex(): String {
-    val format = "%02x"
-
-    return "${format.format(red)}${format.format(green)}${format.format(blue)}"
-}
 
 fun RoleInfo.Companion.of(role: Role) =
     role.guild
@@ -135,11 +134,22 @@ fun NewMessage.Companion.of(message: Message) =
                 UserInfo.of(it.t2)
             )
         }
-        .map {
+        .map { (channel, user) ->
             NewMessage(
-                it.t1,
-                it.t2,
+                channel,
+                user,
                 message.content.orElse(""),
+                message.embeds.map(Embed.Companion::of),
+                message.attachments.map {
+                    NewMessage.Attachment(
+                        it.filename,
+                        it.url,
+                        it.proxyUrl,
+                        if (it.width.isPresent) it.width.asInt else null,
+                        if (it.height.isPresent) it.height.asInt else null,
+                        it.isSpoiler
+                    )
+                },
                 message.timestamp
             )
         }
@@ -149,3 +159,36 @@ fun MessageEdit.Companion.of(content: String, timestamp: Instant) =
 
 fun MessageDeletion.Companion.of(timestamp: Instant) =
     Mono.just(MessageDeletion(timestamp))
+
+fun MessageEmbedUpdate.Companion.of(embeds: Iterable<DiscordEmbed>) =
+    Mono.just(MessageEmbedUpdate(embeds.map(Embed.Companion::of)))
+
+fun Embed.Companion.of(embed: DiscordEmbed) =
+    Embed(
+        Embed.Type.valueOf(embed.type.name),
+        embed.title.orElse(null),
+        embed.description.orElse(null),
+        embed.url.orElse(null),
+        embed.color.orElse(null)?.toHex(),
+        embed.footer.orElse(null)?.let {
+            Embed.Footer(it.text, it.iconUrl, it.proxyIconUrl)
+        },
+        embed.image.orElse(null)?.let {
+            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
+        },
+        embed.thumbnail.orElse(null)?.let {
+            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
+        },
+        embed.video.orElse(null)?.let {
+            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
+        },
+        embed.provider.orElse(null)?.let {
+            Embed.Provider(it.name, it.url)
+        },
+        embed.author.orElse(null)?.let {
+            Embed.Author(it.name, it.url, it.iconUrl, it.proxyIconUrl)
+        },
+        embed.fields.map {
+            Embed.Field(it.name, it.value, it.isInline)
+        }
+    )

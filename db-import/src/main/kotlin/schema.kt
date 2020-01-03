@@ -1,8 +1,15 @@
 package com.seventeenthshard.harmony.dbimport
 
+import com.seventeenthshard.harmony.dbimport.MessageEmbeds.index
+import com.seventeenthshard.harmony.dbimport.MessageEmbeds.nullable
+import com.seventeenthshard.harmony.dbimport.PermissionOverrides.primaryKey
+import com.seventeenthshard.harmony.dbimport.Roles.default
 import com.seventeenthshard.harmony.events.ChannelInfo
+import com.seventeenthshard.harmony.events.Embed
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.`java-time`.datetime
 import org.jetbrains.exposed.sql.vendors.currentDialect
@@ -94,4 +101,58 @@ object MessageVersions : Table() {
     val message = snowflake("message").primaryKey(0)
     val timestamp = datetime("timestamp").primaryKey(1)
     val content = text("content")
+}
+
+object MessageEmbeds : IntIdTable() {
+    val message = snowflake("message").index()
+    val type = enumerationByName("type", 16, Embed.Type::class)
+    val title = varchar("title", 256).nullable()
+    val description = varchar("description", 2048).nullable()
+    val url = varchar("url", 2048).nullable()
+    val color = varchar("color", 6).nullable()
+
+    val footerText = varchar("footerText", 2048).nullable()
+    val footerIconUrl = varchar("footerIconUrl", 2048).nullable()
+    val footerIconProxyUrl = varchar("footerIconProxyUrl", 2048).nullable()
+
+    val imageUrl = varchar("imageUrl", 2048).nullable()
+    val imageProxyUrl = varchar("imageProxyUrl", 2048).nullable()
+    val imageWidth = integer("imageWidth").nullable()
+    val imageHeight = integer("imageHeight").nullable()
+
+    val thumbnailUrl = varchar("thumbnailUrl", 2048).nullable()
+    val thumbnailProxyUrl = varchar("thumbnailProxyUrl", 2048).nullable()
+    val thumbnailWidth = integer("thumbnailWidth").nullable()
+    val thumbnailHeight = integer("thumbnailHeight").nullable()
+
+    val videoUrl = varchar("videoUrl", 2048).nullable()
+    val videoProxyUrl = varchar("videoProxyUrl", 2048).nullable()
+    val videoWidth = integer("videoWidth").nullable()
+    val videoHeight = integer("videoHeight").nullable()
+
+    val providerName = varchar("providerName", 2048).nullable()
+    val providerUrl = varchar("providerUrl", 2048).nullable()
+
+    val authorName = varchar("authorName", 256).nullable()
+    val authorUrl = varchar("authorUrl", 2048).nullable()
+    val authorIconUrl = varchar("authorIconUrl", 2048).nullable()
+    val authorIconProxyUrl = varchar("authorIconProxyUrl", 2048).nullable()
+}
+
+object MessageEmbedFields : Table() {
+    val embed = reference("embed", MessageEmbeds, onDelete = ReferenceOption.CASCADE).primaryKey(1)
+    val position = integer("position").primaryKey(2)
+    val name = varchar("name", 256)
+    val value = varchar("value", 1024)
+    val inline = bool("inline")
+}
+
+object MessageAttachments : Table() {
+    val message = snowflake("message").index()
+    val name = varchar("name", 256)
+    val url = varchar("url", 2048)
+    val proxyUrl = varchar("proxyUrl", 2048)
+    val width = integer("width").nullable()
+    val height = integer("height").nullable()
+    val spoiler = bool("spoiler").default(false)
 }

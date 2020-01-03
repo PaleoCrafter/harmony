@@ -3,7 +3,14 @@ package com.seventeenthshard.harmony.events
 import com.sksamuel.avro4k.serializer.InstantSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.internal.CommonEnumSerializer
+import java.awt.Color
 import java.time.Instant
+
+fun Color.toHex(): String {
+    val format = "%02x"
+
+    return "${format.format(red)}${format.format(green)}${format.format(blue)}"
+}
 
 @Serializable
 data class ServerInfo(val id: String, val name: String, val iconUrl: String?)
@@ -102,8 +109,20 @@ data class NewMessage(
     val channel: ChannelInfo,
     val user: UserInfo,
     val content: String,
+    val embeds: List<Embed>,
+    val attachments: List<Attachment>,
     @Serializable(with = InstantSerializer::class) val timestamp: Instant
-)
+) {
+    @Serializable
+    data class Attachment(
+        val name: String,
+        val url: String,
+        val proxyUrl: String,
+        val width: Int?,
+        val height: Int?,
+        val spoiler: Boolean
+    )
+}
 
 @Serializable
 data class MessageEdit(
@@ -115,3 +134,48 @@ data class MessageEdit(
 data class MessageDeletion(
     @Serializable(with = InstantSerializer::class) val timestamp: Instant
 )
+
+@Serializable
+data class MessageEmbedUpdate(val embeds: List<Embed>)
+
+@Serializable
+data class Embed(
+    val type: Type,
+    val title: String?,
+    val description: String?,
+    val url: String?,
+    val color: String?,
+    val footer: Footer?,
+    val image: Media?,
+    val thumbnail: Media?,
+    val video: Media?,
+    val provider: Provider?,
+    val author: Author?,
+    val fields: List<Field>
+) {
+    @Serializable(with = Type.Serializer::class)
+    enum class Type {
+        UNKNOWN, IMAGE, LINK, RICH, VIDEO;
+
+        companion object Serializer : CommonEnumSerializer<Type>(
+            serialName = "EmbedType",
+            choices = values(),
+            choicesNames = arrayOf("UNKNOWN", "IMAGE", "LINK", "RICH", "VIDEO")
+        )
+    }
+
+    @Serializable
+    data class Footer(val text: String, val iconUrl: String?, val proxyIconUrl: String?)
+
+    @Serializable
+    data class Media(val url: String?, val proxyUrl: String?, val width: Int?, val height: Int?)
+
+    @Serializable
+    data class Provider(val name: String?, val url: String?)
+
+    @Serializable
+    data class Author(val name: String?, val url: String?, val iconUrl: String?, val proxyIconUrl: String?)
+
+    @Serializable
+    data class Field(val name: String, val value: String, val inline: Boolean)
+}

@@ -31,6 +31,7 @@ import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.toFlux
 import reactor.util.function.*
 import java.io.IOException
 import java.nio.file.Files
@@ -271,16 +272,29 @@ fun main() {
                         }
                     )
                 is MessageUpdateEvent ->
-                    Mono.just(
-                        event.messageId to {
-                            Mono.justOrEmpty(event.currentContent).zipWith(event.message)
-                                .filter { it.t2.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.t2.channelId.asString()) }
-                                .flatMap { tuple ->
-                                    MessageEdit.of(tuple.t1, tuple.t2.editedTimestamp.orElse(Instant.now()))
-                                }
-                                .map { producerRecord("messages", event.messageId, it) }
+                    event.message
+                        .filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
+                        .toFlux()
+                        .flatMap { msg ->
+                            Flux.merge(
+                                Mono.just(
+                                    event.messageId to {
+                                        Mono.justOrEmpty(event.currentContent)
+                                            .flatMap {
+                                                MessageEdit.of(it, msg.editedTimestamp.orElse(Instant.now()))
+                                            }
+                                            .map { producerRecord("messages", event.messageId, it) }
+                                    }
+                                ),
+                                Mono.just(
+                                    event.messageId to {
+                                        Mono.justOrEmpty(event.currentEmbeds)
+                                            .flatMap { MessageEmbedUpdate.of(it) }
+                                            .map { producerRecord("messages", event.messageId, it) }
+                                    }
+                                )
+                            )
                         }
-                    )
                 is MessageDeleteEvent ->
                     Mono.just(
                         event.messageId to {

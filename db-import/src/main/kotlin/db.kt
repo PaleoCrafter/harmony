@@ -27,7 +27,10 @@ fun main(args: Array<String>) {
             UserRoles,
             PermissionOverrides,
             Messages,
-            MessageVersions
+            MessageVersions,
+            MessageEmbeds,
+            MessageEmbedFields,
+            MessageAttachments
         )
     }
 

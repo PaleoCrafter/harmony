@@ -2,6 +2,8 @@
 
 package com.seventeenthshard.harmony.dbimport
 
+import com.seventeenthshard.harmony.events.Embed
+import com.seventeenthshard.harmony.events.toHex
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
@@ -10,7 +12,9 @@ import discord4j.core.event.domain.guild.GuildCreateEvent
 import org.apache.logging.log4j.LogManager
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -85,7 +89,8 @@ fun runDump(arguments: List<String>) {
         }
         .map { (messages, channel, guild) ->
             transaction {
-                val existing = Messages.select { Messages.id inList messages.map { msg -> msg.id.asString() } }
+                val messageIds = messages.map { msg -> msg.id.asString() }
+                val existing = Messages.select { Messages.id inList messageIds }
                     .map { it[Messages.id] }
 
                 Users.batchInsert(messages.mapNotNull { it.author.orElse(null) }, ignore = true) {
@@ -147,6 +152,64 @@ fun runDump(arguments: List<String>) {
                             it[content] = msg.content.orElse("")
                             it[timestamp] = editTimestamp
                         }
+                    }
+
+                    MessageAttachments.batchInsert(msg.attachments) {
+                        this[MessageAttachments.message] = msg.id.asString()
+                        this[MessageAttachments.name] = it.filename
+                        this[MessageAttachments.url] = it.url
+                        this[MessageAttachments.proxyUrl] = it.proxyUrl
+                        this[MessageAttachments.width] = if (it.width.isPresent) it.width.asInt else null
+                        this[MessageAttachments.height] = if (it.height.isPresent) it.height.asInt else null
+                        this[MessageAttachments.spoiler] = it.isSpoiler
+                    }
+                }
+
+                MessageEmbeds.deleteWhere { MessageEmbeds.message inList messageIds }
+
+                messages.flatMap { msg -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
+                    val embedId = MessageEmbeds.insertAndGetId {
+                        it[message] = msg
+                        it[type] = Embed.Type.valueOf(embed.type.name)
+                        it[title] = embed.title.orElse(null)
+                        it[description] = embed.description.orElse(null)
+                        it[url] = embed.url.orElse(null)
+                        it[color] = embed.color.orElse(null)?.toHex()
+
+                        it[footerText] = embed.footer.orElse(null)?.text
+                        it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl
+                        it[footerIconProxyUrl] = embed.footer.orElse(null)?.proxyIconUrl
+
+                        it[imageUrl] = embed.image.orElse(null)?.url
+                        it[imageProxyUrl] = embed.image.orElse(null)?.proxyUrl
+                        it[imageWidth] = embed.image.orElse(null)?.width
+                        it[imageHeight] = embed.image.orElse(null)?.height
+
+                        it[thumbnailUrl] = embed.thumbnail.orElse(null)?.url
+                        it[thumbnailProxyUrl] = embed.thumbnail.orElse(null)?.proxyUrl
+                        it[thumbnailWidth] = embed.thumbnail.orElse(null)?.width
+                        it[thumbnailHeight] = embed.thumbnail.orElse(null)?.height
+
+                        it[videoUrl] = embed.video.orElse(null)?.url
+                        it[videoProxyUrl] = embed.video.orElse(null)?.proxyUrl
+                        it[videoWidth] = embed.video.orElse(null)?.width
+                        it[videoHeight] = embed.video.orElse(null)?.height
+
+                        it[providerName] = embed.provider.orElse(null)?.name
+                        it[providerUrl] = embed.provider.orElse(null)?.url
+
+                        it[authorName] = embed.author.orElse(null)?.name
+                        it[authorUrl] = embed.author.orElse(null)?.url
+                        it[authorIconUrl] = embed.author.orElse(null)?.iconUrl
+                        it[authorIconProxyUrl] = embed.author.orElse(null)?.proxyIconUrl
+                    }
+
+                    MessageEmbedFields.batchInsert(embed.fields.withIndex()) { (index, field) ->
+                        this[MessageEmbedFields.embed] = embedId
+                        this[MessageEmbedFields.position] = index
+                        this[MessageEmbedFields.name] = field.name
+                        this[MessageEmbedFields.value] = field.value
+                        this[MessageEmbedFields.inline] = field.isInline
                     }
                 }
             }

@@ -5,8 +5,10 @@ package com.seventeenthshard.harmony.dbimport
 import com.seventeenthshard.harmony.events.ChannelDeletion
 import com.seventeenthshard.harmony.events.ChannelInfo
 import com.seventeenthshard.harmony.events.ChannelRemoval
+import com.seventeenthshard.harmony.events.Embed
 import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
+import com.seventeenthshard.harmony.events.MessageEmbedUpdate
 import com.seventeenthshard.harmony.events.NewMessage
 import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
@@ -15,11 +17,13 @@ import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.seventeenthshard.harmony.events.UserRolesChange
+import com.seventeenthshard.harmony.events.toHex
 import com.sksamuel.avro4k.Avro
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import io.confluent.kafka.serializers.subject.RecordNameStrategy
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.MissingFieldException
 import kotlinx.serialization.serializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
@@ -30,6 +34,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -69,10 +74,14 @@ class EventHandler(init: EventHandler.() -> Unit) {
             while (true) {
                 consumer.poll(Duration.ofMillis(100)).forEach {
                     val record = it.value()
-                    (handlers[it.value().schema.fullName] as? Handler<Any>)?.let { handler ->
-                        val event = Avro.default.fromRecord(handler.deserializer, record)
-                        handler.run(it.key(), event)
-                        logger.info("Handled ${event.javaClass}")
+                    try {
+                        (handlers[it.value().schema.fullName] as? Handler<Any>)?.let { handler ->
+                            val event = Avro.default.fromRecord(handler.deserializer, record)
+                            handler.run(it.key(), event)
+                            logger.info("Handled ${event.javaClass}")
+                        }
+                    } catch (e: MissingFieldException) {
+                        logger.warn("Skipping event due to missing fields")
                     }
                 }
             }
@@ -80,6 +89,56 @@ class EventHandler(init: EventHandler.() -> Unit) {
     }
 
     private data class Handler<T>(val deserializer: DeserializationStrategy<T>, val run: (id: String, event: T) -> Unit)
+}
+
+private fun insertEmbeds(messageId: String, embeds: List<Embed>) {
+    MessageEmbeds.deleteWhere { MessageEmbeds.message eq messageId }
+
+    embeds.forEach { embed ->
+        val embedId = MessageEmbeds.insertAndGetId {
+            it[message] = messageId
+            it[type] = embed.type
+            it[title] = embed.title
+            it[description] = embed.description
+            it[url] = embed.url
+            it[color] = embed.color
+
+            it[footerText] = embed.footer?.text
+            it[footerIconUrl] = embed.footer?.iconUrl
+            it[footerIconProxyUrl] = embed.footer?.proxyIconUrl
+
+            it[imageUrl] = embed.image?.url
+            it[imageProxyUrl] = embed.image?.proxyUrl
+            it[imageWidth] = embed.image?.width
+            it[imageHeight] = embed.image?.height
+
+            it[thumbnailUrl] = embed.thumbnail?.url
+            it[thumbnailProxyUrl] = embed.thumbnail?.proxyUrl
+            it[thumbnailWidth] = embed.thumbnail?.width
+            it[thumbnailHeight] = embed.thumbnail?.height
+
+            it[videoUrl] = embed.video?.url
+            it[videoProxyUrl] = embed.video?.proxyUrl
+            it[videoWidth] = embed.video?.width
+            it[videoHeight] = embed.video?.height
+
+            it[providerName] = embed.provider?.name
+            it[providerUrl] = embed.provider?.url
+
+            it[authorName] = embed.author?.name
+            it[authorUrl] = embed.author?.url
+            it[authorIconUrl] = embed.author?.iconUrl
+            it[authorIconProxyUrl] = embed.author?.proxyIconUrl
+        }
+
+        MessageEmbedFields.batchInsert(embed.fields.withIndex()) { (index, field) ->
+            this[MessageEmbedFields.embed] = embedId
+            this[MessageEmbedFields.position] = index
+            this[MessageEmbedFields.name] = field.name
+            this[MessageEmbedFields.value] = field.value
+            this[MessageEmbedFields.inline] = field.inline
+        }
+    }
 }
 
 fun runImport() {
@@ -217,6 +276,19 @@ fun runImport() {
                     it[timestamp] = creationTimestamp
                     it[content] = event.content
                 }
+
+                MessageAttachments.deleteWhere { MessageAttachments.message eq messageId }
+                MessageAttachments.batchInsert(event.attachments) {
+                    this[MessageAttachments.message] = messageId
+                    this[MessageAttachments.name] = it.name
+                    this[MessageAttachments.url] = it.url
+                    this[MessageAttachments.proxyUrl] = it.proxyUrl
+                    this[MessageAttachments.width] = it.width
+                    this[MessageAttachments.height] = it.height
+                    this[MessageAttachments.spoiler] = it.spoiler
+                }
+
+                insertEmbeds(messageId, event.embeds)
             }
         }
         listen<MessageEdit> { messageId, event ->
@@ -226,6 +298,11 @@ fun runImport() {
                     it[timestamp] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                     it[content] = event.content
                 }
+            }
+        }
+        listen<MessageEmbedUpdate> { messageId, event ->
+            transaction {
+                insertEmbeds(messageId, event.embeds)
             }
         }
         listen<MessageDeletion> { messageId, event ->
@@ -242,12 +319,26 @@ fun runImport() {
                     PermissionOverrides.channel eq channelId
                 }
 
-                val statement = connection.prepareStatement(
+                val versionsStatement = connection.prepareStatement(
                     "DELETE FROM messageversions USING messages WHERE messageversions.message = messages.id AND messages.channel = ?",
                     false
                 )
-                statement.fillParameters(listOf(Messages.channel.columnType to channelId))
-                statement.executeUpdate()
+                versionsStatement.fillParameters(listOf(Messages.channel.columnType to channelId))
+                versionsStatement.executeUpdate()
+
+                val embedsStatement = connection.prepareStatement(
+                    "DELETE FROM messageembeds USING messages WHERE messageembeds.message = messages.id AND messages.channel = ?",
+                    false
+                )
+                embedsStatement.fillParameters(listOf(Messages.channel.columnType to channelId))
+                embedsStatement.executeUpdate()
+
+                val attachmentsStatement = connection.prepareStatement(
+                    "DELETE FROM messageattachments USING messages WHERE messageattachments.message = messages.id AND messages.channel = ?",
+                    false
+                )
+                attachmentsStatement.fillParameters(listOf(Messages.channel.columnType to channelId))
+                attachmentsStatement.executeUpdate()
 
                 Messages.deleteWhere {
                     Messages.channel eq channelId

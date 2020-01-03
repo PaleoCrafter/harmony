@@ -51,6 +51,7 @@ type Color {
 }
 
 type Message {
+  id: ID!
   author: User!
   server: ID!
   versions: [MessageVersion!]!

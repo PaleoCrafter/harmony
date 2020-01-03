@@ -4,21 +4,31 @@
       <a @click.prevent="$store.commit('openSidebar')" href="#" class="channel__header-menu-toggle">
         <MenuIcon />
       </a>
-      <ChannelName :channel="channel" />
+      <h3>
+        <ChannelName :channel="channel" />
+      </h3>
       <Divider />
       <client-only>
-        <DatePicker
-          @input="updateDate"
-          :value="date"
-          :max-date="new Date()"
-          :update-on-input="false"
-          :popover="{ keepVisibleOnInput: false, placement: 'bottom' }"
-          :input-props="{ class: 'channel__date-input' }"
-          color="gray"
-          is-dark
-          is-required
-          class="channel__date"
-        />
+        <div class="channel__date-selection">
+          <button @click="prevDay" class="channel__date-button">
+            <ChevronLeftIcon />
+          </button>
+          <DatePicker
+            @input="updateDate"
+            :value="date"
+            :max-date="new Date()"
+            :update-on-input="false"
+            :popover="{ keepVisibleOnInput: false, placement: 'bottom' }"
+            :input-props="{ class: 'channel__date-input' }"
+            color="gray"
+            is-dark
+            is-required
+            class="channel__date"
+          />
+          <button @click="nextDay" :disabled="nextDayDisabled" class="channel__date-button">
+            <ChevronRightIcon />
+          </button>
+        </div>
       </client-only>
     </header>
     <nuxt-child :date="date" />
@@ -26,13 +36,13 @@
 </template>
 
 <script>
-import { MenuIcon } from 'vue-feather-icons'
+import { ChevronLeftIcon, ChevronRightIcon, MenuIcon } from 'vue-feather-icons'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { Divider, ChannelName, MenuIcon },
+  components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
   computed: {
     date () {
       if (this.$route.params.date === undefined) {
@@ -41,6 +51,11 @@ export default {
 
       const [, year, month, day] = this.$route.params.date.match(/(\d+)-(\d{2})-(\d{2})/)
       return new Date(year, parseInt(month) - 1, day)
+    },
+    nextDayDisabled () {
+      const today = new Date()
+
+      return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }
   },
   apollo: {
@@ -54,6 +69,16 @@ export default {
     }
   },
   methods: {
+    prevDay () {
+      const newDate = new Date(this.date.getTime())
+      newDate.setDate(newDate.getDate() - 1)
+      this.updateDate(newDate)
+    },
+    nextDay () {
+      const newDate = new Date(this.date.getTime())
+      newDate.setDate(newDate.getDate() + 1)
+      this.updateDate(newDate)
+    },
     updateDate (date) {
       if (date === this.date || date === null) {
         return
@@ -87,6 +112,10 @@ export default {
     height: 4rem;
     line-height: 1;
 
+    h3 {
+      font-size: 1rem;
+    }
+
     &-menu-toggle {
       color: white;
       margin-right: 0.25rem;
@@ -98,6 +127,31 @@ export default {
   }
 
   &__date {
+    &-selection {
+      display: flex;
+      align-items: stretch;
+    }
+
+    &-button {
+      background: #202225;
+      color: #dcddde;
+      border: none;
+      padding: 0 0.25rem;
+      line-height: 1rem;
+      border-radius: 4px;
+      font-size: 1rem;
+
+      &:hover, &:focus {
+        cursor: pointer;
+        background: darken(#202225, 5%);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        background: lighten(#202225, 5%);
+      }
+    }
+
     &-input {
       background: #202225;
       color: #dcddde;
@@ -106,6 +160,7 @@ export default {
       line-height: 1rem;
       border-radius: 4px;
       font-size: 1rem;
+      margin: 0 0.5rem;
     }
 
     & > .vc-popover-content-wrapper > .vc-popover-content {

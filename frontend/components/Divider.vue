@@ -10,10 +10,12 @@ export default {
 
 <style lang="scss">
 .divider {
+  min-width: 1px;
   width: 1px;
-  height: 1.75rem;
+  min-height: 1.75rem;
   margin: 0 1rem;
   flex: 0 0 auto;
-  background: rgba(255, 255, 255, 0.06);
+  align-self: stretch;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
 }
 </style>

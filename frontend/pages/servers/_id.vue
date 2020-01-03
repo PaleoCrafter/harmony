@@ -5,7 +5,7 @@
         <a @click.prevent="$store.commit('openSidebar')" href="#" class="server__header-menu-toggle">
           <MenuIcon />
         </a>
-        {{ server.name }}
+        <h2>{{ server.name }}</h2>
       </header>
       <ChannelList :server="$route.params.id" :channels="server.channels" />
     </div>
@@ -78,6 +78,10 @@ export default {
     font-weight: 600;
     height: 4rem;
     line-height: 1;
+
+    h2 {
+      font-size: 1rem;
+    }
 
     &-menu-toggle {
       color: white;

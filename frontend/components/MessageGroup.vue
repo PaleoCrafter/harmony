@@ -8,7 +8,7 @@
     <Message
       v-for="message in group.messages"
       :message="message"
-      :key="message.createdAt.toISOString()"
+      :key="message.id"
     />
   </section>
 </template>

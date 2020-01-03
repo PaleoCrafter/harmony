@@ -14,6 +14,16 @@
     <div v-if="!$apollo.loading && messages !== undefined && messages.length === 0" class="channel__empty">
       There are currently no messages in this channel for the selected date.
     </div>
+    <div v-if="!$apollo.loading && endReached && isToday" class="channel__more">
+      <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
+        Refresh
+      </button>
+      <Divider />
+      <span class="channel__auto-refresh">
+        <input id="channel__auto-refresh" v-model="autoRefresh" type="checkbox">
+        <label for="channel__auto-refresh">Auto-refresh every 30 seconds</label>
+      </span>
+    </div>
   </div>
 </template>
 
@@ -22,9 +32,10 @@ import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { LoadingSpinner, MessageList },
+  components: { Divider, LoadingSpinner, MessageList },
   validate ({ params: { date } }) {
     if (date === undefined) {
       return true
@@ -41,18 +52,32 @@ export default {
   data () {
     return {
       ...this.getInitialDates(),
-      endReached: false
+      endReached: false,
+      autoRefresh: false,
+      refreshHandle: null
     }
   },
   computed: {
     mayNotLoad () {
       return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
+    },
+    isToday () {
+      const today = new Date()
+
+      return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }
   },
   watch: {
     '$route.params.channelId': {
       handler () {
         this.messages = undefined
+      }
+    },
+    autoRefresh (refresh) {
+      if (!refresh && this.refreshHandle !== null) {
+        clearTimeout(this.refreshHandle)
+      } else if (refresh) {
+        this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
       }
     }
   },
@@ -114,6 +139,10 @@ export default {
         )
       } catch {
       }
+    },
+    async performAutoRefresh () {
+      await this.loadMore()
+      this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
     }
   },
   provide () {
@@ -140,7 +169,7 @@ export default {
     overflow-y: scroll;
   }
 
-  &__loading, &__empty {
+  &__loading, &__empty, &__more {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -150,8 +179,45 @@ export default {
     padding: 1rem
   }
 
-  &__empty {
+  &__empty, &__more {
     font-size: 1rem;
+  }
+
+  &__more {
+    flex-direction: row;
+  }
+
+  &__button {
+    position: relative;
+    color: #fff;
+    background: #7289da;
+    cursor: pointer;
+    text-decoration: none;
+    border: none;
+    font-size: 1rem;
+    border-radius: 3px;
+    padding: 0.5rem 1rem;
+    z-index: 1;
+
+    &:hover, &:active, &:focus {
+      background-color: #677bc4;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      background-color: #7984ad;
+      color: #cfcfcf;
+    }
+  }
+
+  &__auto-refresh {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+
+    input {
+      margin-right: 0.5rem;
+    }
   }
 }
 </style>

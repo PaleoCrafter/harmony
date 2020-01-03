@@ -1,5 +1,7 @@
 query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
   messages(channel: $channel, after: $after, before: $before, limit: 100) {
+    id
+
     author {
       name
       discriminator

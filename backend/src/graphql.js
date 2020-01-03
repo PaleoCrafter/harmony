@@ -11,8 +11,7 @@ const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 
 
 function mapColor (color) {
   return {
-    r: parseInt(color.substr(0, 2), 16
-    ),
+    r: parseInt(color.substr(0, 2), 16),
     g: parseInt(color.substr(2, 2), 16),
     b: parseInt(color.substr(4, 2), 16)
   }
@@ -244,6 +243,7 @@ const root = {
     return Promise.all(messages.map(async (msg) => {
       const versions = await request.loaders.messageVersions.load(msg.id)
       return {
+        id: msg.id,
         author: request.loaders.users.load({ server: msg.server, id: msg.user }),
         server: msg.server,
         versions: permissions.has('manageMessages') ? versions : [versions[0]],

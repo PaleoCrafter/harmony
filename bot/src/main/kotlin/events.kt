@@ -170,6 +170,7 @@ fun Embed.Companion.of(embed: DiscordEmbed) =
         embed.description.orElse(null),
         embed.url.orElse(null),
         embed.color.orElse(null)?.toHex(),
+        embed.timestamp.orElse(null),
         embed.footer.orElse(null)?.let {
             Embed.Footer(it.text, it.iconUrl, it.proxyIconUrl)
         },

@@ -175,6 +175,7 @@ fun runDump(arguments: List<String>) {
                         it[description] = embed.description.orElse(null)
                         it[url] = embed.url.orElse(null)
                         it[color] = embed.color.orElse(null)?.toHex()
+                        it[timestamp] = embed.timestamp.orElse(null)?.let { ts -> LocalDateTime.ofInstant(ts, ZoneId.of("UTC")) }
 
                         it[footerText] = embed.footer.orElse(null)?.text
                         it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl

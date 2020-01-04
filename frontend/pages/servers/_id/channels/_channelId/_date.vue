@@ -7,10 +7,10 @@
     infinite-scroll-listen-for-event="reset-infinite"
     class="channel__messages"
   >
-    <MessageList :messages="messages || []" />
+    <MessageList v-if="fetchingMore || !$apollo.loading" :messages="messages || []" />
     <div
       v-if="$apollo.loading || messages === undefined"
-      :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 }]"
+      :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
     >
       <LoadingSpinner />
     </div>
@@ -62,7 +62,8 @@ export default {
       ...this.getInitialDates(),
       endReached: false,
       autoRefresh: false,
-      refreshHandle: null
+      refreshHandle: null,
+      fetchingMore: false
     }
   },
   computed: {
@@ -129,6 +130,7 @@ export default {
       }
       // Fetch more data and transform the original result
       try {
+        this.fetchingMore = true
         await this.$apollo.queries.messages.fetchMore(
           {
             variables: {
@@ -152,6 +154,7 @@ export default {
         // eslint-disable-next-line no-console
         console.error(error)
       }
+      this.fetchingMore = false
     },
     async performAutoRefresh () {
       await this.loadMore()

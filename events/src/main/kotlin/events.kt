@@ -145,6 +145,7 @@ data class Embed(
     val description: String?,
     val url: String?,
     val color: String?,
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant?,
     val footer: Footer?,
     val image: Media?,
     val thumbnail: Media?,

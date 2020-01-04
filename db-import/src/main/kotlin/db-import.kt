@@ -102,6 +102,7 @@ private fun insertEmbeds(messageId: String, embeds: List<Embed>) {
             it[description] = embed.description
             it[url] = embed.url
             it[color] = embed.color
+            it[timestamp] = embed.timestamp?.let { ts -> LocalDateTime.ofInstant(ts, ZoneId.of("UTC")) }
 
             it[footerText] = embed.footer?.text
             it[footerIconUrl] = embed.footer?.iconUrl

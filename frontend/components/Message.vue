@@ -48,7 +48,14 @@ export default {
         class: ['message', { 'message--deleted': this.message.deletedAt !== null }]
       },
       [
-        h(Markdown, { props: { content: this.message.versions[0].content }, class: 'message__content' }, slotContent),
+        h(
+          Markdown,
+          {
+            props: { content: this.message.versions[0].content, context: this.message },
+            class: 'message__content'
+          },
+          slotContent
+        ),
         embeds.length > 0 ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } }))) : undefined
       ]
     )

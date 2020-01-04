@@ -2,6 +2,7 @@ package com.seventeenthshard.harmony.dbimport
 
 import com.seventeenthshard.harmony.dbimport.MessageEmbeds.index
 import com.seventeenthshard.harmony.dbimport.MessageEmbeds.nullable
+import com.seventeenthshard.harmony.dbimport.Messages.nullable
 import com.seventeenthshard.harmony.dbimport.PermissionOverrides.primaryKey
 import com.seventeenthshard.harmony.dbimport.Roles.default
 import com.seventeenthshard.harmony.events.ChannelInfo
@@ -110,6 +111,7 @@ object MessageEmbeds : IntIdTable() {
     val description = varchar("description", 2048).nullable()
     val url = varchar("url", 2048).nullable()
     val color = varchar("color", 6).nullable()
+    val timestamp = datetime("timestamp").nullable()
 
     val footerText = varchar("footerText", 2048).nullable()
     val footerIconUrl = varchar("footerIconUrl", 2048).nullable()

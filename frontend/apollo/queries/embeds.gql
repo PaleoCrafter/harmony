@@ -10,9 +10,11 @@ query Embeds($message: ID!) {
       g
       b
     }
+    timestamp
 
     footer {
       text
+      iconUrl
       proxyIconUrl
     }
     image {
@@ -37,6 +39,7 @@ query Embeds($message: ID!) {
     author {
       name
       url
+      iconUrl
       proxyIconUrl
     }
 

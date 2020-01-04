@@ -48,6 +48,7 @@ export default function renderNode (node, h, message, emojisOnly) {
     case 'strike':
     case 'u':
       return h(node.type, node.content.map(child => renderNode(child, h, message, false)))
+    case 'link':
     case 'url':
       return h('a', { attrs: { href: node.target, target: '_blank' } }, node.content.map(child => renderNode(child, h, message, false)))
     case 'spoiler':

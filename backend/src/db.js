@@ -228,6 +228,9 @@ const Embed = db.define('messageembed', {
   color: {
     type: Sequelize.STRING
   },
+  timestamp: {
+    type: Sequelize.DATE
+  },
 
   footerText: {
     type: Sequelize.STRING

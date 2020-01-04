@@ -1,28 +1,46 @@
 <script>
-import { parser } from 'discord-markdown'
+import { parse, parseEmbed } from '@/components/message/message-parser.js'
 import renderNode, { expandUnicodeEmojis } from '@/components/message/message-renderer'
 
 export default {
   name: 'Markdown',
   props: {
+    tag: {
+      type: String,
+      default: () => 'div'
+    },
+    attributes: {
+      type: Object,
+      default: () => {
+      }
+    },
     content: {
       type: String,
       required: true
+    },
+    embed: {
+      type: Boolean,
+      default: () => false
+    },
+    context: {
+      type: Object,
+      default: () => {
+      }
     }
   },
   computed: {
     parsed () {
-      return parser(this.content)
+      return this.embed ? parseEmbed(this.content) : parse(this.content)
     }
   },
   render (h) {
     const content = this.parsed.flatMap(expandUnicodeEmojis)
     const emojisOnly = content.every(n => n.type === 'discordEmoji' || n.type === 'emoji' || (n.type === 'text' && n.content === ' '))
-    const children = content.map(node => renderNode(node, h, this.message, emojisOnly))
+    const children = content.map(node => renderNode(node, h, this.context, emojisOnly))
 
     children.push(...(this.$slots.default || []))
 
-    return h('div', { class: 'markdown' }, children)
+    return h(this.tag, { class: 'markdown', attrs: this.attributes }, children)
   }
 }
 </script>

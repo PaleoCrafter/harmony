@@ -210,6 +210,7 @@ function initLoaders (user) {
           description: embed.description,
           url: embed.url,
           color: embed.color === null ? null : mapColor(embed.color),
+          timestamp: embed.timestamp,
           footer: embedEntry(embed, 'footer', ['text', 'iconUrl', 'iconProxyUrl']),
           image: embedEntry(embed, 'image', ['url', 'proxyUrl', 'width', 'height']),
           thumbnail: embedEntry(embed, 'thumbnail', ['url', 'proxyUrl', 'width', 'height']),

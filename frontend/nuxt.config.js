@@ -7,6 +7,9 @@ export default {
   ** Headers of the page
   */
   head: {
+    htmlAttrs: {
+      lang: 'en'
+    },
     title: 'Harmony',
     meta: [
       { charset: 'utf-8' },
@@ -15,7 +18,7 @@ export default {
     ],
     link: [
       { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,400i,600,700,700i&display=swap' }
+      { rel: 'preconnect', href: 'https://images-ext-2.discordapp.net' }
     ]
   },
   /*

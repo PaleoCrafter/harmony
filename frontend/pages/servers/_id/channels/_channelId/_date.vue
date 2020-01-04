@@ -4,24 +4,24 @@
     v-infinite-scroll="loadMore"
     infinite-scroll-disabled="mayNotLoad"
     infinite-scroll-distance="100"
-    infinite-scroll-listen-for-event="reset-infinite"
+    infinite-scroll-immediate-check="false"
     class="channel__messages"
   >
-    <MessageList v-if="fetchingMore || !$apollo.loading" :messages="messages || []" />
+    <MessageList v-show="fetchingMore || !loading" :messages="messages || []" />
     <div
-      v-if="$apollo.loading || messages === undefined"
+      v-show="loading || messages === undefined"
       :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
     >
       <LoadingSpinner />
     </div>
     <div
-      v-if="!$apollo.loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
+      v-show="!loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
       :class="['channel__info', { 'channel__info--empty': messages === undefined || messages.length === 0 }]"
     >
-      <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
+      <div v-show="messages !== undefined && messages.length === 0" class="channel__empty">
         There are currently no messages in this channel for the selected date.
       </div>
-      <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
+      <div v-show="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
         <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
           Refresh
         </button>
@@ -60,6 +60,7 @@ export default {
   data () {
     return {
       ...this.getInitialDates(),
+      loading: false,
       endReached: false,
       autoRefresh: false,
       refreshHandle: null,
@@ -109,18 +110,26 @@ export default {
           before: endDate.toISOString()
         }
       },
-      prefetch: false,
-      fetchPolicy: 'network-only'
+      fetchPolicy: 'cache-and-network',
+      watchLoading (loading) {
+        this.$nextTick(() => {
+          this.loading = loading
+        })
+      }
     }
   },
   methods: {
     getInitialDates () {
-      const startDate = new Date(this.date.getTime())
-      startDate.setHours(23, 59, 59, 59)
-      startDate.setDate(startDate.getDate() - 1)
-      const endDate = new Date(this.date.getTime())
-      endDate.setHours(0, 0, 0, 0)
-      endDate.setDate(endDate.getDate() + 1)
+      let startDate = new Date(this.date.getTime() - this.$store.state.timezone * 60000)
+      startDate.setUTCHours(23, 59, 59, 999)
+      startDate.setUTCDate(startDate.getUTCDate() - 1)
+      startDate = new Date(startDate.getTime() + this.$store.state.timezone * 60000)
+
+      let endDate = new Date(this.date.getTime() - this.$store.state.timezone * 60000)
+      endDate.setUTCHours(0, 0, 0, 0)
+      endDate.setUTCDate(endDate.getUTCDate() + 1)
+      endDate = new Date(endDate.getTime() + this.$store.state.timezone * 60000)
+
       return { startDate, endDate }
     },
     async loadMore () {

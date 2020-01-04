@@ -1,6 +1,10 @@
 {
   identity {
-    name
-    discriminator
+    user {
+      name
+      discriminator
+    }
+
+    timezone
   }
 }

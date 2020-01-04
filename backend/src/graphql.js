@@ -228,8 +228,8 @@ function initLoaders (user) {
 
 const root = {
   identity (args, request) {
-    const { id, username, discriminator } = request.user
-    return { id, name: username, discriminator }
+    const { id, username, discriminator, timezone } = request.user
+    return { user: { id, name: username, discriminator }, timezone: parseInt(timezone) }
   },
   async servers (args, request) {
     return (await request.loaders.servers.loadMany(request.user.servers.map(server => server.id))).filter(s => s !== null)

@@ -1,5 +1,5 @@
 type Query {
-  identity: User!
+  identity: Identity!
 
   servers: [Server!]!
   server(id: ID!): Server
@@ -13,6 +13,11 @@ type Query {
 }
 
 scalar Timestamp
+
+type Identity {
+  user: User!
+  timezone: Int!
+}
 
 type Server {
   id: ID!

@@ -3,7 +3,9 @@
     <div class="login__content">
       <KeyIcon size="15x" class="login__icon" />
       You need to log in in order to see this page. Press the button below to grant this application access to your Discord profile.
-      <a :href="loginUrl" class="login__button">Authorize</a>
+      <client-only>
+        <a :href="loginUrl" class="login__button">Authorize</a>
+      </client-only>
     </div>
   </div>
 </template>
@@ -17,9 +19,10 @@ export default {
   computed: {
     loginUrl () {
       const { redirect } = this.$route.query
-      const query = redirect ? `?redirect=${redirect}` : ''
+      const redirectQuery = redirect ? `&redirect=${redirect}` : ''
+      const timezoneOffset = new Date().getTimezoneOffset()
 
-      return `/api/auth/login${query}`
+      return `/api/auth/login?timezone=${timezoneOffset}${redirectQuery}`
     }
   }
 }

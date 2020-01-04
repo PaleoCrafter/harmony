@@ -24,6 +24,8 @@ export default {
     position: absolute;
     top: 0;
     left: 0;
+    margin-top: -0.375em * 0.5;
+    margin-left: -0.375em * 0.5;
 
     animation: sk-cubemove 1.8s infinite ease-in-out;
   }

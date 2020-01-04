@@ -3,7 +3,7 @@
     <Markdown
       v-if="embed.provider !== null"
       :tag="embed.provider.url !== null ? 'a' : 'div'"
-      :attributes="embed.provider.url !== null ? { href: embed.provider.url, target: '_blank' } : {}"
+      :attributes="embed.provider.url !== null ? { href: embed.provider.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.provider.name || ''"
       class="embed__provider"
     >
@@ -13,7 +13,7 @@
       <img v-if="authorIconUrl !== null" :src="authorIconUrl" alt="author icon" class="embed__author-icon">
       <Markdown
         :tag="embed.author.url !== null ? 'a' : 'span'"
-        :attributes="embed.author.url !== null ? { href: embed.author.url, target: '_blank' } : {}"
+        :attributes="embed.author.url !== null ? { href: embed.author.url, target: '_blank', rel: 'noopener' } : {}"
         :content="embed.author.name || ''"
       >
         {{ embed.author.name === null ? embed.author.url : '' }}
@@ -22,7 +22,7 @@
     <Markdown
       v-if="embed.title !== null || embed.url !== null"
       :tag="embed.url !== null ? 'a' : 'div'"
-      :attributes="embed.url !== null ? { href: embed.url, target: '_blank' } : {}"
+      :attributes="embed.url !== null ? { href: embed.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.title || ''"
       class="embed__title"
     >
@@ -63,10 +63,10 @@
         class="embed__thumbnail"
       />
       <div v-if="!playingVideo" class="embed__video-actions">
-        <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank">
+        <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
           <PlayIcon fill="currentColor" stroke="none" />
         </a>
-        <a :href="embed.url" target="_blank">
+        <a :href="embed.url" target="_blank" rel="noopener" aria-label="Open video">
           <ExternalLinkIcon />
         </a>
       </div>

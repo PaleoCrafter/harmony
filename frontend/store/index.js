@@ -4,6 +4,7 @@ import identityQuery from '@/apollo/queries/identity.gql'
 export const state = () => ({
   loggedIn: false,
   identity: null,
+  timezone: new Date().getTimezoneOffset(),
   sidebarOpen: false,
   sidebarTab: 'channels',
   collapsedCategories: {}
@@ -13,6 +14,9 @@ export const mutations = {
   setLoginStatus (state, { loggedIn, identity }) {
     state.loggedIn = loggedIn
     state.identity = identity
+  },
+  setTimezone (state, timezone) {
+    state.timezone = timezone
   },
   openSidebar (state) {
     state.sidebarOpen = true
@@ -40,11 +44,13 @@ export const mutations = {
 export const actions = {
   async nuxtServerInit ({ commit }, { app }) {
     try {
-      const { data: { identity } } = await app.apolloProvider.clients.identityCheck.query({ query: identityQuery })
-      commit('setLoginStatus', { loggedIn: true, identity })
+      const { data: { identity: { user, timezone } } } = await app.apolloProvider.clients.identityCheck.query({ query: identityQuery })
+      commit('setLoginStatus', { loggedIn: true, identity: user })
+      commit('setTimezone', timezone)
     } catch (error) {
       if (error.networkError && error.networkError.statusCode === 401) {
         commit('setLoginStatus', { loggedIn: false, identity: null })
+        commit('setTimezone', new Date().getTimezoneOffset())
       }
     }
   }

@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import hljs from 'highlight.js/lib/highlight'
+import InfiniteScroll from '@/plugins/infinite-scroll.js'
 import Spoiler from '@/components/message/Spoiler.vue'
 import UserMention from '@/components/message/UserMention.vue'
 import ChannelMention from '@/components/message/ChannelMention.vue'
@@ -8,6 +9,7 @@ import GenericMention from '@/components/message/GenericMention.vue'
 import CodeBlock from '@/components/message/CodeBlock.vue'
 import Emoji from '@/components/message/Emoji.vue'
 
+Vue.directive('InfiniteScroll', InfiniteScroll)
 Vue.component('Spoiler', Spoiler)
 Vue.component('UserMention', UserMention)
 Vue.component('ChannelMention', ChannelMention)

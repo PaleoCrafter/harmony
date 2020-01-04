@@ -1,6 +1,6 @@
 <template>
-  <div class="lazy-image">
-    <img v-show="!loading && !error" ref="image" :src="src" :alt="alt" v-bind="attributes">
+  <div ref="container" class="lazy-image">
+    <img ref="image" v-show="!loading && !error" :src="visible ? src : undefined" :alt="alt" v-bind="attributes">
     <LoadingSpinner v-if="loading" class="lazy-image__loading" />
     <img v-if="error" src="https://discordapp.com/assets/e0c782560fd96acd7f01fda1f8c6ff24.svg" alt="Could not load image">
   </div>
@@ -29,8 +29,10 @@ export default {
   },
   data () {
     return {
+      visible: false,
       loading: true,
-      error: false
+      error: false,
+      intersectionObserver: null
     }
   },
   watch: {
@@ -40,6 +42,18 @@ export default {
     }
   },
   mounted () {
+    this.intersectionObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          this.visible = true
+        }
+      },
+      {
+        root: document.querySelector('.channel__messages'),
+        threshold: 0.25
+      }
+    )
+    this.intersectionObserver.observe(this.$refs.container)
     this.$refs.image.addEventListener('load', () => {
       this.loading = false
       this.error = false

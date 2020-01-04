@@ -136,6 +136,9 @@ module.exports = {
     app.get(
       '/api/auth/login',
       (req, res, next) => {
+        if (req.query.timezone) {
+          res.cookie('auth_timezone', req.query.timezone, { maxAge: 900000, httpOnly: true, signed: true })
+        }
         if (req.query.redirect) {
           res.cookie('auth_redirect', req.query.redirect, { maxAge: 900000, httpOnly: true, signed: true })
         }
@@ -147,7 +150,9 @@ module.exports = {
       '/api/auth/callback',
       passport.authenticate('discord', { failureRedirect: '/' }),
       (req, res) => {
+        res.clearCookie('auth_timezone')
         res.clearCookie('auth_redirect')
+        req.user.timezone = req.signedCookies.auth_timezone
         res.redirect(req.signedCookies.auth_redirect || '/')
       }
     )

@@ -62,9 +62,11 @@ export default {
     }
   },
   head () {
+    const serverName = this.server?.name
+
     return {
       title: null,
-      titleTemplate: titleChunk => titleChunk ? `${titleChunk} on ${this.server?.name} - Harmony` : `${this.server?.name} - Harmony`
+      titleTemplate: titleChunk => titleChunk ? `${titleChunk} on ${serverName} - Harmony` : `${serverName} - Harmony`
     }
   }
 }

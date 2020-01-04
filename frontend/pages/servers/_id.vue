@@ -63,10 +63,12 @@ export default {
   },
   head () {
     const serverName = this.server?.name
+    const defaultTitle = serverName ? `${serverName} - Harmony` : 'Harmony'
+    const channelSuffix = serverName ? ` on ${serverName}` : ''
 
     return {
       title: null,
-      titleTemplate: titleChunk => titleChunk ? `${titleChunk} on ${serverName} - Harmony` : `${serverName} - Harmony`
+      titleTemplate: titleChunk => titleChunk ? `${titleChunk}${channelSuffix} - Harmony` : defaultTitle
     }
   }
 }

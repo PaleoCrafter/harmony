@@ -312,7 +312,6 @@ export default {
     align-items: stretch;
     justify-content: stretch;
     overflow: hidden;
-    z-index: 51;
 
     @media (max-width: 1200px) {
       max-width: 90%;
@@ -338,6 +337,7 @@ export default {
       justify-content: center;
       background: rgba(0, 0, 0, 0.7);
       cursor: pointer;
+      z-index: 51;
     }
 
     &-header {

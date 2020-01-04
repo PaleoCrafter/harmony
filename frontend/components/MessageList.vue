@@ -58,6 +58,10 @@ export default {
 
 <style lang="scss">
 .message-list {
+  display: flex;
   align-self: stretch;
+  flex-direction: column;
+  align-items: stretch;
+  flex-basis: 0;
 }
 </style>

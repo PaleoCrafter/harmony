@@ -1,8 +1,20 @@
 <template>
   <div ref="container" class="lazy-image">
-    <img ref="image" v-show="!loading && !error" :src="visible ? src : undefined" :alt="alt" v-bind="attributes">
+    <img
+      ref="image"
+      v-show="!loading && !error"
+      :src="visible ? src : undefined"
+      :alt="alt"
+      v-bind="attributes"
+      class="lazy-image__content"
+    >
     <LoadingSpinner v-if="loading" class="lazy-image__loading" />
-    <img v-if="error" src="https://discordapp.com/assets/e0c782560fd96acd7f01fda1f8c6ff24.svg" alt="Could not load image">
+    <img
+      v-if="error"
+      src="https://discordapp.com/assets/e0c782560fd96acd7f01fda1f8c6ff24.svg"
+      alt="Could not load image"
+      class="lazy-image__error"
+    >
   </div>
 </template>
 
@@ -68,14 +80,21 @@ export default {
 
 <style lang="scss">
 .lazy-image {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   background-color: rgba(0, 0, 0, .05);
   overflow: hidden;
+  max-width: 100%;
 
   img {
     max-width: 100%;
+    position: absolute;
+  }
+
+  &__content {
+    top: 0;
   }
 
   &__loading {

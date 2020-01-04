@@ -111,6 +111,19 @@ export default {
     padding: 1rem;
     height: 4rem;
     line-height: 1;
+    z-index: 50;
+
+    @media (max-width: 470px) {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      height: auto;
+      row-gap: 0.5rem;
+      padding-bottom: 0.5rem;
+
+      .divider {
+        display: none;
+      }
+    }
 
     h3 {
       font-size: 1rem;
@@ -130,6 +143,11 @@ export default {
     &-selection {
       display: flex;
       align-items: stretch;
+
+      @media (max-width: 470px) {
+        grid-column: 1/span 2;
+        justify-content: center;
+      }
     }
 
     &-button {
@@ -188,6 +206,14 @@ export default {
 
       .vc-day:hover .vc-highlight {
         background: rgba(#7289DA, 0.7);
+      }
+
+      .vc-day .vc-opacity-0 {
+        opacity: 0.5;
+      }
+
+      .vc-day .vc-pointer-events-none {
+        pointer-events: all;
       }
     }
   }

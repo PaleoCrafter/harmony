@@ -7,21 +7,21 @@
     infinite-scroll-immediate-check="false"
     class="channel__messages"
   >
-    <MessageList v-show="fetchingMore || !loading" :messages="messages || []" />
+    <MessageList v-if="fetchingMore || !loading" :messages="messages || []" />
     <div
-      v-show="loading || messages === undefined"
+      v-if="loading || messages === undefined"
       :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
     >
       <LoadingSpinner />
     </div>
     <div
-      v-show="!loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
+      v-if="!loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
       :class="['channel__info', { 'channel__info--empty': messages === undefined || messages.length === 0 }]"
     >
-      <div v-show="messages !== undefined && messages.length === 0" class="channel__empty">
+      <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
         There are currently no messages in this channel for the selected date.
       </div>
-      <div v-show="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
+      <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
         <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
           Refresh
         </button>
@@ -213,6 +213,8 @@ export default {
     justify-content: center;
     flex-direction: column;
     padding: 1rem;
+    flex-wrap: wrap;
+    flex-basis: 0;
 
     &--empty {
       flex-grow: 1;

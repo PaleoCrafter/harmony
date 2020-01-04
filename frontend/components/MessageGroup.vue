@@ -37,6 +37,10 @@ export default {
 
 <style lang="scss">
 .message-group {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-basis: 0;
   padding: 1.5rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 
@@ -47,19 +51,8 @@ export default {
     }
   }
 
-  article {
-    line-height: 1.57;
-    white-space: pre-wrap;
-    vertical-align: baseline;
-  }
-
-  &__note {
-    color: rgba(255, 255, 255, 0.2);
-    font-size: 0.625rem;
-  }
-
-  &--deleted {
-    color: #f04747;
+  @media (max-width: 768px) {
+    padding-right: 0;
   }
 }
 </style>

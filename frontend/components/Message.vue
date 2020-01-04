@@ -65,7 +65,11 @@ export default {
 
 <style lang="scss">
 .message {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   color: #dcddde;
+  flex-basis: 0;
 
   a {
     color: #00b0f4;
@@ -83,6 +87,14 @@ export default {
 
   &__embeds {
     padding: 0.5rem 0;
+    flex-basis: 0;
+
+    @media (max-width: 768px) {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      max-width: 100%;
+    }
   }
 
   &--deleted {

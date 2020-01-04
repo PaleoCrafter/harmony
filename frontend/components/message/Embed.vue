@@ -5,11 +5,11 @@
       :tag="embed.provider.url !== null ? 'a' : 'div'"
       :attributes="embed.provider.url !== null ? { href: embed.provider.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.provider.name || ''"
-      class="embed__provider"
+      class="embed__provider embed__grid-item"
     >
       {{ embed.provider.name === null ? embed.provider.url : '' }}
     </Markdown>
-    <div v-if="embed.author !== null" class="embed__author">
+    <div v-if="embed.author !== null" class="embed__author embed__grid-item">
       <img v-if="authorIconUrl !== null" :src="authorIconUrl" alt="author icon" class="embed__author-icon">
       <Markdown
         :tag="embed.author.url !== null ? 'a' : 'span'"
@@ -24,12 +24,12 @@
       :tag="embed.url !== null ? 'a' : 'div'"
       :attributes="embed.url !== null ? { href: embed.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.title || ''"
-      class="embed__title"
+      class="embed__title embed__grid-item"
     >
       {{ embed.title === null ? embed.url : '' }}
     </Markdown>
-    <Markdown v-if="embed.description !== null" :content="embed.description" class="embed__description" embed />
-    <div v-if="embed.fields.length > 0" class="embed__fields">
+    <Markdown v-if="embed.description !== null" :content="embed.description" class="embed__description embed__grid-item" embed />
+    <div v-if="embed.fields.length > 0" class="embed__fields embed__grid-item">
       <div
         v-for="(field, index) in groupedFields"
         :key="index"
@@ -40,38 +40,50 @@
         <Markdown :content="field.value" class="embed__field-value" embed />
       </div>
     </div>
-    <LazyImage
-      v-if="embed.image !== null"
-      :src="imageUrl"
-      :style="calculateImageStyle(embed.image)"
-      alt="image"
-      class="embed__image"
-    />
-    <LazyImage
-      v-if="embed.thumbnail !== null && embed.video === null"
-      :src="thumbnailUrl"
-      :style="calculateImageStyle(embed.thumbnail)"
-      alt="thumbnail"
-      class="embed__thumbnail"
-    />
-    <div v-else-if="embed.thumbnail !== null" :style="calculateImageStyle(embed.thumbnail)" class="embed__video">
-      <iframe v-if="playingVideo" :src="videoUrl" width="100%" height="100%" allowfullscreen />
+    <div v-if="embed.image !== null" :style="{ width: calculateImageStyle(embed.image).width }" class="embed__image embed__grid-item">
       <LazyImage
-        v-else-if="embed.thumbnail"
-        :src="thumbnailUrl"
-        alt="thumbnail"
-        class="embed__thumbnail"
+        :src="imageUrl"
+        :style="calculateImageStyle(embed.image)"
+        alt="image"
       />
-      <div v-if="!playingVideo" class="embed__video-actions">
-        <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
-          <PlayIcon fill="currentColor" stroke="none" />
-        </a>
-        <a :href="embed.url" target="_blank" rel="noopener" aria-label="Open video">
-          <ExternalLinkIcon />
-        </a>
+    </div>
+    <div
+      v-if="embed.thumbnail !== null && embed.video === null"
+      :style="{ width: calculateImageStyle(embed.thumbnail).width }"
+      class="embed__thumbnail embed__grid-item"
+    >
+      <LazyImage
+        :src="thumbnailUrl"
+        :style="calculateImageStyle(embed.thumbnail)"
+        alt="thumbnail"
+      />
+    </div>
+    <div
+      v-else-if="embed.thumbnail !== null"
+      :style="{ width: calculateImageStyle(embed.thumbnail).width }"
+      class="embed__video embed__grid-item"
+    >
+      <div :style="calculateImageStyle(embed.thumbnail)" class="embed__video-container">
+        <div class="embed__video-content">
+          <iframe v-if="playingVideo" :src="videoUrl" width="100%" height="100%" allowfullscreen />
+          <LazyImage
+            v-else-if="embed.thumbnail"
+            :src="thumbnailUrl"
+            alt="thumbnail"
+            class="embed__thumbnail"
+          />
+          <div v-if="!playingVideo" class="embed__video-actions">
+            <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
+              <PlayIcon fill="currentColor" stroke="none" />
+            </a>
+            <a :href="embed.url" target="_blank" rel="noopener" aria-label="Open video">
+              <ExternalLinkIcon />
+            </a>
+          </div>
+        </div>
       </div>
     </div>
-    <div v-if="embed.footer !== null || embed.timestamp !== null" class="embed__footer">
+    <div v-if="embed.footer !== null || embed.timestamp !== null" class="embed__footer embed__grid-item">
       <img v-if="footerIconUrl !== null" :src="footerIconUrl" alt="footer icon" class="embed__footer-icon">
       <div class="embed__footer-text">
         <Markdown v-if="embed.footer !== null" :content="embed.footer.text" tag="span" embed />
@@ -195,11 +207,10 @@ export default {
       const height = image.height ?? 300
       const aspect = width / height
       const minAspect = 4 / 3
-      const styles = { width: `${width}px`, height: `${height}px` }
+      const styles = { width: `${width}px`, paddingTop: `${100 / aspect}%` }
 
       if (width > 400 || height > 300) {
         styles.width = aspect > minAspect ? '400px' : `${aspect * 300}px`
-        styles.height = aspect > minAspect ? `${height / width * 400}px` : '300px'
       }
 
       return styles
@@ -217,13 +228,25 @@ export default {
   background: #2f3136;
   border-left: var(--embed-accent) 4px solid;
   max-width: 520px;
+  grid-template-columns: minmax(0, auto) minmax(0, auto);
+  grid-auto-rows: auto;
+  column-gap: 1rem;
+
+  @media (max-width: 768px) {
+    display: grid;
+    max-width: 100%;
+    flex-basis: 0;
+  }
+
+  &__grid-item {
+    min-width: 0;
+    margin-top: 0.5rem;
+  }
 
   &__provider {
-    margin-top: 0.5rem;
     font-size: 0.75rem;
     color: #b9bbbe !important;
     white-space: normal;
-
     grid-column: 1;
     grid-row: 1;
   }
@@ -232,7 +255,6 @@ export default {
     display: flex;
     align-items: center;
     font-size: 0.875rem;
-    margin-top: 0.5rem;
     grid-column: 1;
     grid-row: 2;
 
@@ -251,14 +273,12 @@ export default {
 
   &__title {
     font-weight: bold;
-    margin-top: 0.5rem;
     grid-column: 1;
     grid-row: 3;
     white-space: normal;
   }
 
   &__description {
-    margin-top: 0.5rem;
     font-size: 0.9rem;
     line-height: 1.175rem;
     white-space: pre-line;
@@ -267,7 +287,6 @@ export default {
   }
 
   &__fields {
-    margin-top: 0.5rem;
     display: grid;
     grid-gap: 0.5rem;
     grid-column: 1;
@@ -294,16 +313,50 @@ export default {
     border-radius: 4px;
     grid-column: 1;
     grid-row: 6;
+    overflow: hidden;
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+    }
   }
 
   &__video {
     position: relative;
     display: flex;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: stretch;
     margin-top: 0.5rem;
     grid-column: 1;
     grid-row: 6;
+    max-width: 400px;
+    max-height: 300px;
+    border-radius: 4px;
+    overflow: hidden;
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+    }
+
+    &-container {
+      position: relative;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      flex: 1;
+      flex-basis: 0;
+      max-width: 100%;
+    }
+
+    &-content {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
     iframe {
       border: none;
@@ -313,10 +366,7 @@ export default {
     .lazy-image {
       width: 100%;
       height: 100%;
-    }
-
-    .embed__thumbnail {
-      margin-top: 0;
+      border-radius: 4px;
     }
 
     &-actions {
@@ -345,7 +395,6 @@ export default {
   &__footer {
     display: flex;
     align-items: center;
-    margin-top: 0.5rem;
     font-size: 0.75rem;
     line-height: 1rem;
     color: #72767d;
@@ -385,12 +434,16 @@ export default {
       grid-column: 2;
       grid-row: 1/span 7;
       margin-top: 0.5rem;
-      margin-left: 1rem;
+
+      @media (max-width: 768px) {
+        max-width: 60px;
+        max-height: 60px;
+      }
     }
   }
 
   &--unknown, &--image, &--video {
-    grid-auto-columns: minmax(auto, min-content);
+    grid-template-columns: minmax(0, min-content);
   }
 }
 </style>

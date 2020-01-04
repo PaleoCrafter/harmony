@@ -4,7 +4,6 @@
       v-infinite-scroll="loadMore"
       infinite-scroll-disabled="mayNotLoad"
       infinite-scroll-distance="100"
-      infinite-scroll-immediate-check="false"
       class="channel__messages-container"
     >
       <MessageList v-if="fetchingMore || !loading" :messages="messages || []" />

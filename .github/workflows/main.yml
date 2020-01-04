@@ -6,9 +6,18 @@ on:
       - master
 
 jobs:
+  default:
+    runs-on: ubuntu-latest
+
+    steps:
+      - run: echo Build started
+
   build-conditions:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && contains(github.event.head_commit.message, '[docker-push]')
+
+    steps:
+      - run: echo Build conditions are met
 
   build-node:
     runs-on: ubuntu-latest

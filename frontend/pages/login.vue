@@ -24,6 +24,11 @@ export default {
 
       return `/api/auth/login?timezone=${timezoneOffset}${redirectQuery}`
     }
+  },
+  head () {
+    return {
+      title: 'Login'
+    }
   }
 }
 </script>

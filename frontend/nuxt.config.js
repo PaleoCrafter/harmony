@@ -10,7 +10,7 @@ export default {
     htmlAttrs: {
       lang: 'en'
     },
-    title: 'Harmony',
+    titleTemplate: titleChunk => titleChunk ? `${titleChunk} - Harmony` : 'Harmony',
     meta: [
       { charset: 'utf-8' },
       { name: 'viewport', content: 'width=device-width, initial-scale=1' },

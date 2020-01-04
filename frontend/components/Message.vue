@@ -40,6 +40,8 @@ export default {
       )
     }
 
+    const embeds = this.embeds || []
+
     return h(
       'article',
       {
@@ -47,7 +49,7 @@ export default {
       },
       [
         h(Markdown, { props: { content: this.message.versions[0].content }, class: 'message__content' }, slotContent),
-        h('div', { class: 'message__embeds' }, (this.embeds || []).map(embed => h(Embed, { props: { embed } })))
+        embeds.length > 0 ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } }))) : undefined
       ]
     )
   }

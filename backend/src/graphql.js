@@ -45,7 +45,7 @@ const ATTACHMENT_TYPES = {
 
 function initLoaders (user) {
   const channelLoader = new DataLoader(async (ids) => {
-    const channels = await Channel.findAll({ where: { id: ids } })
+    const channels = await Channel.findAll({ where: { id: ids }, order: [['position', 'ASC']] })
     return ids.map(id => channels.find(s => s.id === id) || null)
   })
 
@@ -58,7 +58,7 @@ function initLoaders (user) {
       const permissions = (await getPermissions(user, server.id)).channels
       const ids = Object.keys(permissions).filter(id => permissions[id].has('readMessages'))
 
-      return (await channelLoader.loadMany(ids)).filter(channel => channel !== null).sort((a, b) => a.position - b.position)
+      return (await channelLoader.loadMany(ids)).filter(channel => channel !== null)
     }
 
     return server

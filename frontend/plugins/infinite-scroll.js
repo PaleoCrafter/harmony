@@ -1,3 +1,5 @@
+// SSR-friendly version of https://github.com/ElemeFE/vue-infinite-scroll
+
 const ctx = '@@InfiniteScroll'
 
 const throttle = function (fn, delay) {

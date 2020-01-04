@@ -1,4 +1,5 @@
 <script>
+import { ClockIcon } from 'vue-feather-icons'
 import detailsQuery from '@/apollo/queries/details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
@@ -6,7 +7,7 @@ import Attachment from '@/components/message/Attachment.vue'
 
 export default {
   name: 'Message',
-  components: { Embed, Markdown },
+  components: { Embed, Attachment, Markdown, ClockIcon },
   props: {
     message: {
       type: Object,
@@ -25,6 +26,11 @@ export default {
         }
       },
       update: data => data.messageDetails
+    }
+  },
+  methods: {
+    openHistory () {
+      this.$store.commit('openMessageHistory', this.message)
     }
   },
   render (h) {
@@ -60,6 +66,21 @@ export default {
           },
           slotContent
         ),
+        this.message.versions.length > 1 ? h(
+          'div',
+          { class: 'message__actions' },
+          [
+            h(
+              'button',
+              {
+                class: 'message__history-button',
+                on: { click: this.openHistory },
+                attrs: { 'aria-label': 'Message History', title: 'Message History' }
+              },
+              [h(ClockIcon, { props: { size: '1x' } })]
+            )
+          ]
+        ) : undefined,
         embeds.length > 0
           ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } })))
           : undefined,
@@ -74,11 +95,22 @@ export default {
 
 <style lang="scss">
 .message {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   align-items: stretch;
   color: #dcddde;
   flex-basis: 0;
+  grid-template-columns: 1fr minmax(0, auto);
+  grid-auto-rows: auto;
+  grid-column-gap: 0.25rem;
+
+  &--deleted {
+    color: #f04747;
+  }
+
+  &__content {
+    grid-column: 1;
+    grid-row: 1;
+  }
 
   a {
     color: #00b0f4;
@@ -106,13 +138,44 @@ export default {
     }
   }
 
+  &__embeds {
+    grid-column: 1/span 2;
+    grid-row: 2;
+  }
+
   &__attachments {
     display: flex;
     flex-direction: column;
+    grid-column: 1/span 2;
+    grid-row: 3;
   }
 
-  &--deleted {
-    color: #f04747;
+  &__actions {
+    min-width: 1.5rem;
+  }
+
+  &__history-button {
+    float: right;
+    clear: none;
+    font-size: 1.25rem;
+    display: none;
+    border: none;
+    background: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    line-height: 0;
+    outline: none;
+    grid-row: 1;
+    grid-column: 2;
+    padding: 0;
+
+    &:hover {
+      color: white;
+    }
+  }
+
+  &:hover &__history-button {
+    display: inline;
   }
 }
 </style>

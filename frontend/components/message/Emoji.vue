@@ -1,8 +1,12 @@
 <template>
-  <span :class="['emoji', { 'emoji--large': large }]">
+  <span @mouseover="calculateAlignment" :class="['emoji', { 'emoji--large': large }]">
     <img :src="url" :alt="name" class="emoji__image">
 
-    <span ref="name" v-if="name.startsWith(':')" :class="['emoji__name', `emoji__name--${tooltipAlignment}`]">
+    <span
+      ref="name"
+      v-if="name.startsWith(':')"
+      :class="['emoji__name', `emoji__name--${tooltipAlignment}`, `emoji__name--${tooltipVerticalAlignment}`]"
+    >
       <span>{{ name }}</span>
     </span>
   </span>
@@ -34,21 +38,29 @@ export default {
   },
   data () {
     return {
-      tooltipAlignment: 'center'
+      tooltipAlignment: 'center',
+      tooltipVerticalAlignment: 'top'
     }
   },
   mounted () {
-    this.$refs.name.style.display = 'block'
-    this.$nextTick(() => {
-      let bounds = this.tooltipBounds()
-      if (bounds === undefined) {
-        bounds = new DOMRect(0, 0, window.innerWidth, window.innerHeight)
-      }
-      const left = this.$refs.name.getBoundingClientRect().left
-      const right = this.$refs.name.getBoundingClientRect().right
-      this.tooltipAlignment = left < bounds.left ? 'left' : right > bounds.right ? 'right' : 'center'
-      this.$refs.name.style.display = null
-    })
+    this.calculateAlignment()
+  },
+  methods: {
+    calculateAlignment () {
+      this.$refs.name.style.display = 'block'
+      this.tooltipAlignment = 'center'
+      this.tooltipVerticalAlignment = 'top'
+      this.$nextTick(() => {
+        let bounds = this.tooltipBounds()
+        if (bounds === undefined) {
+          bounds = new DOMRect(0, 0, window.innerWidth, window.innerHeight)
+        }
+        const { left, right, top } = this.$refs.name.getBoundingClientRect()
+        this.tooltipAlignment = left < bounds.left ? 'left' : right > bounds.right ? 'right' : 'center'
+        this.tooltipVerticalAlignment = top < bounds.top ? 'bottom' : 'top'
+        this.$refs.name.style.display = null
+      })
+    }
   }
 }
 </script>
@@ -83,6 +95,7 @@ export default {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
     white-space: nowrap;
     align-items: center;
+    z-index: 2;
 
     & > span {
       white-space: nowrap;
@@ -118,6 +131,20 @@ export default {
         right: 0.6785em;
         margin-left: 0;
         margin-right: -0.4rem;
+      }
+    }
+
+    &--bottom {
+      bottom: auto;
+      top: 100%;
+      margin-bottom: 0;
+      margin-top: 0.5rem;
+
+      &:before {
+        top: auto;
+        bottom: 100%;
+        border-top: none;
+        border-bottom: 0.4rem solid #0b0b0d;
       }
     }
   }

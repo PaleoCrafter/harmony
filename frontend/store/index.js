@@ -7,7 +7,8 @@ export const state = () => ({
   timezone: new Date().getTimezoneOffset(),
   sidebarOpen: false,
   sidebarTab: 'channels',
-  collapsedCategories: {}
+  collapsedCategories: {},
+  historyMessage: null
 })
 
 export const mutations = {
@@ -38,6 +39,12 @@ export const mutations = {
     if (process.browser) {
       window.localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories))
     }
+  },
+  openMessageHistory (state, message) {
+    state.historyMessage = message
+  },
+  closeMessageHistory (state) {
+    state.historyMessage = null
   }
 }
 

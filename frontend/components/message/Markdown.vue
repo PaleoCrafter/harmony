@@ -52,6 +52,7 @@ export default {
   word-wrap: break-word;
   vertical-align: baseline;
   unicode-bidi: plaintext;
+  color: #dcddde;
 
   blockquote {
     position: relative;

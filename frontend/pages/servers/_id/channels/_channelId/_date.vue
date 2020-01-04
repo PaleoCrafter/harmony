@@ -1,49 +1,65 @@
 <template>
-  <div
-    ref="container"
-    v-infinite-scroll="loadMore"
-    infinite-scroll-disabled="mayNotLoad"
-    infinite-scroll-distance="100"
-    infinite-scroll-immediate-check="false"
-    class="channel__messages"
-  >
-    <MessageList v-if="fetchingMore || !loading" :messages="messages || []" />
+  <div ref="container" class="channel__messages">
     <div
-      v-if="loading || messages === undefined"
-      :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
+      v-infinite-scroll="loadMore"
+      infinite-scroll-disabled="mayNotLoad"
+      infinite-scroll-distance="100"
+      infinite-scroll-immediate-check="false"
+      class="channel__messages-container"
     >
-      <LoadingSpinner />
-    </div>
-    <div
-      v-if="!loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
-      :class="['channel__info', { 'channel__info--empty': messages === undefined || messages.length === 0 }]"
-    >
-      <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
-        There are currently no messages in this channel for the selected date.
+      <MessageList v-if="fetchingMore || !loading" :messages="messages || []" />
+      <div
+        v-if="loading || messages === undefined"
+        :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
+      >
+        <LoadingSpinner />
       </div>
-      <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
-        <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
-          Refresh
-        </button>
-        <Divider />
-        <span class="channel__auto-refresh">
-          <input id="channel__auto-refresh" v-model="autoRefresh" type="checkbox">
-          <label for="channel__auto-refresh">Auto-refresh every 30 seconds</label>
-        </span>
+      <div
+        v-if="!loading && (endReached && isToday || messages !== undefined && messages.length === 0)"
+        :class="['channel__info', { 'channel__info--empty': messages === undefined || messages.length === 0 }]"
+      >
+        <div v-if="messages !== undefined && messages.length === 0" class="channel__empty">
+          There are currently no messages in this channel for the selected date.
+        </div>
+        <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
+          <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
+            Refresh
+          </button>
+          <Divider />
+          <span class="channel__auto-refresh">
+            <input id="channel__auto-refresh" v-model="autoRefresh" type="checkbox">
+            <label for="channel__auto-refresh">Auto-refresh every 30 seconds</label>
+          </span>
+        </div>
       </div>
     </div>
+    <transition :duration="400" name="channel__modal">
+      <div v-if="$store.state.historyMessage !== null" @click.self="$store.commit('closeMessageHistory')" class="channel__modal-container">
+        <div class="channel__modal">
+          <div class="channel__modal-header">
+            <h4>Message History</h4>
+            <XIcon @click="$store.commit('closeMessageHistory')" />
+          </div>
+          <div ref="modalContent" class="channel__modal-content">
+            <MessageHistory :message="$store.state.historyMessage" />
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
 <script>
+import { XIcon } from 'vue-feather-icons'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Divider from '@/components/Divider.vue'
+import MessageHistory from '@/components/MessageHistory.vue'
 
 export default {
-  components: { Divider, LoadingSpinner, MessageList },
+  components: { MessageHistory, Divider, LoadingSpinner, MessageList, XIcon },
   validate ({ params: { date } }) {
     if (date === undefined) {
       return true
@@ -78,8 +94,12 @@ export default {
     }
   },
   watch: {
+    date () {
+      this.$store.commit('closeMessageHistory')
+    },
     '$route.params.channelId': {
       handler () {
+        this.$store.commit('closeMessageHistory')
         this.messages = undefined
       }
     },
@@ -174,7 +194,11 @@ export default {
     const self = this
     return {
       tooltipBounds () {
-        return self.$refs.container.getBoundingClientRect()
+        const element = self.$store.state.historyMessage !== null ? self.$refs.modalContent : self.$refs.container
+        const scrollbarWidth = element.offsetWidth - element.clientWidth
+        const scrollbarHeight = element.offsetHeight - element.clientHeight
+        const baseRect = element.getBoundingClientRect()
+        return new DOMRect(baseRect.x, baseRect.y, baseRect.width - scrollbarWidth, baseRect.height - scrollbarHeight)
       }
     }
   }
@@ -186,12 +210,22 @@ export default {
   &__messages {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 0 1rem 1rem;
+    align-items: stretch;
     position: relative;
     flex: 1;
     flex-basis: 0;
-    overflow-y: scroll;
+    overflow: hidden;
+
+    &-container {
+      display: flex;
+      flex: 1;
+      flex-basis: 0;
+      position: relative;
+      flex-direction: column;
+      padding: 0 1rem 1rem;
+      align-items: center;
+      overflow-y: scroll;
+    }
   }
 
   &__loading {
@@ -262,6 +296,96 @@ export default {
 
     input {
       margin-right: 0.5rem;
+    }
+  }
+
+  &__modal {
+    display: flex;
+    flex-direction: column;
+    cursor: default;
+    max-width: 640px;
+    max-height: 90%;
+    background: #36393f;
+    box-shadow: 0 0 0 1px rgba(32, 34, 37, .6), 0 2px 10px 0 rgba(0, 0, 0, .2);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    align-items: stretch;
+    justify-content: stretch;
+    overflow: hidden;
+    z-index: 51;
+
+    @media (max-width: 1200px) {
+      max-width: 90%;
+    }
+
+    @media (max-width: 768px) {
+      width: 100%;
+      max-width: 100%;
+      max-height: 90%;
+      align-self: flex-end;
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
+
+    &-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.7);
+      cursor: pointer;
+    }
+
+    &-header {
+      display: flex;
+      align-items: center;
+      padding-bottom: 0.5rem;
+
+      h4 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .feather {
+        margin-left: auto;
+        cursor: pointer;
+      }
+    }
+
+    &-content {
+      overflow-y: scroll;
+      flex: 1;
+      padding-right: 0.5rem;
+    }
+
+    &-enter-active, &-leave-active {
+      transition: background .12s ease-in-out;
+    }
+
+    &-enter-active .channel__modal {
+      transition: transform .4s ease-in-out;
+
+      @media (max-width: 768px) {
+        transition: transform .4s ease-out;
+      }
+    }
+
+    &-enter, &-leave-to {
+      background: rgba(0, 0, 0, 0.0);
+
+      .channel__modal {
+        transform: scale(0);
+
+        @media (max-width: 768px) {
+          transform: translateY(100%);
+        }
+      }
     }
   }
 }

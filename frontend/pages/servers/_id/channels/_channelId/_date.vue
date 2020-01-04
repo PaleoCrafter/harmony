@@ -88,7 +88,7 @@ export default {
       return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
     },
     isToday () {
-      const today = new Date()
+      const today = new Date(Date.now() + this.$store.state.timezone * 60000)
 
       return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }

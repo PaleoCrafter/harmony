@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { AlertCircleIcon, MenuIcon, ArrowLeftIcon } from 'vue-feather-icons'
+import { AlertCircleIcon, ArrowLeftIcon, MenuIcon } from 'vue-feather-icons'
 import { mapState } from 'vuex'
 import channelsQuery from '@/apollo/queries/server-channels.gql'
 import ChannelList from '@/components/ChannelList.vue'
@@ -59,6 +59,12 @@ export default {
           id: this.$route.params.id
         }
       }
+    }
+  },
+  head () {
+    return {
+      title: null,
+      titleTemplate: titleChunk => titleChunk ? `${titleChunk} on ${this.server?.name} - Harmony` : `${this.server?.name} - Harmony`
     }
   }
 }

@@ -92,6 +92,11 @@ export default {
       const isoDate = `${year}-${paddedMonth}-${paddedDay}`
       this.$router.push(`/servers/${this.$route.params.id}/channels/${this.$route.params.channelId}/${isoDate}`)
     }
+  },
+  head () {
+    return {
+      title: this.channel ? `#${this.channel.name}` : null
+    }
   }
 }
 </script>

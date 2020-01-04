@@ -50,6 +50,7 @@ export default {
     justify-content: center;
     position: relative;
     flex-direction: column;
+    padding: 1rem;
   }
 
   &__button {

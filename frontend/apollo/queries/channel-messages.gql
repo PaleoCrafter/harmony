@@ -25,5 +25,6 @@ query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
     deletedAt
 
     hasEmbeds
+    hasAttachments
   }
 }

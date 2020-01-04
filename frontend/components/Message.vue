@@ -1,7 +1,8 @@
 <script>
-import embedsQuery from '@/apollo/queries/embeds.gql'
+import detailsQuery from '@/apollo/queries/details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
+import Attachment from '@/components/message/Attachment.vue'
 
 export default {
   name: 'Message',
@@ -13,16 +14,17 @@ export default {
     }
   },
   apollo: {
-    embeds: {
-      query: embedsQuery,
+    details: {
+      query: detailsQuery,
       skip () {
-        return !this.message.hasEmbeds
+        return !this.message.hasEmbeds && !this.message.hasAttachments
       },
       variables () {
         return {
           message: this.message.id
         }
-      }
+      },
+      update: data => data.messageDetails
     }
   },
   render (h) {
@@ -40,7 +42,9 @@ export default {
       )
     }
 
-    const embeds = this.embeds || []
+    const details = this.details ?? {}
+    const embeds = details.embeds || []
+    const attachments = details.attachments || []
 
     return h(
       'article',
@@ -56,7 +60,12 @@ export default {
           },
           slotContent
         ),
-        embeds.length > 0 ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } }))) : undefined
+        embeds.length > 0
+          ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } })))
+          : undefined,
+        attachments.length > 0
+          ? h('div', { class: 'message__attachments' }, attachments.map(attachment => h(Attachment, { props: { attachment } })))
+          : undefined
       ]
     )
   }
@@ -85,7 +94,7 @@ export default {
     font-size: 0.625rem;
   }
 
-  &__embeds {
+  &__embeds, &__attachments {
     padding: 0.5rem 0;
     flex-basis: 0;
 
@@ -95,6 +104,11 @@ export default {
       align-items: flex-start;
       max-width: 100%;
     }
+  }
+
+  &__attachments {
+    display: flex;
+    flex-direction: column;
   }
 
   &--deleted {

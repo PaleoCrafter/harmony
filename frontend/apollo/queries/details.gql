@@ -1,0 +1,67 @@
+query Embeds($message: ID!) {
+  messageDetails(message: $message) {
+    embeds {
+      id
+      type
+      title
+      description
+      url
+      color {
+        r
+        g
+        b
+      }
+      timestamp
+
+      footer {
+        text
+        iconUrl
+        proxyIconUrl
+      }
+      image {
+        width
+        height
+        url
+        proxyUrl
+      }
+      thumbnail {
+        width
+        height
+        url
+        proxyUrl
+      }
+      video {
+        width
+        height
+        url
+        proxyUrl
+      }
+      provider {
+        name
+        url
+      }
+      author {
+        name
+        url
+        iconUrl
+        proxyIconUrl
+      }
+
+      fields {
+        name
+        value
+        inline
+      }
+    }
+
+    attachments {
+      type
+      name
+      url
+      proxyUrl
+      width
+      height
+      spoiler
+    }
+  }
+}

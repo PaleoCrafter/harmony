@@ -9,7 +9,7 @@ type Query {
   role(server: ID!, id: ID!): Role
 
   messages(channel: ID!, after: Timestamp!, before: Timestamp!, limit: Int!): [Message!]!
-  embeds(message: ID!): [Embed!]!
+  messageDetails(message: ID!): MessageDetails!
 }
 
 scalar Timestamp
@@ -64,12 +64,18 @@ type Message {
   createdAt: Timestamp!
   editedAt: Timestamp
   deletedAt: Timestamp
-  hasEmbeds: Boolean
+  hasEmbeds: Boolean!
+  hasAttachments: Boolean!
 }
 
 type MessageVersion {
   content: String!
   timestamp: Timestamp!
+}
+
+type MessageDetails {
+  embeds: [Embed!]!
+  attachments: [Attachment!]!
 }
 
 type Embed {
@@ -118,4 +124,14 @@ type EmbedField {
   name: String!
   value: String!
   inline: Boolean!
+}
+
+type Attachment {
+  type: String!
+  name: String!
+  url: String!
+  proxyUrl: String!
+  width: Int
+  height: Int
+  spoiler: Boolean!
 }

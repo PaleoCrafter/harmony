@@ -5,7 +5,7 @@ const DataLoader = require('dataloader')
 const { buildSchema } = require('graphql')
 const Sequelize = require('sequelize')
 const { Op, QueryTypes } = Sequelize
-const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField } = require('./db')
+const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField, Attachment } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
 const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
@@ -28,6 +28,19 @@ function embedEntry (embed, prefix, fields) {
     nonNull |= value !== null
   })
   return nonNull ? obj : null
+}
+
+const ATTACHMENT_TYPES = {
+  jpg: 'IMAGE',
+  jpeg: 'IMAGE',
+  webp: 'IMAGE',
+  gif: 'IMAGE',
+  png: 'IMAGE',
+  mp4: 'VIDEO',
+  webm: 'VIDEO',
+  mp3: 'AUDIO',
+  wav: 'AUDIO',
+  ogg: 'AUDIO'
 }
 
 function initLoaders (user) {
@@ -222,6 +235,22 @@ function initLoaders (user) {
       )
 
       return messages.map(id => embeds.filter(e => e.message === id))
+    }),
+    attachments: new DataLoader(async (messages) => {
+      const attachments = await Promise.all(
+        (await Attachment.findAll({ where: { message: messages } })).map(attachment => ({
+          message: attachment.message,
+          type: ATTACHMENT_TYPES[attachment.name.split('.').pop()] || 'FILE',
+          name: attachment.name,
+          url: attachment.url,
+          proxyUrl: attachment.proxyUrl,
+          width: attachment.width,
+          height: attachment.height,
+          spoiler: attachment.spoiler
+        }))
+      )
+
+      return messages.map(id => attachments.filter(e => e.message === id))
     })
   }
 }
@@ -295,11 +324,15 @@ const root = {
         hasEmbeds: async () => (await Embed.findOne({
           attributes: [[Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
           where: { message: msg.id }
+        })).get('count') > 0,
+        hasAttachments: async () => (await Attachment.findOne({
+          attributes: [[Sequelize.fn('COUNT', Sequelize.col('*')), 'count']],
+          where: { message: msg.id }
         })).get('count') > 0
       }
     }))
   },
-  async embeds ({ message: messageId }, request) {
+  async messageDetails ({ message: messageId }, request) {
     const message = await Message.findOne({ where: { id: messageId } })
     if (message === undefined) {
       return []
@@ -312,7 +345,7 @@ const root = {
       return []
     }
 
-    return request.loaders.embeds.load(messageId)
+    return { embeds: () => request.loaders.embeds.load(messageId), attachments: () => request.loaders.attachments.load(messageId) }
   }
 }
 
@@ -325,7 +358,20 @@ module.exports = {
     app.use('/api/graphql', checkAuth, graphqlHTTP({
       schema,
       rootValue: root,
-      graphiql: true
+      graphiql: true,
+      customFormatErrorFn: (error) => {
+        const message = error.message || 'An unknown error occurred.'
+        const locations = error.locations
+        const path = error.path
+        const extensions = error.extensions
+
+        // eslint-disable-next-line no-console
+        console.error(error)
+
+        return extensions
+          ? { message, locations, path, extensions }
+          : { message, locations, path }
+      }
     }))
   }
 }

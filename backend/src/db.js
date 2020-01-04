@@ -249,10 +249,10 @@ const Embed = db.define('messageembed', {
     type: Sequelize.STRING
   },
   imageWidth: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
   imageHeight: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
 
   thumbnailUrl: {
@@ -262,10 +262,10 @@ const Embed = db.define('messageembed', {
     type: Sequelize.STRING
   },
   thumbnailWidth: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
   thumbnailHeight: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
 
   videoUrl: {
@@ -275,10 +275,10 @@ const Embed = db.define('messageembed', {
     type: Sequelize.STRING
   },
   videoWidth: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
   videoHeight: {
-    type: Sequelize.STRING
+    type: Sequelize.INTEGER
   },
 
   providerName: {
@@ -331,6 +331,38 @@ const EmbedField = db.define('messageembedfield', {
   timestamps: false
 })
 
+const Attachment = db.define('messageattachment', {
+  message: {
+    type: Sequelize.BIGINT,
+    allowNull: false
+  },
+  name: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  url: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  proxyUrl: {
+    type: Sequelize.STRING,
+    allowNull: false
+  },
+  width: {
+    type: Sequelize.INTEGER
+  },
+  height: {
+    type: Sequelize.INTEGER
+  },
+  spoiler: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false
+  }
+}, {
+  timestamps: false
+})
+Attachment.removeAttribute('id')
+
 Message.hasMany(MessageVersion, { as: 'versions', foreignKey: 'message', foreignKeyConstraint: false, constraints: false })
 
 module.exports = {
@@ -344,5 +376,6 @@ module.exports = {
   Message,
   MessageVersion,
   Embed,
-  EmbedField
+  EmbedField,
+  Attachment
 }

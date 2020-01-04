@@ -366,7 +366,6 @@ export default {
     .lazy-image {
       width: 100%;
       height: 100%;
-      border-radius: 4px;
     }
 
     &-actions {

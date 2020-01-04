@@ -20,16 +20,19 @@ query Embeds($message: ID!) {
     image {
       width
       height
+      url
       proxyUrl
     }
     thumbnail {
       width
       height
+      url
       proxyUrl
     }
     video {
       width
       height
+      url
       proxyUrl
     }
     provider {

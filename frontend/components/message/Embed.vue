@@ -40,8 +40,37 @@
         <Markdown :content="field.value" class="embed__field-value" embed />
       </div>
     </div>
-    <img v-if="embed.image !== null" :src="embed.image.proxyUrl" alt="image" class="embed__image">
-    <img v-if="embed.thumbnail !== null" :src="embed.thumbnail.proxyUrl" alt="thumbnail" class="embed__thumbnail">
+    <LazyImage
+      v-if="embed.image !== null"
+      :src="imageUrl"
+      :style="calculateImageStyle(embed.image)"
+      alt="image"
+      class="embed__image"
+    />
+    <LazyImage
+      v-if="embed.thumbnail !== null && embed.video === null"
+      :src="thumbnailUrl"
+      :style="calculateImageStyle(embed.thumbnail)"
+      alt="thumbnail"
+      class="embed__thumbnail"
+    />
+    <div v-else-if="embed.thumbnail !== null" :style="calculateImageStyle(embed.thumbnail)" class="embed__video">
+      <iframe v-if="playingVideo" :src="videoUrl" width="100%" height="100%" allowfullscreen />
+      <LazyImage
+        v-else-if="embed.thumbnail"
+        :src="thumbnailUrl"
+        alt="thumbnail"
+        class="embed__thumbnail"
+      />
+      <div v-if="!playingVideo" class="embed__video-actions">
+        <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank">
+          <PlayIcon fill="currentColor" stroke="none" />
+        </a>
+        <a :href="embed.url" target="_blank">
+          <ExternalLinkIcon />
+        </a>
+      </div>
+    </div>
     <div v-if="embed.footer !== null || embed.timestamp !== null" class="embed__footer">
       <img v-if="footerIconUrl !== null" :src="footerIconUrl" alt="footer icon" class="embed__footer-icon">
       <div class="embed__footer-text">
@@ -54,7 +83,9 @@
 </template>
 
 <script>
+import { ExternalLinkIcon, PlayIcon } from 'vue-feather-icons'
 import Markdown from '@/components/message/Markdown.vue'
+import LazyImage from '@/components/message/LazyImage.vue'
 
 const gcd = (a, b) => a ? gcd(b % a, a) : b
 
@@ -62,11 +93,16 @@ const lcm = (a, b) => a * b / gcd(a, b)
 
 export default {
   name: 'Embed',
-  components: { Markdown },
+  components: { PlayIcon, ExternalLinkIcon, LazyImage, Markdown },
   props: {
     embed: {
       type: Object,
       required: true
+    }
+  },
+  data () {
+    return {
+      playingVideo: false
     }
   },
   computed: {
@@ -114,6 +150,22 @@ export default {
         []
       )
     },
+    imageUrl () {
+      return this.embed.image?.proxyUrl ?? this.embed.image?.url ?? null
+    },
+    thumbnailUrl () {
+      return this.embed.thumbnail?.proxyUrl ?? this.embed.thumbnail?.url ?? null
+    },
+    videoUrl () {
+      const url = this.embed.video?.url
+      if (url === null) {
+        return undefined
+      }
+
+      const query = url.includes('?') ? '&' : '?'
+
+      return `${url}${query}autoplay=1`
+    },
     footerIconUrl () {
       return this.embed.footer?.proxyIconUrl ?? this.embed.footer?.iconUrl ?? null
     },
@@ -132,6 +184,26 @@ export default {
       })
       return format.format(Date.parse(this.embed.timestamp))
     }
+  },
+  methods: {
+    calculateImageStyle (image) {
+      if (image === null) {
+        return undefined
+      }
+
+      const width = image.width ?? 400
+      const height = image.height ?? 300
+      const aspect = width / height
+      const minAspect = 4 / 3
+      const styles = { width: `${width}px`, height: `${height}px` }
+
+      if (width > 400 || height > 300) {
+        styles.width = aspect > minAspect ? '400px' : `${aspect * 300}px`
+        styles.height = aspect > minAspect ? `${height / width * 400}px` : '300px'
+      }
+
+      return styles
+    }
   }
 }
 </script>
@@ -146,11 +218,23 @@ export default {
   border-left: var(--embed-accent) 4px solid;
   max-width: 520px;
 
+  &__provider {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    color: #b9bbbe !important;
+    white-space: normal;
+
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   &__author {
     display: flex;
     align-items: center;
     font-size: 0.875rem;
     margin-top: 0.5rem;
+    grid-column: 1;
+    grid-row: 2;
 
     &-icon {
       max-width: 1.7rem;
@@ -165,21 +249,11 @@ export default {
     }
   }
 
-  &__provider {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: #b9bbbe !important;
-    white-space: normal;
-
-    grid-column: 1;
-    grid-row: 1;
-  }
-
   &__title {
     font-weight: bold;
     margin-top: 0.5rem;
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 3;
     white-space: normal;
   }
 
@@ -189,13 +263,15 @@ export default {
     line-height: 1.175rem;
     white-space: pre-line;
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   &__fields {
     margin-top: 0.5rem;
     display: grid;
     grid-gap: 0.5rem;
+    grid-column: 1;
+    grid-row: 5;
   }
 
   &__field {
@@ -217,7 +293,53 @@ export default {
     margin-top: 1rem;
     border-radius: 4px;
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 6;
+  }
+
+  &__video {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5rem;
+    grid-column: 1;
+    grid-row: 6;
+
+    iframe {
+      border: none;
+      border-radius: 4px;
+    }
+
+    .lazy-image {
+      width: 100%;
+      height: 100%;
+    }
+
+    .embed__thumbnail {
+      margin-top: 0;
+    }
+
+    &-actions {
+      position: absolute;
+      display: grid;
+      align-items: center;
+      justify-content: center;
+      grid-template-columns: 1fr 1fr;
+      grid-gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 1rem;
+      border-radius: 2rem;
+    }
+
+    a {
+      display: flex;
+      color: rgba(255, 255, 255, 0.6) !important;
+      transition: color 0.2s ease-in-out;
+
+      &:hover, &:focus, &:active {
+        color: white !important;
+      }
+    }
   }
 
   &__footer {
@@ -228,7 +350,7 @@ export default {
     line-height: 1rem;
     color: #72767d;
     grid-column: 1;
-    grid-row: 6;
+    grid-row: 7;
 
     &-icon {
       max-width: 1.4rem;
@@ -261,13 +383,13 @@ export default {
       max-width: 80px;
       max-height: 80px;
       grid-column: 2;
-      grid-row: 1/span 6;
+      grid-row: 1/span 7;
       margin-top: 0.5rem;
       margin-left: 1rem;
     }
   }
 
-  &--image, &--unknown {
+  &--unknown, &--image, &--video {
     grid-auto-columns: minmax(auto, min-content);
   }
 }

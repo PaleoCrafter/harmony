@@ -1,13 +1,13 @@
-<template>
-  <div class="loading-spinner">
-    <div class="loading-spinner__cube1" />
-    <div class="loading-spinner__cube2" />
-  </div>
-</template>
-
 <script>
 export default {
-  name: 'LoadingSpinner'
+  name: 'LoadingSpinner',
+  functional: true,
+  render (h, context) {
+    return h('div', { ...context.data, class: ['loading-spinner', context.data.class] }, [
+      h('div', { class: 'loading-spinner__cube1' }),
+      h('div', { class: 'loading-spinner__cube2' })
+    ])
+  }
 }
 </script>
 
@@ -34,41 +34,21 @@ export default {
   }
 }
 
-@-webkit-keyframes sk-cubemove {
-  25% {
-    -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5)
-  }
-  50% {
-    -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg)
-  }
-  75% {
-    -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5)
-  }
-  100% {
-    -webkit-transform: rotate(-360deg)
-  }
-}
-
 @keyframes sk-cubemove {
   25% {
-    transform: translateX(42px) rotate(-90deg) scale(0.5);
-    -webkit-transform: translateX(42px) rotate(-90deg) scale(0.5);
+    transform: translateX(1em) rotate(-90deg) scale(0.5);
   }
   50% {
-    transform: translateX(42px) translateY(42px) rotate(-179deg);
-    -webkit-transform: translateX(42px) translateY(42px) rotate(-179deg);
+    transform: translateX(1em) translateY(1em) rotate(-179deg);
   }
   50.1% {
-    transform: translateX(42px) translateY(42px) rotate(-180deg);
-    -webkit-transform: translateX(42px) translateY(42px) rotate(-180deg);
+    transform: translateX(1em) translateY(1em) rotate(-180deg);
   }
   75% {
-    transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);
-    -webkit-transform: translateX(0px) translateY(42px) rotate(-270deg) scale(0.5);
+    transform: translateX(0px) translateY(1em) rotate(-270deg) scale(0.5);
   }
   100% {
     transform: rotate(-360deg);
-    -webkit-transform: rotate(-360deg);
   }
 }
 </style>

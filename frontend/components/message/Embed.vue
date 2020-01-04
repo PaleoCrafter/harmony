@@ -25,7 +25,8 @@
       :attributes="embed.url !== null ? { href: embed.url, target: '_blank' } : {}"
       :content="embed.title || ''"
       class="embed__title"
-    >{{ embed.title === null ? embed.url : '' }}
+    >
+      {{ embed.title === null ? embed.url : '' }}
     </Markdown>
     <Markdown v-if="embed.description !== null" :content="embed.description" class="embed__description" embed />
     <div v-if="embed.fields.length > 0" class="embed__fields">
@@ -41,7 +42,7 @@
     </div>
     <img v-if="embed.image !== null" :src="embed.image.proxyUrl" alt="image" class="embed__image">
     <img v-if="embed.thumbnail !== null" :src="embed.thumbnail.proxyUrl" alt="thumbnail" class="embed__thumbnail">
-    <div class="embed__footer">
+    <div v-if="embed.footer !== null || embed.timestamp !== null" class="embed__footer">
       <img v-if="footerIconUrl !== null" :src="footerIconUrl" alt="footer icon" class="embed__footer-icon">
       <div class="embed__footer-text">
         <Markdown v-if="embed.footer !== null" :content="embed.footer.text" tag="span" embed />
@@ -137,14 +138,13 @@ export default {
 
 <style lang="scss">
 .embed {
-  display: inline-flex;
-  flex-direction: column;
+  display: inline-grid;
   white-space: normal;
   border-radius: 4px;
   padding: 0.5rem 1rem 1rem;
   background: #2f3136;
   border-left: var(--embed-accent) 4px solid;
-  max-width: 40%;
+  max-width: 520px;
 
   &__author {
     display: flex;
@@ -212,7 +212,8 @@ export default {
   }
 
   &__thumbnail, &__image {
-    max-width: 100%;
+    max-width: 400px;
+    max-height: 300px;
     margin-top: 1rem;
     border-radius: 4px;
     grid-column: 1;
@@ -251,16 +252,23 @@ export default {
     background: #202225 !important;
   }
 
-  &--rich {
-    display: inline-grid;
-    grid-auto-columns: auto;
+  .code-block, blockquote {
+    max-width: 100%;
+  }
 
+  &--rich {
     .embed__thumbnail {
       max-width: 80px;
+      max-height: 80px;
       grid-column: 2;
       grid-row: 1/span 6;
       margin-top: 0.5rem;
+      margin-left: 1rem;
     }
+  }
+
+  &--image, &--unknown {
+    grid-auto-columns: minmax(auto, min-content);
   }
 }
 </style>

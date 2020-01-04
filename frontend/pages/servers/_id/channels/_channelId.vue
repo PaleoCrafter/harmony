@@ -46,14 +46,14 @@ export default {
   computed: {
     date () {
       if (this.$route.params.date === undefined) {
-        return new Date(Date.now() + this.$store.state.timezone * 60000)
+        return new Date(Date.now() - this.$store.state.timezone * 60000)
       }
 
       const [, year, month, day] = this.$route.params.date.match(/(\d+)-(\d{2})-(\d{2})/)
       return new Date(year, parseInt(month) - 1, day)
     },
     nextDayDisabled () {
-      const today = new Date(Date.now() + this.$store.state.timezone * 60000)
+      const today = new Date(Date.now() - this.$store.state.timezone * 60000)
 
       return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }

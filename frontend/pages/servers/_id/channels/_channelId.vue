@@ -18,8 +18,8 @@
             :value="date"
             :max-date="new Date()"
             :update-on-input="false"
-            :popover="{ keepVisibleOnInput: false, placement: 'bottom' }"
-            :input-props="{ class: 'channel__date-input' }"
+            :popover="{ keepVisibleOnInput: false, placement: 'bottom', visibility: 'focus' }"
+            :input-props="{ class: 'channel__date-input', 'aria-label': 'Date' }"
             color="gray"
             is-dark
             is-required

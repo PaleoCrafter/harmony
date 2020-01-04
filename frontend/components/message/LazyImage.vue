@@ -89,8 +89,8 @@ export default {
   max-width: 100%;
 
   img {
-    max-width: 100%;
     position: absolute;
+    max-width: 100%;
   }
 
   &__content {
@@ -98,6 +98,9 @@ export default {
   }
 
   &__loading {
+    position: absolute !important;
+    top: 50%;
+    margin-top: -0.5em;
     font-size: 2em;
   }
 }

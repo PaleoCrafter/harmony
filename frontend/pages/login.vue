@@ -20,9 +20,9 @@ export default {
     loginUrl () {
       const { redirect } = this.$route.query
       const redirectQuery = redirect ? `&redirect=${redirect}` : ''
-      const timezoneOffset = new Date().getTimezoneOffset()
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
 
-      return `/api/auth/login?timezone=${timezoneOffset}${redirectQuery}`
+      return `/api/auth/login?timezone=${timezone}${redirectQuery}`
     }
   },
   head () {

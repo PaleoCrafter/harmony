@@ -285,7 +285,7 @@ function initLoaders (user) {
 const queryResolver = {
   identity (parent, args, { request }) {
     const { id, username, discriminator, timezone } = request.user
-    return { user: { id, name: username, discriminator }, timezone: parseInt(timezone) }
+    return { user: { id, name: username, discriminator }, timezone }
   },
   async servers (parent, args, { request }) {
     return (await request.loaders.servers.loadMany(request.user.servers.map(server => server.id))).filter(s => s !== null)

@@ -4,7 +4,7 @@ import identityQuery from '@/apollo/queries/identity.gql'
 export const state = () => ({
   loggedIn: false,
   identity: null,
-  timezone: new Date().getTimezoneOffset(),
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   sidebarOpen: false,
   sidebarTab: 'channels',
   collapsedCategories: {},
@@ -57,7 +57,7 @@ export const actions = {
     } catch (error) {
       if (error.networkError && error.networkError.statusCode === 401) {
         commit('setLoginStatus', { loggedIn: false, identity: null })
-        commit('setTimezone', new Date().getTimezoneOffset())
+        commit('setTimezone', Intl.DateTimeFormat().resolvedOptions().timeZone)
       }
     }
   }

@@ -50,6 +50,11 @@
 
 <script>
 import { XIcon } from 'vue-feather-icons'
+import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz'
+import addDays from 'date-fns/addDays'
+import startOfDay from 'date-fns/startOfDay'
+import endOfDay from 'date-fns/endOfDay'
+import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
@@ -68,7 +73,7 @@ export default {
   },
   props: {
     date: {
-      type: Date,
+      type: null,
       required: true
     }
   },
@@ -83,11 +88,12 @@ export default {
     }
   },
   computed: {
+    ...mapState(['timezone']),
     mayNotLoad () {
       return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
     },
     isToday () {
-      const today = new Date(Date.now() - this.$store.state.timezone * 60000)
+      const today = utcToZonedTime(Date.now(), this.timezone)
 
       return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }
@@ -124,6 +130,7 @@ export default {
       query: messagesQuery,
       variables () {
         const { startDate, endDate } = this.getInitialDates()
+
         return {
           channel: this.$route.params.channelId,
           after: startDate.toISOString(),
@@ -140,15 +147,9 @@ export default {
   },
   methods: {
     getInitialDates () {
-      let startDate = new Date(this.date.getTime() - this.$store.state.timezone * 60000)
-      startDate.setUTCHours(23, 59, 59, 999)
-      startDate.setUTCDate(startDate.getUTCDate() - 1)
-      startDate = new Date(startDate.getTime() + this.$store.state.timezone * 60000)
-
-      let endDate = new Date(this.date.getTime() - this.$store.state.timezone * 60000)
-      endDate.setUTCHours(0, 0, 0, 0)
-      endDate.setUTCDate(endDate.getUTCDate() + 1)
-      endDate = new Date(endDate.getTime() + this.$store.state.timezone * 60000)
+      const zoned = zonedTimeToUtc(this.date, this.timezone)
+      const startDate = zonedTimeToUtc(endOfDay(addDays(zoned, -1)), this.timezone)
+      const endDate = zonedTimeToUtc(startOfDay(addDays(zoned, 1)), this.timezone)
 
       return { startDate, endDate }
     },

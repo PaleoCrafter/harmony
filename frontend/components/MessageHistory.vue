@@ -1,13 +1,18 @@
 <template>
   <section class="message-history">
     <Markdown v-for="(version, index) in message.versions" :key="index" :content="version.content" :context="message">
-      <span class="message-history__timestamp--float" aria-hidden="true">{{ formatTimestamp(version.timestamp) }}</span>
-      <time :datetime="version.timestamp" class="message-history__timestamp">{{ formatTimestamp(version.timestamp) }}</time>
+      <span class="message-history__timestamp--float" aria-hidden="true">
+        {{ formatTimestampRelative(version.timestamp) }}
+      </span>
+      <time :datetime="version.timestamp" :title="formatTimestamp(version.timestamp)" class="message-history__timestamp">
+        {{ formatTimestampRelative(version.timestamp) }}
+      </time>
     </Markdown>
   </section>
 </template>
 
 <script>
+import formatRelative from 'date-fns/formatRelative'
 import Markdown from '@/components/message/Markdown.vue'
 
 export default {
@@ -20,6 +25,9 @@ export default {
     }
   },
   methods: {
+    formatTimestampRelative (timestamp) {
+      return formatRelative(Date.parse(timestamp), new Date())
+    },
     formatTimestamp (timestamp) {
       const format = new Intl.DateTimeFormat(undefined, {
         weekday: 'short',
@@ -60,12 +68,14 @@ export default {
     bottom: 0;
     right: 0;
     padding: 0.75rem 0.5rem;
+    white-space: normal;
 
     &--float {
       float: right;
       visibility: hidden;
       margin-top: 0.25rem;
       margin-left: 0.25rem;
+      white-space: normal;
     }
   }
 }

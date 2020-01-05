@@ -37,6 +37,8 @@
 
 <script>
 import { ChevronLeftIcon, ChevronRightIcon, MenuIcon } from 'vue-feather-icons'
+import { utcToZonedTime } from 'date-fns-tz'
+import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
@@ -44,16 +46,17 @@ import Divider from '@/components/Divider.vue'
 export default {
   components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
   computed: {
+    ...mapState(['timezone']),
     date () {
       if (this.$route.params.date === undefined) {
-        return new Date(Date.now() - this.$store.state.timezone * 60000)
+        return utcToZonedTime(Date.now(), this.timezone)
       }
 
       const [, year, month, day] = this.$route.params.date.match(/(\d+)-(\d{2})-(\d{2})/)
       return new Date(year, parseInt(month) - 1, day)
     },
     nextDayDisabled () {
-      const today = new Date(Date.now() - this.$store.state.timezone * 60000)
+      const today = utcToZonedTime(new Date(), this.timezone)
 
       return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }

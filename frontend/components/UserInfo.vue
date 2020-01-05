@@ -19,7 +19,9 @@
         <div class="user-info__nicknames">
           <div v-for="nickname in details.nicknames" :key="nickname.timestamp" class="user-info__nickname">
             <span>{{ nickname.name || user.name }}</span>
-            <time :datetime="nickname.timestamp">{{ formatTimestamp(nickname.timestamp) }}</time>
+            <time :datetime="nickname.timestamp" :title="formatTimestamp(nickname.timestamp)">
+              {{ formatTimestampRelative(nickname.timestamp) }}
+            </time>
           </div>
         </div>
       </template>
@@ -28,6 +30,7 @@
 </template>
 
 <script>
+import formatRelative from 'date-fns/formatRelative'
 import detailsQuery from '@/apollo/queries/user-details.gql'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
@@ -80,6 +83,9 @@ export default {
       return {
         '--role-color': `rgb(${r}, ${g}, ${b})`
       }
+    },
+    formatTimestampRelative (timestamp) {
+      return formatRelative(Date.parse(timestamp), new Date())
     },
     formatTimestamp (timestamp) {
       const format = new Intl.DateTimeFormat(undefined, {

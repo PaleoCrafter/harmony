@@ -18,7 +18,7 @@
         <strong>Nickname History</strong>
         <div class="user-info__nicknames">
           <div v-for="nickname in details.nicknames" :key="nickname.timestamp" class="user-info__nickname">
-            <span>{{ nickname.name }}</span>
+            <span>{{ nickname.name || user.name }}</span>
             <time :datetime="nickname.timestamp">{{ formatTimestamp(nickname.timestamp) }}</time>
           </div>
         </div>
@@ -121,6 +121,9 @@ export default {
   }
 
   &__details {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
     background: #2f3136;
     padding: 0.75rem 0.75rem;
 
@@ -130,6 +133,10 @@ export default {
       text-transform: uppercase;
       line-height: 1;
       color: #72767d;
+    }
+
+    .loading-spinner {
+      align-self: center;
     }
   }
 

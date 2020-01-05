@@ -144,6 +144,6 @@ type UserDetails {
 }
 
 type UserNickname {
-  name: String!
+  name: String
   timestamp: Timestamp!
 }

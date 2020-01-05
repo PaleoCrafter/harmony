@@ -15,6 +15,7 @@
     "@nuxtjs/apollo": "^4.0.0-rc19",
     "@nuxtjs/auth": "^4.8.5",
     "@nuxtjs/axios": "^5.3.6",
+    "apollo-link-batch-http": "^1.2.13",
     "highlight.js": "^9.17.1",
     "nuxt": "^2.0.0",
     "portal-vue": "^2.1.7",

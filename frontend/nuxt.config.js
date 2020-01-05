@@ -60,11 +60,7 @@ export default {
     authenticationType: 'Session',
     errorHandler: '@/apollo/error-handler',
     clientConfigs: {
-      default: {
-        tokenName: 'connect.sid',
-        httpEndpoint: 'http://backend:3000/api/graphql',
-        browserHttpEndpoint: '/api/graphql'
-      },
+      default: '@/plugins/batch-apollo-client.js',
       identityCheck: {
         tokenName: 'connect.sid',
         httpEndpoint: 'http://backend:3000/api/graphql',

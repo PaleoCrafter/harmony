@@ -1,14 +1,13 @@
 const path = require('path')
 const fs = require('fs')
-const graphqlHTTP = require('express-graphql')
+const { ApolloServer, gql } = require('apollo-server-express')
 const DataLoader = require('dataloader')
-const { buildSchema } = require('graphql')
 const Sequelize = require('sequelize')
 const { Op, QueryTypes } = Sequelize
 const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField, Attachment } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
-const schema = buildSchema(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
+const typeDefs = gql(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
 
 function mapColor (color) {
   return {
@@ -203,6 +202,28 @@ function initLoaders (user) {
       }
     ),
     roles,
+    messages: new DataLoader(async (ids) => {
+      const messages = await Message.findAll({ where: { id: ids } })
+
+      return ids.map(id => messages.find(msg => msg.id === id) || null)
+    }),
+    messageCounts: new DataLoader(async (messages) => {
+      const embedCounts = await Embed.findAll({
+        attributes: ['message', [Sequelize.fn('COUNT', Sequelize.col('*')), 'count']],
+        where: { message: messages },
+        group: ['message']
+      })
+      const attachmentCounts = await Attachment.findAll({
+        attributes: ['message', [Sequelize.fn('COUNT', Sequelize.col('*')), 'count']],
+        where: { message: messages },
+        group: ['message']
+      })
+
+      return messages.map(id => ({
+        embeds: parseInt((embedCounts.find(e => e.message === id) || { get: () => '0' }).get('count')),
+        attachments: parseInt((attachmentCounts.find(e => e.message === id) || { get: () => '0' }).get('count'))
+      }))
+    }),
     messageVersions: new DataLoader(async (ids) => {
       const versions = await MessageVersion.findAll({
         where: {
@@ -255,18 +276,18 @@ function initLoaders (user) {
   }
 }
 
-const root = {
-  identity (args, request) {
+const queryResolver = {
+  identity (parent, args, { request }) {
     const { id, username, discriminator, timezone } = request.user
     return { user: { id, name: username, discriminator }, timezone: parseInt(timezone) }
   },
-  async servers (args, request) {
+  async servers (parent, args, { request }) {
     return (await request.loaders.servers.loadMany(request.user.servers.map(server => server.id))).filter(s => s !== null)
   },
-  server ({ id: requestedId }, request) {
+  server (parent, { id: requestedId }, { request }) {
     return request.user.servers.find(s => s.id === requestedId) ? request.loaders.servers.load(requestedId) : null
   },
-  async channel ({ id: requestedId }, request) {
+  async channel (parent, { id: requestedId }, { request }) {
     const channel = await request.loaders.channels.load(requestedId)
     if (channel === null) {
       return channel
@@ -274,13 +295,13 @@ const root = {
     const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
     return permissions && permissions.has('readMessages') ? channel : null
   },
-  user ({ server, id }, request) {
+  user (parent, { server, id }, { request }) {
     return request.user.servers.find(s => s.id === server) ? request.loaders.users.load({ server, id }) : null
   },
-  role ({ server, id }, request) {
+  role (parent, { server, id }, { request }) {
     return request.user.servers.find(s => s.id === server) ? request.loaders.roles.load({ server, id }) : null
   },
-  async messages ({ channel: channelId, before, after, limit }, request) {
+  async messages (parent, { channel: channelId, before, after, limit }, { request }) {
     if (limit > 100) {
       throw new Error('You may request at most 100 messages at once!')
     }
@@ -321,20 +342,14 @@ const root = {
         createdAt: msg.createdAt,
         editedAt: versions.length > 1 ? versions[0].timestamp : null,
         deletedAt: msg.deletedAt,
-        hasEmbeds: async () => (await Embed.findOne({
-          attributes: [[Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
-          where: { message: msg.id }
-        })).get('count') > 0,
-        hasAttachments: async () => (await Attachment.findOne({
-          attributes: [[Sequelize.fn('COUNT', Sequelize.col('*')), 'count']],
-          where: { message: msg.id }
-        })).get('count') > 0
+        hasEmbeds: async () => (await request.loaders.messageCounts.load(msg.id)).embeds > 0,
+        hasAttachments: async () => (await request.loaders.messageCounts.load(msg.id)).attachments > 0
       }
     }))
   },
-  async messageDetails ({ message: messageId }, request) {
-    const message = await Message.findOne({ where: { id: messageId } })
-    if (message === undefined) {
+  async messageDetails (parent, { message: messageId }, { request }) {
+    const message = await request.loaders.messages.load(messageId)
+    if (message === null) {
       return []
     }
 
@@ -355,23 +370,7 @@ module.exports = {
       req.loaders = initLoaders(req.user)
       next()
     })
-    app.use('/api/graphql', checkAuth, graphqlHTTP({
-      schema,
-      rootValue: root,
-      graphiql: true,
-      customFormatErrorFn: (error) => {
-        const message = error.message || 'An unknown error occurred.'
-        const locations = error.locations
-        const path = error.path
-        const extensions = error.extensions
-
-        // eslint-disable-next-line no-console
-        console.error(error)
-
-        return extensions
-          ? { message, locations, path, extensions }
-          : { message, locations, path }
-      }
-    }))
+    const server = new ApolloServer({ typeDefs, resolvers: { Query: queryResolver }, context: context => ({ request: context.req }) })
+    app.use('/api/graphql', checkAuth, server.getMiddleware({ path: '/' }))
   }
 }

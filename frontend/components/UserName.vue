@@ -4,6 +4,8 @@
 
     <UserInfo
       ref="aligned"
+      @loaded="calculateAlignment()"
+      :load="infoVisible"
       :server="server"
       :user="user"
       :class="['user-name__info', `user-name__info--${alignment}`, `user-name__info--${verticalAlignment}`]"

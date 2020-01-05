@@ -49,10 +49,10 @@ export default {
         if (this.verticalAlignment === 'middle') {
           this.verticalAlignment = top < bounds.top ? 'bottom' : bottom > bounds.bottom ? 'top' : 'middle'
         } else if (this.verticalAlignment === 'top') {
-          const middlePreference = (bottom + height > bounds.bottom) ? 'middle' : 'bottom'
+          const middlePreference = (bottom + height / 2 < bounds.bottom) ? 'middle' : 'bottom'
           this.verticalAlignment = top < bounds.top ? middlePreference : bottom > bounds.bottom ? 'middle' : 'top'
         } else if (this.verticalAlignment === 'bottom') {
-          const middlePreference = (top - height < bounds.top) ? 'middle' : 'top'
+          const middlePreference = (top - height / 2 > bounds.top) ? 'middle' : 'top'
           this.verticalAlignment = top < bounds.top ? 'middle' : bottom > bounds.bottom ? middlePreference : 'bottom'
         }
 

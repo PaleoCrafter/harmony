@@ -35,6 +35,10 @@ export default {
   name: 'UserInfo',
   components: { LoadingSpinner },
   props: {
+    load: {
+      type: Boolean,
+      required: true
+    },
     server: {
       type: String,
       required: true
@@ -47,13 +51,21 @@ export default {
   apollo: {
     details: {
       query: detailsQuery,
+      skip () {
+        return !this.load
+      },
       variables () {
         return {
           server: this.server,
           id: this.user.id
         }
       },
-      update: data => data.userDetails
+      update: data => data.userDetails,
+      result (result) {
+        if (result.data?.userDetails) {
+          this.$emit('loaded')
+        }
+      }
     }
   },
   methods: {

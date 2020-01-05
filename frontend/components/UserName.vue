@@ -85,6 +85,8 @@ export default {
 <style lang="scss">
 .user-name {
   position: relative;
+  display: inline-flex;
+  align-items: center;
 
   & > span {
     font-weight: 600;
@@ -97,6 +99,7 @@ export default {
   }
 
   &__info {
+    display: none;
     position: absolute;
     bottom: 0;
     margin-left: 0.5rem;
@@ -104,7 +107,6 @@ export default {
     min-width: 250px;
     max-width: 250px;
     z-index: 2;
-    display: none !important;
 
     &--right {
       left: 100%;
@@ -114,6 +116,11 @@ export default {
     &--bottom {
       bottom: auto;
       top: 0;
+    }
+
+    &--middle {
+      bottom: auto;
+      top: auto;
     }
 
     &--left {
@@ -137,7 +144,7 @@ export default {
   }
 
   &--info-visible .user-name__info {
-    display: flex !important;
+    display: flex;
     animation-name: user-name__info--enter;
     animation-duration: 0.12s;
     animation-timing-function: ease-in-out;

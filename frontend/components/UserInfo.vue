@@ -86,7 +86,6 @@ export default {
 
 <style lang="scss">
 .user-info {
-  display: flex;
   overflow: hidden;
   flex-direction: column;
   align-items: stretch;

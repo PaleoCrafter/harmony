@@ -111,7 +111,7 @@ export default {
       }
     }
 
-    &--bottom {
+    &--bottom, &--middle {
       bottom: auto;
       top: 100%;
       margin-bottom: 0;

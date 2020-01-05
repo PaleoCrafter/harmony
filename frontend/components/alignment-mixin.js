@@ -30,14 +30,14 @@ export default {
       this.$nextTick(() => {
         const initialDisplay = element.style.display ?? null
         const initialTransform = element.style.transform ?? null
-        element.style.display = 'block'
+        element.style.display = 'flex'
         element.style.transform = null
 
         let bounds = this.alignmentBounds()
         if (bounds === undefined) {
           bounds = new DOMRect(0, 0, window.innerWidth, window.innerHeight)
         }
-        const { left, right, top, bottom } = element.getBoundingClientRect()
+        const { left, right, top, bottom, height } = element.getBoundingClientRect()
         if (this.alignment === 'center') {
           this.alignment = left < bounds.left ? 'left' : right > bounds.right ? 'right' : 'center'
         } else if (this.alignment === 'left') {
@@ -46,10 +46,14 @@ export default {
           this.alignment = left < bounds.left ? 'center' : right > bounds.right ? 'left' : 'right'
         }
 
-        if (this.verticalAlignment === 'top' && top < bounds.top) {
-          this.verticalAlignment = 'bottom'
-        } else if (this.verticalAlignment === 'bottom' && bottom > bounds.bottom) {
-          this.verticalAlignment = 'top'
+        if (this.verticalAlignment === 'middle') {
+          this.verticalAlignment = top < bounds.top ? 'bottom' : bottom > bounds.bottom ? 'top' : 'middle'
+        } else if (this.verticalAlignment === 'top') {
+          const middlePreference = (bottom + height > bounds.bottom) ? 'middle' : 'bottom'
+          this.verticalAlignment = top < bounds.top ? middlePreference : bottom > bounds.bottom ? 'middle' : 'top'
+        } else if (this.verticalAlignment === 'bottom') {
+          const middlePreference = (top - height < bounds.top) ? 'middle' : 'top'
+          this.verticalAlignment = top < bounds.top ? 'middle' : bottom > bounds.bottom ? middlePreference : 'bottom'
         }
 
         element.style.transform = initialTransform

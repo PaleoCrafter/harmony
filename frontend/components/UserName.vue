@@ -104,7 +104,7 @@ export default {
     min-width: 250px;
     max-width: 250px;
     z-index: 2;
-    display: none;
+    display: none !important;
 
     &--right {
       left: 100%;
@@ -137,7 +137,7 @@ export default {
   }
 
   &--info-visible .user-name__info {
-    display: flex;
+    display: flex !important;
     animation-name: user-name__info--enter;
     animation-duration: 0.12s;
     animation-timing-function: ease-in-out;

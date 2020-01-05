@@ -279,13 +279,9 @@ export default {
       transform: translateY(-100%);
     }
 
-    &:hover .attachment__media-header {
+    .attachment__content:hover .attachment__media-header, &.attachment__media--active:hover .attachment__media-header {
       transform: translateY(0);
     }
-  }
-
-  &--spoiler:hover .attachment__media-header {
-    transform: translateY(-100%);
   }
 }
 </style>

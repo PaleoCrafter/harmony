@@ -9,7 +9,9 @@ type Query {
   role(server: ID!, id: ID!): Role
 
   messages(channel: ID!, after: Timestamp!, before: Timestamp!, limit: Int!): [Message!]!
-  messageDetails(message: ID!): MessageDetails!
+  messageDetails(message: ID!): MessageDetails
+
+  userDetails(server: ID!, id: ID!): UserDetails
 }
 
 scalar Timestamp
@@ -134,4 +136,14 @@ type Attachment {
   width: Int
   height: Int
   spoiler: Boolean!
+}
+
+type UserDetails {
+  nicknames: [UserNickname!]!
+  roles: [Role!]!
+}
+
+type UserNickname {
+  name: String!
+  timestamp: Timestamp!
 }

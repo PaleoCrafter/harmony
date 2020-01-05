@@ -1,0 +1,18 @@
+query UserDetails($server: ID!, $id: ID!) {
+  userDetails(server: $server, id: $id) {
+    roles {
+      name
+      color {
+        r
+        g
+        b
+      }
+      deletedAt
+    }
+
+    nicknames {
+      name
+      timestamp
+    }
+  }
+}

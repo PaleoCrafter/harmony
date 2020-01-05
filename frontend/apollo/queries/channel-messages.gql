@@ -3,6 +3,7 @@ query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
     id
 
     author {
+      id
       name
       discriminator
       nickname

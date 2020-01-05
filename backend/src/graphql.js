@@ -123,13 +123,16 @@ function initLoaders (user) {
 
   const userRoles = new DataLoader(
     async (keys) => {
-      const variables = keys.map(({ server, id }, index) => ({
-        query: `($server${index}::bigint, $user${index}::bigint)`,
-        values: {
-          [`server${index}`]: server,
-          [`user${index}`]: id
-        }
-      }))
+      const variables = await Promise.all(
+        keys.map(async ({ server, id }, index) => ({
+          query: `($server${index}::bigint, $user${index}::bigint, $canSeeDeleted${index}::boolean)`,
+          values: {
+            [`server${index}`]: server,
+            [`user${index}`]: id,
+            [`canSeeDeleted${index}`]: (await getPermissions(user, server)).server.has('manageRoles')
+          }
+        }))
+      )
       const roles = await database.query(
         `
         SELECT
@@ -141,8 +144,9 @@ function initLoaders (user) {
           "roles"."deletedAt" AS "deletedAt"
         FROM "userroles"
         JOIN "roles" ON "roles"."id" = "userroles"."role"
-        JOIN (VALUES ${variables.map(v => v.query).join(', ')}) AS conditions (s, u)
+        JOIN (VALUES ${variables.map(v => v.query).join(', ')}) AS conditions (s, u, canSeeDeleted)
           ON "userroles"."server" = s AND "userroles"."user" = u
+        WHERE canSeeDeleted OR "roles"."deletedAt" IS NULL
         ORDER BY "roles"."position" DESC
         `,
         {
@@ -202,6 +206,8 @@ function initLoaders (user) {
       }
     ),
     roles,
+    userRoles,
+    userNicknames,
     messages: new DataLoader(async (ids) => {
       const messages = await Message.findAll({ where: { id: ids } })
 
@@ -350,17 +356,25 @@ const queryResolver = {
   async messageDetails (parent, { message: messageId }, { request }) {
     const message = await request.loaders.messages.load(messageId)
     if (message === null) {
-      return []
+      return null
     }
 
     const channel = await request.loaders.channels.load(message.channel)
     const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
 
     if (permissions === undefined || !permissions.has('readMessages')) {
-      return []
+      return null
     }
 
     return { embeds: () => request.loaders.embeds.load(messageId), attachments: () => request.loaders.attachments.load(messageId) }
+  },
+  userDetails (parent, { server, id }, { request }) {
+    return request.user.servers.find(s => s.id === server)
+      ? {
+        roles: request.loaders.userRoles.load({ server, id }),
+        nicknames: request.loaders.userNicknames.load({ server, id })
+      }
+      : null
   }
 }
 

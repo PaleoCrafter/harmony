@@ -95,6 +95,7 @@ export default {
   watch: {
     date () {
       this.$store.commit('closeMessageHistory')
+      this.messages = undefined
     },
     '$route.params.channelId': {
       handler () {
@@ -167,13 +168,14 @@ export default {
               before: this.endDate.toISOString()
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
+              const oldMessages = previousResult?.messages ?? []
               const newMessages = fetchMoreResult.messages
               const hasMore = newMessages.length > 0
 
               this.endReached = !hasMore
 
               return {
-                messages: [...(previousResult?.messages ?? []), ...newMessages]
+                messages: [...oldMessages, ...newMessages.filter(msg => oldMessages.find(old => old.id === msg.id) === undefined)]
               }
             }
           }
@@ -192,8 +194,12 @@ export default {
   provide () {
     const self = this
     return {
-      tooltipBounds () {
+      alignmentBounds () {
         const element = self.$store.state.historyMessage !== null ? self.$refs.modalContent : self.$refs.container
+        if (element === undefined) {
+          return undefined
+        }
+
         const scrollbarWidth = element.offsetWidth - element.clientWidth
         const scrollbarHeight = element.offsetHeight - element.clientHeight
         const baseRect = element.getBoundingClientRect()

@@ -1,11 +1,11 @@
 <template>
-  <span @mouseover="calculateAlignment" :class="['emoji', { 'emoji--large': large }]">
+  <span @mouseover="calculateAlignment()" :class="['emoji', { 'emoji--large': large }]">
     <img :src="url" :alt="name" class="emoji__image">
 
     <span
-      ref="name"
+      ref="aligned"
       v-if="name.startsWith(':')"
-      :class="['emoji__name', `emoji__name--${tooltipAlignment}`, `emoji__name--${tooltipVerticalAlignment}`]"
+      :class="['emoji__name', `emoji__name--${alignment}`, `emoji__name--${verticalAlignment}`]"
     >
       <span>{{ name }}</span>
     </span>
@@ -13,8 +13,11 @@
 </template>
 
 <script>
+import alignment from '@/components/alignment-mixin'
+
 export default {
   name: 'Emoji',
+  mixins: [alignment],
   props: {
     url: {
       type: String,
@@ -29,37 +32,10 @@ export default {
       required: true
     }
   },
-  inject: {
-    tooltipBounds: {
-      default () {
-        return () => undefined
-      }
-    }
-  },
   data () {
     return {
-      tooltipAlignment: 'center',
-      tooltipVerticalAlignment: 'top'
-    }
-  },
-  mounted () {
-    this.calculateAlignment()
-  },
-  methods: {
-    calculateAlignment () {
-      this.$refs.name.style.display = 'block'
-      this.tooltipAlignment = 'center'
-      this.tooltipVerticalAlignment = 'top'
-      this.$nextTick(() => {
-        let bounds = this.tooltipBounds()
-        if (bounds === undefined) {
-          bounds = new DOMRect(0, 0, window.innerWidth, window.innerHeight)
-        }
-        const { left, right, top } = this.$refs.name.getBoundingClientRect()
-        this.tooltipAlignment = left < bounds.left ? 'left' : right > bounds.right ? 'right' : 'center'
-        this.tooltipVerticalAlignment = top < bounds.top ? 'bottom' : 'top'
-        this.$refs.name.style.display = null
-      })
+      defaultAlignment: 'center',
+      defaultVerticalAlignment: 'top'
     }
   }
 }
@@ -96,6 +72,7 @@ export default {
     white-space: nowrap;
     align-items: center;
     z-index: 2;
+    transform-origin: bottom;
 
     & > span {
       white-space: nowrap;
@@ -139,6 +116,7 @@ export default {
       top: 100%;
       margin-bottom: 0;
       margin-top: 0.5rem;
+      transform-origin: top;
 
       &:before {
         top: auto;
@@ -151,6 +129,23 @@ export default {
 
   &:hover &__name {
     display: flex;
+    transform: scale(0);
+    animation-name: emoji__name--enter;
+    animation-delay: 500ms;
+    animation-duration: 0.12s;
+    animation-timing-function: ease-in-out;
+    animation-fill-mode: forwards;
+  }
+}
+
+@keyframes emoji__name--enter {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 </style>

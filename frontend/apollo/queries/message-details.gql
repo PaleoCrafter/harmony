@@ -1,4 +1,4 @@
-query Embeds($message: ID!) {
+query MessageDetails($message: ID!) {
   messageDetails(message: $message) {
     embeds {
       id

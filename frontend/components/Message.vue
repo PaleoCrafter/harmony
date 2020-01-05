@@ -1,6 +1,6 @@
 <script>
 import { ClockIcon } from 'vue-feather-icons'
-import detailsQuery from '@/apollo/queries/details.gql'
+import detailsQuery from '@/apollo/queries/message-details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
 import Attachment from '@/components/message/Attachment.vue'

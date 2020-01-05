@@ -88,7 +88,7 @@ export default {
     font-weight: 600;
     height: 4rem;
     line-height: 1;
-    z-index: 50;
+    z-index: 51;
 
     h2 {
       font-size: 1rem;

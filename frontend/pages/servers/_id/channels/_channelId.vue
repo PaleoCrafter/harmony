@@ -116,7 +116,7 @@ export default {
     padding: 1rem;
     height: 4rem;
     line-height: 1;
-    z-index: 50;
+    z-index: 51;
 
     @media (max-width: 470px) {
       display: grid;

@@ -71,7 +71,7 @@ export default {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.25);
     white-space: nowrap;
     align-items: center;
-    z-index: 2;
+    z-index: 50;
     transform-origin: bottom;
 
     & > span {

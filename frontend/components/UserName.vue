@@ -108,7 +108,7 @@ export default {
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, .2), 0 0 0 1px rgba(32, 34, 37, .6);
     min-width: 250px;
     max-width: 250px;
-    z-index: 2;
+    z-index: 50;
 
     &--right {
       left: 100%;

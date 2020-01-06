@@ -146,15 +146,8 @@ export default {
     grid-row: 3;
   }
 
-  &__actions {
-    min-width: 1.5rem;
-  }
-
   &__history-button {
-    float: right;
-    clear: none;
     font-size: 1.25rem;
-    display: none;
     border: none;
     background: none;
     color: rgba(255, 255, 255, 0.6);
@@ -168,10 +161,6 @@ export default {
     &:hover {
       color: white;
     }
-  }
-
-  &:hover &__history-button {
-    display: inline;
   }
 
   &--deleted {

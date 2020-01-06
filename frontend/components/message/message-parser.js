@@ -29,7 +29,7 @@ import markdown from 'simple-markdown'
 const rules = {
   blockQuote: Object.assign({}, markdown.defaultRules.blockQuote, {
     match (source, state, prevSource) {
-      return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]+(\n *> [^\n]+)*\n?)/.exec(source)
+      return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]*(\n *> [^\n]*)*\n?)/.exec(source)
     },
     parse (capture, parse, state) {
       const all = capture[0]

@@ -52,11 +52,10 @@ export default {
         return utcToZonedTime(Date.now(), this.timezone)
       }
 
-      const [, year, month, day] = this.$route.params.date.match(/(\d+)-(\d{2})-(\d{2})/)
-      return new Date(year, parseInt(month) - 1, day)
+      return utcToZonedTime(this.$route.params.date, this.timezone)
     },
     nextDayDisabled () {
-      const today = utcToZonedTime(new Date(), this.timezone)
+      const today = utcToZonedTime(Date.now(), this.timezone)
 
       return this.date.getFullYear() === today.getFullYear() && this.date.getMonth() === today.getMonth() && this.date.getDate() === today.getDate()
     }

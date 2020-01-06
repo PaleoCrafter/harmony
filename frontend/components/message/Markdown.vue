@@ -1,5 +1,5 @@
 <script>
-import { parse, parseEmbed } from '@/components/message/message-parser.js'
+import { parse, parseEmbed } from '@/components/message/message-parser'
 import renderNode, { expandUnicodeEmojis } from '@/components/message/message-renderer'
 
 export default {

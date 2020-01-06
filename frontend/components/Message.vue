@@ -103,10 +103,6 @@ export default {
   grid-auto-rows: auto;
   grid-column-gap: 0.25rem;
 
-  &--deleted {
-    color: #f04747;
-  }
-
   &__content {
     grid-column: 1;
     grid-row: 1;
@@ -176,6 +172,12 @@ export default {
 
   &:hover &__history-button {
     display: inline;
+  }
+
+  &--deleted {
+    .message__content, .message__note {
+      color: #f04747;
+    }
   }
 }
 </style>

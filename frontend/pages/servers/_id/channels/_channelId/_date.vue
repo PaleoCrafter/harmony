@@ -318,6 +318,7 @@ export default {
     align-items: stretch;
     justify-content: stretch;
     overflow: hidden;
+    flex-grow: 1;
 
     @media (max-width: 1200px) {
       max-width: 90%;

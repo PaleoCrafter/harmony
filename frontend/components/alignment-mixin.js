@@ -31,7 +31,9 @@ export default {
         const initialDisplay = element.style.display ?? null
         const initialTransform = element.style.transform ?? null
         element.style.display = 'flex'
-        element.style.transform = null
+        element.style.mozTransform = 'scale(1) translate(0, 0)'
+        element.style.webkitTransform = 'scale(1) translate(0, 0)'
+        element.style.transform = 'scale(1) translate(0, 0)'
 
         let bounds = this.alignmentBounds()
         if (bounds === undefined) {

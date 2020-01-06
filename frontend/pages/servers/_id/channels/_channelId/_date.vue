@@ -194,7 +194,7 @@ export default {
     const self = this
     return {
       alignmentBounds () {
-        let element = self.$store.state.channelModalOpen !== null ? self.$refs.modalContent : self.$refs.container
+        let element = self.channelModalOpen ? self.$refs.modalContent : self.$refs.container
         if (element === undefined) {
           return undefined
         }

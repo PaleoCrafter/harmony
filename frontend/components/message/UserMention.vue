@@ -1,12 +1,10 @@
-<template>
-  <span class="user-mention">@{{ userName }}</span>
-</template>
-
 <script>
 import userQuery from '@/apollo/queries/user.gql'
+import UserName from '@/components/UserName.vue'
 
 export default {
   name: 'UserMention',
+  components: { UserName },
   props: {
     server: {
       type: String,
@@ -15,11 +13,6 @@ export default {
     id: {
       type: String,
       required: true
-    }
-  },
-  computed: {
-    userName () {
-      return this.user?.nickname ?? this.user?.name ?? this.id
     }
   },
   apollo: {
@@ -32,20 +25,33 @@ export default {
         }
       }
     }
+  },
+  render (h) {
+    if (this.user === null || this.user === undefined) {
+      return h('span', { class: 'user-mention' }, [`@${this.id}`])
+    }
+
+    return h(UserName, { class: 'user-mention', props: { server: this.server, user: { id: this.id, ...this.user }, prefix: '@' } })
   }
 }
 </script>
 
 <style lang="scss">
 .user-mention {
-  color: #7289da;
-  background-color: rgba(114, 137, 218, .1);
-  transition: background-color 50ms ease-out, color 50ms ease-out;
-  cursor: pointer;
+  & > span {
+    color: #7289da;
+    background-color: rgba(114, 137, 218, .1);
+    transition: background-color 50ms ease-out, color 50ms ease-out;
+    cursor: pointer;
+    vertical-align: baseline;
+    border-radius: 0.125rem;
+    padding: 0 0.125rem;
 
-  &:hover {
-    color: white;
-    background-color: rgba(114, 137, 218, 0.7);
+    &:hover {
+      color: white;
+      background-color: rgba(114, 137, 218, 0.7);
+      text-decoration: none;
+    }
   }
 }
 </style>

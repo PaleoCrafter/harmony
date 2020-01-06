@@ -1,6 +1,6 @@
 <template>
   <span :class="['user-name', { 'user-name--info-visible': infoVisible }]">
-    <span @click.self="toggleInfoBox" :style="userStyle">{{ userName }}</span>
+    <span @click.self="toggleInfoBox" :style="userStyle">{{ prefix }}{{ userName }}</span>
 
     <UserInfo
       ref="aligned"
@@ -29,6 +29,14 @@ export default {
     user: {
       type: Object,
       required: true
+    },
+    prefix: {
+      type: String,
+      default: () => ''
+    },
+    useRoleColor: {
+      type: Boolean,
+      default: () => false
     }
   },
   data () {
@@ -43,6 +51,10 @@ export default {
       return this.user?.nickname ?? this.user.name
     },
     userStyle () {
+      if (!this.useRoleColor) {
+        return undefined
+      }
+
       const defaultColor = [255, 255, 255]
       let [r, g, b] = defaultColor
 

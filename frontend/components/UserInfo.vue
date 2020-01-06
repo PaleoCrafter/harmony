@@ -108,6 +108,7 @@ export default {
   flex-direction: column;
   align-items: stretch;
   border-radius: 0.4rem;
+  white-space: normal;
 
   &__header {
     align-items: center;

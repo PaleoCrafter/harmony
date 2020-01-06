@@ -61,6 +61,9 @@ export default {
   background-color: var(--mention-bg-color);
   transition: background-color 50ms ease-out, color 50ms ease-out;
   cursor: pointer;
+  vertical-align: baseline;
+  border-radius: 0.125rem;
+  padding: 0 0.125rem;
 
   &:hover {
     color: white;

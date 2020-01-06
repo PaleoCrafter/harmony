@@ -1,7 +1,7 @@
 <template>
   <section class="message-group">
     <div class="message-group__header">
-      <UserName :server="group.messages[0].server" :user="group.author" />
+      <UserName :server="group.messages[0].server" :user="group.author" use-role-color />
 
       <time :datetime="group.firstTimestamp">{{ formattedTime }}</time>
     </div>

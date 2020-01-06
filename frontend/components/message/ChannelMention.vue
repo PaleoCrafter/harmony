@@ -1,6 +1,6 @@
 <template>
   <span class="channel-mention">
-    <template v-if="channel === null || channel === undefined">#{{ channelName }}</template>
+    <span v-if="channel === null || channel === undefined">#{{ channelName }}</span>
     <nuxt-link v-else :to="`/servers/${channel.server}/channels/${id}`">#{{ channelName }}</nuxt-link>
   </span>
 </template>
@@ -40,10 +40,16 @@ export default {
   background-color: rgba(114, 137, 218, .1);
   transition: background-color 50ms ease-out, color 50ms ease-out;
   cursor: pointer;
+  border-radius: 0.125rem;
+  vertical-align: baseline;
 
   &:hover {
     color: white;
     background-color: rgba(114, 137, 218, 0.7);
+  }
+
+  a, span {
+    padding: 0 0.125rem;
   }
 
   a {

@@ -367,6 +367,40 @@ const Attachment = db.define('messageattachment', {
 })
 Attachment.removeAttribute('id')
 
+const Reaction = db.define('messagereaction', {
+  message: {
+    type: Sequelize.BIGINT,
+    allowNull: false,
+    primaryKey: true
+  },
+  user: {
+    type: Sequelize.BIGINT,
+    allowNull: false,
+    primaryKey: true
+  },
+  type: {
+    type: Sequelize.ENUM('UNICODE', 'CUSTOM'),
+    allowNull: false,
+    primaryKey: true
+  },
+  emoji: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    primaryKey: true
+  },
+  emojiId: {
+    type: Sequelize.STRING,
+    allowNull: false,
+    primaryKey: true
+  },
+  emojiAnimated: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false
+  }
+}, {
+  timestamps: false
+})
+
 Message.hasMany(MessageVersion, { as: 'versions', foreignKey: 'message', foreignKeyConstraint: false, constraints: false })
 
 module.exports = {
@@ -381,5 +415,6 @@ module.exports = {
   MessageVersion,
   Embed,
   EmbedField,
-  Attachment
+  Attachment,
+  Reaction
 }

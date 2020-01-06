@@ -1,5 +1,13 @@
 query MessageDetails($message: ID!) {
   messageDetails(message: $message) {
+    reactions {
+      type
+      emoji
+      emojiId
+      emojiAnimated
+      count
+    }
+
     embeds {
       id
       type

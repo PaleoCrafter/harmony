@@ -3,6 +3,7 @@
 package com.seventeenthshard.harmony.dbimport
 
 import com.seventeenthshard.harmony.events.Embed
+import com.seventeenthshard.harmony.events.NewReaction
 import com.seventeenthshard.harmony.events.toHex
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
@@ -18,6 +19,7 @@ import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.replace
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.util.function.component1
 import reactor.util.function.component2
@@ -68,33 +70,41 @@ fun runDump(arguments: List<String>) {
         .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
         .flatMap { (guild, channel) ->
             readOldMessages(startDate, channel)
+                .flatMap { msg ->
+                    Mono.zip(
+                        Mono.just(msg),
+                        Flux.fromIterable(msg.reactions)
+                            .flatMap { reaction -> msg.getReactors(reaction.emoji).map { reaction.emoji to it.id } }
+                            .collectList()
+                    )
+                }
                 .window(1000)
                 .flatMap { group ->
                     group.collectList().map { messages ->
                         transaction {
-                            val messageIds = messages.map { msg -> msg.id.asString() }
+                            val messageIds = messages.map { (msg, _) -> msg.id.asString() }
                             val existing = Messages.select { Messages.id inList messageIds }
                                 .map { it[Messages.id] }
 
-                            Users.batchInsert(messages.mapNotNull { it.author.orElse(null) }, ignore = true) {
+                            Users.batchInsert(messages.mapNotNull { (msg, _) -> msg.author.orElse(null) }, ignore = true) {
                                 this[Users.id] = it.id.asString()
                                 this[Users.name] = it.username
                                 this[Users.discriminator] = it.discriminator
                                 this[Users.bot] = it.isBot
                             }
 
-                            Messages.batchInsert(messages.filter { it.author.isPresent }, ignore = true) {
-                                val creationTimestamp = LocalDateTime.ofInstant(it.timestamp, ZoneId.of("UTC"))
+                            Messages.batchInsert(messages.filter { (msg, _) -> msg.author.isPresent }, ignore = true) { (msg, _) ->
+                                val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
 
-                                this[Messages.id] = it.id.asString()
+                                this[Messages.id] = msg.id.asString()
                                 this[Messages.server] = guild.id.asString()
-                                this[Messages.channel] = it.channelId.asString()
-                                this[Messages.user] = it.author.map { u -> u.id.asString() }.orElse(null) ?: return@batchInsert
+                                this[Messages.channel] = msg.channelId.asString()
+                                this[Messages.user] = msg.author.map { u -> u.id.asString() }.orElse(null) ?: return@batchInsert
                                 this[Messages.createdAt] = creationTimestamp
                             }
 
-                            val (existingMessages, newMessages) = messages.partition { it.id.asString() in existing }
-                            existingMessages.forEach { msg ->
+                            val (existingMessages, newMessages) = messages.partition { it.t1.id.asString() in existing }
+                            existingMessages.forEach { (msg, _) ->
                                 val lastVersion = MessageVersions.select { MessageVersions.message eq msg.id.asString() }
                                     .orderBy(MessageVersions.timestamp, SortOrder.DESC).limit(1).firstOrNull()
 
@@ -119,7 +129,7 @@ fun runDump(arguments: List<String>) {
                                 }
                             }
 
-                            newMessages.forEach { msg ->
+                            newMessages.forEach { (msg, _) ->
                                 val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
                                 MessageVersions.replace {
                                     it[message] = msg.id.asString()
@@ -151,7 +161,7 @@ fun runDump(arguments: List<String>) {
 
                             MessageEmbeds.deleteWhere { MessageEmbeds.message inList messageIds }
 
-                            messages.flatMap { msg -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
+                            messages.flatMap { (msg, _) -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
                                 val embedId = MessageEmbeds.insertAndGetId {
                                     it[message] = msg
                                     it[type] = Embed.Type.valueOf(embed.type.name)
@@ -196,6 +206,31 @@ fun runDump(arguments: List<String>) {
                                     this[MessageEmbedFields.value] = field.value
                                     this[MessageEmbedFields.inline] = field.isInline
                                 }
+                            }
+
+                            MessageReactions.batchInsert(
+                                messages.flatMap { (msg, reactions) -> reactions.map { msg.id to it } },
+                                ignore = true
+                            ) { (messageId, reaction) ->
+                                val (emoji, user) = reaction
+                                this[MessageReactions.message] = messageId.asString()
+                                this[MessageReactions.user] = user.asString()
+
+                                emoji.asUnicodeEmoji().ifPresent {
+                                    this[MessageReactions.emoji] = it.raw
+                                    this[MessageReactions.type] = NewReaction.Type.UNICODE
+                                    this[MessageReactions.emojiId] = "0"
+                                    this[MessageReactions.emojiAnimated] = false
+                                }
+
+                                emoji.asCustomEmoji().ifPresent {
+                                    this[MessageReactions.emoji] = it.name
+                                    this[MessageReactions.type] = NewReaction.Type.CUSTOM
+                                    this[MessageReactions.emojiId] = it.id.asString()
+                                    this[MessageReactions.emojiAnimated] = it.isAnimated
+                                }
+
+                                this[MessageReactions.createdAt] = LocalDateTime.ofInstant(Instant.now(), ZoneId.of("UTC"))
                             }
                         }
 

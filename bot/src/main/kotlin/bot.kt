@@ -9,6 +9,9 @@ import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.MessageEmbedUpdate
 import com.seventeenthshard.harmony.events.NewMessage
+import com.seventeenthshard.harmony.events.NewReaction
+import com.seventeenthshard.harmony.events.ReactionClear
+import com.seventeenthshard.harmony.events.ReactionRemoval
 import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
 import com.seventeenthshard.harmony.events.ServerDeletion
@@ -41,6 +44,9 @@ import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.event.domain.message.MessageDeleteEvent
 import discord4j.core.event.domain.message.MessageEvent
 import discord4j.core.event.domain.message.MessageUpdateEvent
+import discord4j.core.event.domain.message.ReactionAddEvent
+import discord4j.core.event.domain.message.ReactionRemoveAllEvent
+import discord4j.core.event.domain.message.ReactionRemoveEvent
 import discord4j.core.event.domain.role.RoleCreateEvent
 import discord4j.core.event.domain.role.RoleDeleteEvent
 import discord4j.core.event.domain.role.RoleUpdateEvent
@@ -56,9 +62,9 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.logging.log4j.LogManager
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.core.publisher.toFlux
 import reactor.util.function.Tuple4
 import reactor.util.function.component1
 import reactor.util.function.component2
@@ -291,62 +297,94 @@ fun main() {
             .map { it.t1 to it.t2 }
     }
 
+    fun validateMessage(
+        message: Mono<Message>,
+        vararg producers: (Message) -> Publisher<ProducerRecord<String, GenericRecord>>
+    ): Flux<Pair<Snowflake, () -> Publisher<ProducerRecord<String, GenericRecord>>>> =
+        message.filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
+            .flux()
+            .flatMap { msg ->
+                Flux.fromIterable(producers.map { msg.id to { it(msg) } })
+            }
+
+    fun validateMessage(
+        message: Message,
+        vararg producers: (Message) -> Publisher<ProducerRecord<String, GenericRecord>>
+    ): Flux<Pair<Snowflake, () -> Publisher<ProducerRecord<String, GenericRecord>>>> =
+        validateMessage(Mono.just(message), *producers)
+
     client.eventDispatcher.on(MessageEvent::class.java)
         .flatMap { event ->
             when (event) {
                 is MessageCreateEvent ->
-                    Mono.just(
-                        event.message.id to {
+                    validateMessage(
+                        event.message,
+                        {
                             NewMessage.of(event.message)
-                                .filter { event.message.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.message.channelId.asString()) }
                                 .map { producerRecord("messages", event.message.id, it) }
                         }
                     )
                 is MessageUpdateEvent ->
-                    event.message
-                        .filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
-                        .toFlux()
-                        .flatMap { msg ->
-                            Flux.merge(
-                                Mono.just(
-                                    event.messageId to {
-                                        Mono.justOrEmpty(event.currentContent)
-                                            .flatMap {
-                                                MessageEdit.of(it, msg.editedTimestamp.orElse(Instant.now()))
-                                            }
-                                            .map { producerRecord("messages", event.messageId, it) }
-                                    }
-                                ),
-                                Mono.just(
-                                    event.messageId to {
-                                        Mono.justOrEmpty(event.currentEmbeds)
-                                            .flatMap { MessageEmbedUpdate.of(it) }
-                                            .map { producerRecord("messages", event.messageId, it) }
-                                    }
-                                )
-                            )
-                        }
-                is MessageDeleteEvent ->
-                    Mono.just(
-                        event.messageId to {
-                            MessageDeletion.of(Instant.now())
-                                .filter {
-                                    event.message.orElse(null)?.type == Message.Type.DEFAULT && !ignoredChannels.contains(
-                                        event.channelId.asString()
-                                    )
+                    validateMessage(
+                        event.message,
+                        { msg ->
+                            Mono.justOrEmpty(event.currentContent)
+                                .flatMap {
+                                    MessageEdit.of(it, msg.editedTimestamp.orElse(Instant.now()))
                                 }
+                                .map { producerRecord("messages", event.messageId, it) }
+                        },
+                        {
+                            Mono.justOrEmpty(event.currentEmbeds)
+                                .flatMap { MessageEmbedUpdate.of(it) }
                                 .map { producerRecord("messages", event.messageId, it) }
                         }
                     )
-                is MessageBulkDeleteEvent ->
-                    Flux.fromIterable(event.messages)
-                        .filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(event.channelId.asString()) }
-                        .map { msg ->
-                            msg.id to {
-                                MessageDeletion.of(Instant.now())
-                                    .map { producerRecord("messages", msg.id, it) }
+                is MessageDeleteEvent ->
+                    if (!ignoredChannels.contains(event.channelId.asString()))
+                        Mono.just(
+                            event.messageId to {
+                                MessageDeletion.of(Instant.now()).map { producerRecord("messages", event.messageId, it) }
                             }
+                        )
+                    else
+                        Mono.empty()
+                is MessageBulkDeleteEvent ->
+                    if (!ignoredChannels.contains(event.channelId.asString()))
+                        Flux.fromIterable(event.messageIds.map { msg ->
+                            msg to {
+                                MessageDeletion.of(Instant.now())
+                                    .map { producerRecord("messages", msg, it) }
+                            }
+                        })
+                    else
+                        Flux.empty()
+                is ReactionAddEvent ->
+                    validateMessage(
+                        event.message,
+                        {
+                            event.user
+                                .flatMap { NewReaction.of(it, event.emoji) }
+                                .map { producerRecord("messages", event.messageId, it) }
                         }
+                    )
+                is ReactionRemoveEvent ->
+                    validateMessage(
+                        event.message,
+                        {
+                            event.user
+                                .flatMap { ReactionRemoval.of(it, event.emoji) }
+                                .map { producerRecord("messages", event.messageId, it) }
+                        }
+                    )
+                is ReactionRemoveAllEvent ->
+                    validateMessage(
+                        event.message,
+                        {
+                            ReactionClear.of(Instant.now())
+                                .map { producerRecord("messages", event.messageId, it) }
+                        }
+                    )
                 else -> Flux.empty()
             }
         }

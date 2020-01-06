@@ -67,6 +67,7 @@ type Message {
   createdAt: Timestamp!
   editedAt: Timestamp
   deletedAt: Timestamp
+  hasReactions: Boolean!
   hasEmbeds: Boolean!
   hasAttachments: Boolean!
 }
@@ -79,6 +80,15 @@ type MessageVersion {
 type MessageDetails {
   embeds: [Embed!]!
   attachments: [Attachment!]!
+  reactions: [Reaction!]!
+}
+
+type Reaction {
+  type: String!
+  emoji: String!
+  emojiId: String
+  emojiAnimated: Boolean!
+  count: Int
 }
 
 type Embed {

@@ -181,3 +181,36 @@ data class Embed(
     @Serializable
     data class Field(val name: String, val value: String, val inline: Boolean)
 }
+
+@Serializable
+data class NewReaction(
+    val user: UserInfo,
+    val type: Type,
+    val emoji: String,
+    val emojiId: String?,
+    val emojiAnimated: Boolean,
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant
+) {
+    @Serializable(with = Type.Serializer::class)
+    enum class Type {
+        UNICODE, CUSTOM;
+
+        companion object Serializer : CommonEnumSerializer<Type>(
+            serialName = "ReactionType",
+            choices = values(),
+            choicesNames = arrayOf("UNICODE", "CUSTOM")
+        )
+    }
+}
+
+@Serializable
+data class ReactionRemoval(
+    val user: UserInfo,
+    val type: NewReaction.Type,
+    val emoji: String,
+    val emojiId: String?,
+    @Serializable(with = InstantSerializer::class) val timestamp: Instant
+)
+
+@Serializable
+data class ReactionClear(@Serializable(with = InstantSerializer::class) val timestamp: Instant)

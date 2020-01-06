@@ -1,6 +1,9 @@
 <template>
   <span @mouseover="calculateAlignment()" :class="['emoji', { 'emoji--large': large }]">
-    <img :src="url" :alt="name" class="emoji__image">
+    <span class="emoji__content">
+      <img :src="url" :alt="name" class="emoji__image">
+      <slot />
+    </span>
 
     <span
       ref="aligned"
@@ -29,7 +32,7 @@ export default {
     },
     large: {
       type: Boolean,
-      required: true
+      default: () => false
     }
   },
   data () {
@@ -51,6 +54,12 @@ export default {
 
   &--large {
     font-size: 2.5rem;
+  }
+
+  &__content {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: bottom;
   }
 
   &__image {

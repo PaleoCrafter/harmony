@@ -1,12 +1,8 @@
 package com.seventeenthshard.harmony.dbimport
 
-import com.seventeenthshard.harmony.dbimport.MessageEmbeds.index
-import com.seventeenthshard.harmony.dbimport.MessageEmbeds.nullable
-import com.seventeenthshard.harmony.dbimport.Messages.nullable
-import com.seventeenthshard.harmony.dbimport.PermissionOverrides.primaryKey
-import com.seventeenthshard.harmony.dbimport.Roles.default
 import com.seventeenthshard.harmony.events.ChannelInfo
 import com.seventeenthshard.harmony.events.Embed
+import com.seventeenthshard.harmony.events.NewReaction
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
@@ -15,7 +11,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.`java-time`.datetime
 import org.jetbrains.exposed.sql.vendors.currentDialect
 
-object SnowflakeColumnType : ColumnType() {
+class SnowflakeColumnType : ColumnType() {
     override fun sqlType(): String = currentDialect.dataTypeProvider.longType()
 
     override fun notNullValueToDB(value: Any): Any {
@@ -33,7 +29,7 @@ object SnowflakeColumnType : ColumnType() {
     }
 }
 
-fun Table.snowflake(name: String): Column<String> = registerColumn(name, SnowflakeColumnType)
+fun Table.snowflake(name: String): Column<String> = registerColumn(name, SnowflakeColumnType())
 
 object Servers : Table() {
     val id = snowflake("id").primaryKey()
@@ -158,4 +154,15 @@ object MessageAttachments : Table() {
     val width = integer("width").nullable()
     val height = integer("height").nullable()
     val spoiler = bool("spoiler").default(false)
+}
+
+object MessageReactions : Table() {
+    val message = snowflake("message").primaryKey(0)
+    val user = snowflake("user").primaryKey(1)
+    val type = enumerationByName("type", 16, NewReaction.Type::class).primaryKey(2)
+    val emoji = varchar("emoji", 32).primaryKey(3)
+    val emojiId = snowflake("emojiId").primaryKey(4).default("0")
+    val emojiAnimated = bool("emojiAnimated")
+    val createdAt = datetime("createdAt")
+    val deletedAt = datetime("deletedAt").nullable()
 }

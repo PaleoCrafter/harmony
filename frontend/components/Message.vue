@@ -4,6 +4,7 @@ import detailsQuery from '@/apollo/queries/message-details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
 import Attachment from '@/components/message/Attachment.vue'
+import Reaction from '@/components/message/Reaction.vue'
 
 export default {
   name: 'Message',
@@ -18,7 +19,7 @@ export default {
     details: {
       query: detailsQuery,
       skip () {
-        return !this.message.hasEmbeds && !this.message.hasAttachments
+        return !this.message.hasEmbeds && !this.message.hasAttachments && !this.message.hasReactions
       },
       variables () {
         return {
@@ -49,6 +50,7 @@ export default {
     }
 
     const details = this.details ?? {}
+    const reactions = details.reactions || []
     const embeds = details.embeds || []
     const attachments = details.attachments || []
 
@@ -81,6 +83,9 @@ export default {
             )
           ]
         ) : undefined,
+        reactions.length > 0
+          ? h('div', { class: 'message__reactions' }, reactions.map(reaction => h(Reaction, { props: { reaction } })))
+          : undefined,
         embeds.length > 0
           ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } })))
           : undefined,
@@ -122,7 +127,7 @@ export default {
     font-size: 0.625rem;
   }
 
-  &__embeds, &__attachments {
+  &__reactions, &__embeds, &__attachments {
     padding: 0.5rem 0;
     flex-basis: 0;
 
@@ -134,16 +139,28 @@ export default {
     }
   }
 
-  &__embeds {
+  &__reactions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
     grid-column: 1/span 2;
     grid-row: 2;
+
+    @media (max-width: 768px) {
+      flex-direction: row;
+    }
+  }
+
+  &__embeds {
+    grid-column: 1/span 2;
+    grid-row: 3;
   }
 
   &__attachments {
     display: flex;
     flex-direction: column;
     grid-column: 1/span 2;
-    grid-row: 3;
+    grid-row: 4;
   }
 
   &__history-button {

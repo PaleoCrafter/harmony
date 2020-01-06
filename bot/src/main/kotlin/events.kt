@@ -8,6 +8,9 @@ import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.MessageEmbedUpdate
 import com.seventeenthshard.harmony.events.NewMessage
+import com.seventeenthshard.harmony.events.NewReaction
+import com.seventeenthshard.harmony.events.ReactionClear
+import com.seventeenthshard.harmony.events.ReactionRemoval
 import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
 import com.seventeenthshard.harmony.events.ServerDeletion
@@ -23,12 +26,14 @@ import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.entity.Role
 import discord4j.core.`object`.entity.User
+import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Image
 import discord4j.core.`object`.util.Snowflake
 import reactor.core.publisher.Mono
 import reactor.util.function.component1
 import reactor.util.function.component2
 import java.time.Instant
+import java.util.Optional
 import discord4j.core.`object`.Embed as DiscordEmbed
 
 fun ServerInfo.Companion.of(guild: Guild) =
@@ -194,3 +199,34 @@ fun Embed.Companion.of(embed: DiscordEmbed) =
             Embed.Field(it.name, it.value, it.isInline)
         }
     )
+
+fun NewReaction.Companion.of(user: User, emoji: ReactionEmoji) =
+    UserInfo.of(user)
+        .flatMap { u ->
+            Mono.justOrEmpty(
+                Optional.ofNullable(
+                    emoji.asCustomEmoji().orElse(null)?.let {
+                        NewReaction(u, NewReaction.Type.CUSTOM, it.name, it.id.asString(), it.isAnimated, Instant.now())
+                    } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
+                        NewReaction(u, NewReaction.Type.UNICODE, it.raw, null, false, Instant.now())
+                    }
+                )
+            )
+        }
+
+fun ReactionRemoval.Companion.of(user: User, emoji: ReactionEmoji) =
+    UserInfo.of(user)
+        .flatMap { u ->
+            Mono.justOrEmpty(
+                Optional.ofNullable(
+                    emoji.asCustomEmoji().orElse(null)?.let {
+                        ReactionRemoval(u, NewReaction.Type.CUSTOM, it.name, it.id.asString(), Instant.now())
+                    } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
+                        ReactionRemoval(u, NewReaction.Type.UNICODE, it.raw, null, Instant.now())
+                    }
+                )
+            )
+        }
+
+fun ReactionClear.Companion.of(timestamp: Instant) =
+    Mono.just(ReactionClear(timestamp))

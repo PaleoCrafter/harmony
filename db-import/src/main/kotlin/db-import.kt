@@ -10,6 +10,9 @@ import com.seventeenthshard.harmony.events.MessageDeletion
 import com.seventeenthshard.harmony.events.MessageEdit
 import com.seventeenthshard.harmony.events.MessageEmbedUpdate
 import com.seventeenthshard.harmony.events.NewMessage
+import com.seventeenthshard.harmony.events.NewReaction
+import com.seventeenthshard.harmony.events.ReactionClear
+import com.seventeenthshard.harmony.events.ReactionRemoval
 import com.seventeenthshard.harmony.events.RoleDeletion
 import com.seventeenthshard.harmony.events.RoleInfo
 import com.seventeenthshard.harmony.events.ServerDeletion
@@ -17,7 +20,6 @@ import com.seventeenthshard.harmony.events.ServerInfo
 import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.UserNicknameChange
 import com.seventeenthshard.harmony.events.UserRolesChange
-import com.seventeenthshard.harmony.events.toHex
 import com.sksamuel.avro4k.Avro
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
@@ -79,7 +81,7 @@ class EventHandler(init: EventHandler.() -> Unit) {
                             val event = Avro.default.fromRecord(handler.deserializer, record)
                             handler.run(it.key(), event)
                             logger.info("Handled ${event.javaClass}")
-                        }
+                        } ?: logger.warn("Skipping event $it")
                     } catch (e: MissingFieldException) {
                         logger.warn("Skipping event due to missing fields")
                     }
@@ -315,6 +317,46 @@ fun runImport() {
                 }
             }
         }
+        listen<NewReaction> { messageId, event ->
+            transaction {
+                Users.replace {
+                    it[id] = event.user.id
+                    it[name] = event.user.username
+                    it[discriminator] = event.user.discriminator
+                    it[bot] = event.user.isBot
+                }
+
+                MessageReactions.replace {
+                    it[message] = messageId
+                    it[user] = event.user.id
+                    it[type] = event.type
+                    it[emoji] = event.emoji
+                    it[emojiId] = event.emojiId ?: "0"
+                    it[emojiAnimated] = event.emojiAnimated
+                    it[createdAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+                }
+            }
+        }
+        listen<ReactionRemoval> { messageId, event ->
+            transaction {
+                MessageReactions.update({
+                    (MessageReactions.message eq messageId) and
+                        (MessageReactions.user eq event.user.id) and
+                        (MessageReactions.type eq event.type) and
+                        (MessageReactions.emoji eq event.emoji) and
+                        (MessageReactions.emojiId eq (event.emojiId ?: "0"))
+                }) {
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+                }
+            }
+        }
+        listen<ReactionClear> { messageId, event ->
+            transaction {
+                MessageReactions.update({ (MessageReactions.message eq messageId) and MessageReactions.deletedAt.isNull() }) {
+                    it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
+                }
+            }
+        }
 
         listen<ChannelRemoval> { channelId, _ ->
             transaction {
@@ -342,6 +384,13 @@ fun runImport() {
                 )
                 attachmentsStatement.fillParameters(listOf(Messages.channel.columnType to channelId))
                 attachmentsStatement.executeUpdate()
+
+                val reactionsStatement = connection.prepareStatement(
+                    "DELETE FROM messagereactions USING messages WHERE messagereactions.message = messages.id AND messages.channel = ?",
+                    false
+                )
+                reactionsStatement.fillParameters(listOf(Messages.channel.columnType to channelId))
+                reactionsStatement.executeUpdate()
 
                 Messages.deleteWhere {
                     Messages.channel eq channelId

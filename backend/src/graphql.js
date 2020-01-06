@@ -4,7 +4,7 @@ const { ApolloServer, gql } = require('apollo-server-express')
 const DataLoader = require('dataloader')
 const Sequelize = require('sequelize')
 const { Op, QueryTypes } = Sequelize
-const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField, Attachment } = require('./db')
+const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField, Attachment, Reaction } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
 
 const typeDefs = gql(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
@@ -214,7 +214,8 @@ function initLoaders (user) {
 
       return ids.map(id => messages.find(msg => msg.id === id) || null)
     }),
-    messageCounts: new DataLoader(async (messages) => {
+    messageCounts: new DataLoader(async (keys) => {
+      const messages = keys.map(k => k.message)
       const embedCounts = await Embed.findAll({
         attributes: ['message', [Sequelize.fn('COUNT', Sequelize.col('*')), 'count']],
         where: { message: messages },
@@ -226,9 +227,33 @@ function initLoaders (user) {
         group: ['message']
       })
 
+      const reactionVariables = keys.map(({ message, canSeeDeleted }, index) => ({
+        query: `($message${index}::bigint, $canSeeDeleted${index}::boolean)`,
+        values: {
+          [`message${index}`]: message,
+          [`canSeeDeleted${index}`]: canSeeDeleted
+        }
+      }))
+      const reactionCounts = await database.query(
+        `
+        SELECT
+          "messagereactions"."message" AS "message",
+          COUNT(*) AS "count"
+        FROM "messagereactions"
+        JOIN (VALUES ${reactionVariables.map(v => v.query).join(', ')}) AS conditions (msg, canSeeDeleted)
+          ON "messagereactions"."message" = msg AND (canSeeDeleted OR "messagereactions"."deletedAt" IS NULL)
+        GROUP BY "message"
+        `,
+        {
+          bind: reactionVariables.reduce((acc, v) => ({ ...acc, ...v.values }), {}),
+          type: QueryTypes.SELECT
+        }
+      )
+
       return messages.map(id => ({
         embeds: parseInt((embedCounts.find(e => e.message === id) || { get: () => '0' }).get('count')),
-        attachments: parseInt((attachmentCounts.find(e => e.message === id) || { get: () => '0' }).get('count'))
+        attachments: parseInt((attachmentCounts.find(a => a.message === id) || { get: () => '0' }).get('count')),
+        reactions: parseInt((reactionCounts.find(r => r.message === id) || { count: '0' }).count)
       }))
     }),
     messageVersions: new DataLoader(async (ids) => {
@@ -241,7 +266,53 @@ function initLoaders (user) {
 
       return ids.map(id => versions.filter(v => v.message === id))
     }),
-    embeds: new DataLoader(async (messages) => {
+    reactions: new DataLoader(async (keys) => {
+      const messages = keys.map(k => k.message)
+      const reactions = await database.query(
+        `
+        SELECT
+          "messagereactions"."message" AS "message",
+          "messagereactions"."type" AS "type",
+          "messagereactions"."emoji" AS "emoji",
+          CASE WHEN "messagereactions"."type" = 'UNICODE' THEN NULL ELSE "messagereactions"."emojiId" END AS "emojiId",
+          bool_or("messagereactions"."emojiAnimated") AS "emojiAnimated",
+          MIN("messagereactions"."createdAt") AS "createdAt",
+          COUNT("counter"."user") AS "count"
+        FROM "messagereactions"
+        LEFT JOIN "messagereactions" AS "counter"
+          ON "counter"."message" = "messagereactions"."message"
+          AND "counter"."user" = "messagereactions"."user"
+          AND "counter"."type" = "messagereactions"."type"
+          AND "counter"."emoji" = "messagereactions"."emoji"
+          AND "counter"."emojiId" = "messagereactions"."emojiId"
+          AND "counter"."deletedAt" IS NULL
+        WHERE "messagereactions".message IN (${messages.map((_, i) => `$${i + 1}::bigint`).join(', ')})
+        GROUP BY "messagereactions"."message", "messagereactions"."type", "messagereactions"."emoji", "messagereactions"."emojiId"
+        ORDER BY "createdAt" ASC
+        `,
+        {
+          bind: messages,
+          type: QueryTypes.SELECT
+        }
+      )
+
+      return keys.map(({ message, canSeeDeleted }) => {
+        const messageReactions = reactions.filter(r => r.message === message)
+        return messageReactions
+          .filter(r => canSeeDeleted || r.count > 0)
+          .map(reaction => ({
+            type: reaction.type,
+            emoji: reaction.emoji,
+            emojiId: reaction.emojiId,
+            emojiAnimated: reaction.emojiAnimated,
+            count: reaction.count
+          }))
+      })
+    }, {
+      cacheKeyFn: ({ message, canSeeDeleted }) => `${message}-${canSeeDeleted}`
+    }),
+    embeds: new DataLoader(async (keys) => {
+      const messages = keys.map(k => k.message)
       const embeds = await Promise.all(
         (await Embed.findAll({ where: { message: messages } })).map(embed => ({
           id: embed.id,
@@ -264,7 +335,8 @@ function initLoaders (user) {
 
       return messages.map(id => embeds.filter(e => e.message === id))
     }),
-    attachments: new DataLoader(async (messages) => {
+    attachments: new DataLoader(async (keys) => {
+      const messages = keys.map(k => k.message)
       const attachments = await Promise.all(
         (await Attachment.findAll({ where: { message: messages } })).map(attachment => ({
           message: attachment.message,
@@ -340,6 +412,7 @@ const queryResolver = {
 
     return Promise.all(messages.map(async (msg) => {
       const versions = await request.loaders.messageVersions.load(msg.id)
+      const infoKey = { message: msg.id, canSeeDeleted: permissions.has('manageMessages') }
 
       return {
         id: msg.id,
@@ -349,8 +422,9 @@ const queryResolver = {
         createdAt: msg.createdAt,
         editedAt: versions.length > 1 ? versions[0].timestamp : null,
         deletedAt: msg.deletedAt,
-        hasEmbeds: async () => (await request.loaders.messageCounts.load(msg.id)).embeds > 0,
-        hasAttachments: async () => (await request.loaders.messageCounts.load(msg.id)).attachments > 0
+        hasReactions: async () => (await request.loaders.messageCounts.load(infoKey)).reactions > 0,
+        hasEmbeds: async () => (await request.loaders.messageCounts.load(infoKey)).embeds > 0,
+        hasAttachments: async () => (await request.loaders.messageCounts.load(infoKey)).attachments > 0
       }
     }))
   },
@@ -367,7 +441,13 @@ const queryResolver = {
       return null
     }
 
-    return { embeds: () => request.loaders.embeds.load(messageId), attachments: () => request.loaders.attachments.load(messageId) }
+    const key = { message: messageId, canSeeDeleted: permissions.has('manageMessages') }
+
+    return {
+      embeds: () => request.loaders.embeds.load(key),
+      attachments: () => request.loaders.attachments.load(key),
+      reactions: () => request.loaders.reactions.load(key)
+    }
   },
   userDetails (parent, { server, id }, { request }) {
     return request.user.servers.find(s => s.id === server)
@@ -385,7 +465,16 @@ module.exports = {
       req.loaders = initLoaders(req.user)
       next()
     })
-    const server = new ApolloServer({ typeDefs, resolvers: { Query: queryResolver }, context: context => ({ request: context.req }) })
+    const server = new ApolloServer({
+      typeDefs,
+      resolvers: { Query: queryResolver },
+      formatError: (err) => {
+        // eslint-disable-next-line no-console
+        console.error(err.extensions.exception)
+        return err
+      },
+      context: context => ({ request: context.req })
+    })
     app.use('/api/graphql', checkAuth, server.getMiddleware({ path: '/' }))
   }
 }

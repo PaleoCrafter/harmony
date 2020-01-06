@@ -30,7 +30,8 @@ fun main(args: Array<String>) {
             MessageVersions,
             MessageEmbeds,
             MessageEmbedFields,
-            MessageAttachments
+            MessageAttachments,
+            MessageReactions
         )
     }
 

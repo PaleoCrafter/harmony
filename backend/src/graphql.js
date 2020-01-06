@@ -195,8 +195,8 @@ function initLoaders (user) {
             name: user.name,
             discriminator: user.discriminator,
             bot: user.bot,
-            color: userRoles.load({ server, id: user.id }).then(roles => roles.map(role => role.color)[0] || null),
-            nickname: userNicknames.load({ server, id: user.id }).then(nicks => nicks.map(nick => nick.name)[0] || null)
+            color: () => userRoles.load({ server, id: user.id }).then(roles => roles.map(role => role.color)[0] || null),
+            nickname: () => userNicknames.load({ server, id: user.id }).then(nicks => nicks.map(nick => nick.name)[0] || null)
           }
         }
 
@@ -448,6 +448,42 @@ const queryResolver = {
       attachments: () => request.loaders.attachments.load(key),
       reactions: () => request.loaders.reactions.load(key)
     }
+  },
+  async reactors (parent, { message: messageId, type, emoji, emojiId }, { request }) {
+    const message = await request.loaders.messages.load(messageId)
+    if (message === null) {
+      return []
+    }
+
+    const channel = await request.loaders.channels.load(message.channel)
+    const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
+
+    if (permissions === undefined || !permissions.has('readMessages')) {
+      return []
+    }
+
+    const reactions = await Reaction.findAll({
+      where: {
+        message: messageId,
+        type,
+        emoji,
+        emojiId: emojiId || '0',
+        ...(
+          permissions.has('manageMessages')
+            ? {}
+            : {
+              deletedAt: null
+            }
+        )
+      },
+      order: [['createdAt', 'ASC'], ['deletedAt', 'ASC', 'NULLS FIRST']]
+    })
+
+    return reactions.map(r => ({
+      user: () => request.loaders.users.load({ server: message.server, id: r.user }),
+      createdAt: r.createdAt,
+      deletedAt: r.deletedAt
+    }))
   },
   userDetails (parent, { server, id }, { request }) {
     return request.user.servers.find(s => s.id === server)

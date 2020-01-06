@@ -8,8 +8,14 @@ export const state = () => ({
   sidebarOpen: false,
   sidebarTab: 'channels',
   collapsedCategories: {},
-  historyMessage: null
+  channelModalTitle: null
 })
+
+export const getters = {
+  channelModalOpen (state) {
+    return state.channelModalTitle !== null
+  }
+}
 
 export const mutations = {
   setLoginStatus (state, { loggedIn, identity }) {
@@ -40,11 +46,11 @@ export const mutations = {
       window.localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories))
     }
   },
-  openMessageHistory (state, message) {
-    state.historyMessage = message
+  openChannelModal (state, title) {
+    state.channelModalTitle = title
   },
-  closeMessageHistory (state) {
-    state.historyMessage = null
+  closeChannelModal (state) {
+    state.channelModalTitle = null
   }
 }
 

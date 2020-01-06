@@ -396,6 +396,13 @@ const Reaction = db.define('messagereaction', {
   emojiAnimated: {
     type: Sequelize.BOOLEAN,
     allowNull: false
+  },
+  createdAt: {
+    type: Sequelize.DATE,
+    allowNull: false
+  },
+  deletedAt: {
+    type: Sequelize.DATE
   }
 }, {
   timestamps: false

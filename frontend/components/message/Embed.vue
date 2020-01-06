@@ -232,6 +232,18 @@ export default {
   grid-auto-rows: auto;
   column-gap: 1rem;
 
+  a {
+    color: #00b0f4;
+    text-decoration: none;
+    unicode-bidi: bidi-override;
+    direction: ltr;
+    word-break: break-word;
+
+    &:hover, &:focus {
+      text-decoration: underline;
+    }
+  }
+
   @media (max-width: 768px) {
     display: grid;
     max-width: 100%;

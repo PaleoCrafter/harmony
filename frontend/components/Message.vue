@@ -1,20 +1,30 @@
 <script>
 import { ClockIcon } from 'vue-feather-icons'
+import { mapGetters } from 'vuex'
 import detailsQuery from '@/apollo/queries/message-details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
 import Attachment from '@/components/message/Attachment.vue'
 import Reaction from '@/components/message/Reaction.vue'
+import MessageHistory from '@/components/MessageHistory.vue'
+import MessageReactors from '@/components/MessageReactors.vue'
 
 export default {
   name: 'Message',
-  components: { Embed, Attachment, Markdown, ClockIcon },
+  components: { Embed, Attachment, Markdown, ClockIcon, MessageHistory, MessageReactors },
   props: {
     message: {
       type: Object,
       required: true
     }
   },
+  data () {
+    return {
+      historyActive: false,
+      selectedReaction: null
+    }
+  },
+  computed: mapGetters(['channelModalOpen']),
   apollo: {
     details: {
       query: detailsQuery,
@@ -29,9 +39,22 @@ export default {
       update: data => data.messageDetails
     }
   },
+  watch: {
+    channelModalOpen (newState) {
+      if (newState === false) {
+        this.historyActive = false
+        this.selectedReaction = null
+      }
+    }
+  },
   methods: {
     openHistory () {
-      this.$store.commit('openMessageHistory', this.message)
+      this.$store.commit('openChannelModal', 'Message History')
+      this.historyActive = true
+    },
+    openReactors (reaction) {
+      this.$store.commit('openChannelModal', 'Reactions')
+      this.selectedReaction = reaction
     }
   },
   render (h) {
@@ -83,15 +106,25 @@ export default {
             )
           ]
         ) : undefined,
-        reactions.length > 0
-          ? h('div', { class: 'message__reactions' }, reactions.map(reaction => h(Reaction, { props: { reaction } })))
-          : undefined,
+        reactions.length > 0 ? h(
+          'div',
+          { class: 'message__reactions' },
+          reactions.map(reaction => h(Reaction, { props: { reaction }, on: { click: this.openReactors } }))
+        ) : undefined,
         embeds.length > 0
           ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } })))
           : undefined,
         attachments.length > 0
           ? h('div', { class: 'message__attachments' }, attachments.map(attachment => h(Attachment, { props: { attachment } })))
-          : undefined
+          : undefined,
+        this.historyActive
+          ? h('portal', { props: { to: 'channel-modal' } }, [h(MessageHistory, { props: { message: this.message } })])
+          : undefined,
+        this.selectedReaction !== null ? h(
+          'portal',
+          { props: { to: 'channel-modal' } },
+          [h(MessageReactors, { props: { message: this.message, reactions, initialSelection: this.selectedReaction } })]
+        ) : undefined
       ]
     )
   }
@@ -111,15 +144,6 @@ export default {
   &__content {
     grid-column: 1;
     grid-row: 1;
-  }
-
-  a {
-    color: #00b0f4;
-    text-decoration: none;
-
-    &:hover, &:focus {
-      text-decoration: underline;
-    }
   }
 
   &__note {

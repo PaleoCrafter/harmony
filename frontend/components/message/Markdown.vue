@@ -54,6 +54,18 @@ export default {
   unicode-bidi: plaintext;
   color: #dcddde;
 
+  a {
+    color: #00b0f4;
+    text-decoration: none;
+    unicode-bidi: bidi-override;
+    direction: ltr;
+    word-break: break-word;
+
+    &:hover, &:focus {
+      text-decoration: underline;
+    }
+  }
+
   blockquote {
     position: relative;
     padding: 0 0.5rem 0 1rem;

@@ -1,0 +1,11 @@
+query Reactors($message: ID!, $type: String!, $emoji: String!, $emojiId: ID) {
+  reactors(message: $message, type: $type, emoji: $emoji, emojiId: $emojiId) {
+    user {
+      name
+      discriminator
+      nickname
+    }
+    createdAt
+    deletedAt
+  }
+}

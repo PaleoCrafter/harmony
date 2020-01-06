@@ -10,6 +10,7 @@ type Query {
 
   messages(channel: ID!, after: Timestamp!, before: Timestamp!, limit: Int!): [Message!]!
   messageDetails(message: ID!): MessageDetails
+  reactors(message: ID!, type: String!, emoji: String!, emojiId: ID): [Reactor!]!
 
   userDetails(server: ID!, id: ID!): UserDetails
 }
@@ -157,4 +158,10 @@ type UserDetails {
 type UserNickname {
   name: String
   timestamp: Timestamp!
+}
+
+type Reactor {
+  user: User!
+  createdAt: Timestamp!
+  deletedAt: Timestamp
 }

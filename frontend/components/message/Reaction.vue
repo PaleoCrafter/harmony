@@ -1,5 +1,10 @@
 <template>
-  <Emoji :url="emoji.url" :name="emoji.name" :class="['reaction', { 'reaction--deleted': reaction.count === 0 }]">
+  <Emoji
+    @click.native="$emit('click', reaction)"
+    :url="emoji.url"
+    :name="emoji.name"
+    :class="['reaction', { 'reaction--deleted': reaction.count === 0 }]"
+  >
     <span class="reaction__count">{{ reaction.count }}</span>
   </Emoji>
 </template>
@@ -42,7 +47,7 @@ export default {
   font-size: 0.8rem;
   margin: 0.125rem;
   background: rgba(255, 255, 255, 0.06);
-  padding: 0.1rem 0.3rem;
+  padding: 0.125em 0.375em;
   border-radius: 0.25rem;
 
   &__count {

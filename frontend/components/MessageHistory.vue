@@ -47,6 +47,9 @@ export default {
 .message-history {
   display: flex;
   flex-direction: column;
+  overflow-y: scroll;
+  flex: 1;
+  padding-right: 0.5rem;
 
   .markdown {
     padding: 0.75rem 0.5rem;

@@ -32,16 +32,14 @@
         </div>
       </div>
     </div>
-    <transition :duration="400" name="channel__modal">
-      <div v-if="$store.state.historyMessage !== null" @click.self="$store.commit('closeMessageHistory')" class="channel__modal-container">
+    <transition :duration="300" name="channel__modal">
+      <div v-if="channelModalOpen" @click.self="$store.commit('closeChannelModal')" class="channel__modal-container">
         <div class="channel__modal">
           <div class="channel__modal-header">
-            <h4>Message History</h4>
-            <XIcon @click="$store.commit('closeMessageHistory')" />
+            <h4>{{ channelModalTitle }}</h4>
+            <XIcon @click="$store.commit('closeChannelModal')" />
           </div>
-          <div ref="modalContent" class="channel__modal-content">
-            <MessageHistory :message="$store.state.historyMessage" />
-          </div>
+          <portal-target ref="modalContent" name="channel-modal" class="channel__modal-content" />
         </div>
       </div>
     </transition>
@@ -54,16 +52,15 @@ import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz'
 import addDays from 'date-fns/addDays'
 import startOfDay from 'date-fns/startOfDay'
 import endOfDay from 'date-fns/endOfDay'
-import { mapState } from 'vuex'
+import { mapState, mapGetters } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Divider from '@/components/Divider.vue'
-import MessageHistory from '@/components/MessageHistory.vue'
 
 export default {
-  components: { MessageHistory, Divider, LoadingSpinner, MessageList, XIcon },
+  components: { Divider, LoadingSpinner, MessageList, XIcon },
   validate ({ params: { date } }) {
     if (date === undefined) {
       return true
@@ -88,7 +85,8 @@ export default {
     }
   },
   computed: {
-    ...mapState(['timezone']),
+    ...mapState(['timezone', 'channelModalTitle']),
+    ...mapGetters(['channelModalOpen']),
     mayNotLoad () {
       return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
     },
@@ -100,12 +98,12 @@ export default {
   },
   watch: {
     date () {
-      this.$store.commit('closeMessageHistory')
+      this.$store.commit('closeChannelModal')
       this.messages = undefined
     },
     '$route.params.channelId': {
       handler () {
-        this.$store.commit('closeMessageHistory')
+        this.$store.commit('closeChannelModal')
         this.messages = undefined
       }
     },
@@ -196,10 +194,12 @@ export default {
     const self = this
     return {
       alignmentBounds () {
-        const element = self.$store.state.historyMessage !== null ? self.$refs.modalContent : self.$refs.container
+        let element = self.$store.state.channelModalOpen !== null ? self.$refs.modalContent : self.$refs.container
         if (element === undefined) {
           return undefined
         }
+
+        element = element.$el ?? element
 
         const scrollbarWidth = element.offsetWidth - element.clientWidth
         const scrollbarHeight = element.offsetHeight - element.clientHeight
@@ -310,7 +310,8 @@ export default {
     flex-direction: column;
     cursor: default;
     max-width: 640px;
-    max-height: 90%;
+    height: 60%;
+    max-height: 60%;
     background: #36393f;
     box-shadow: 0 0 0 1px rgba(32, 34, 37, .6), 0 2px 10px 0 rgba(0, 0, 0, .2);
     border-radius: 0.5rem;
@@ -327,7 +328,7 @@ export default {
     @media (max-width: 768px) {
       width: 100%;
       max-width: 100%;
-      max-height: 90%;
+      height: 60%;
       align-self: flex-end;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
@@ -366,20 +367,22 @@ export default {
     }
 
     &-content {
-      overflow-y: scroll;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
       flex: 1;
-      padding-right: 0.5rem;
+      overflow: hidden;
     }
 
     &-enter-active, &-leave-active {
-      transition: background .12s ease-in-out;
+      transition: background .3s ease-in-out;
     }
 
     &-enter-active .channel__modal {
-      transition: transform .4s ease-in-out;
+      transition: transform .3s cubic-bezier(0.420, 0.000, 0.630, 1.2);
 
       @media (max-width: 768px) {
-        transition: transform .4s ease-out;
+        transition: transform .3s ease-out;
       }
     }
 

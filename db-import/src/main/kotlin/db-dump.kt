@@ -80,6 +80,7 @@ fun runDump(arguments: List<String>) {
                                 this[Users.id] = it.id.asString()
                                 this[Users.name] = it.username
                                 this[Users.discriminator] = it.discriminator
+                                this[Users.bot] = it.isBot
                             }
 
                             Messages.batchInsert(messages.filter { it.author.isPresent }, ignore = true) {

@@ -127,6 +127,10 @@ const User = db.define('user', {
   discriminator: {
     type: Sequelize.STRING,
     allowNull: false
+  },
+  bot: {
+    type: Sequelize.BOOLEAN,
+    allowNull: false
   }
 }, {
   timestamps: false

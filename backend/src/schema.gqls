@@ -41,6 +41,7 @@ type User {
   id: ID!
   name: String!
   discriminator: String!
+  bot: Boolean!
   nickname: String
   color: Color
 }

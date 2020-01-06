@@ -218,6 +218,7 @@ fun runImport() {
                     it[id] = event.id
                     it[name] = event.username
                     it[discriminator] = event.discriminator
+                    it[bot] = event.isBot
                 }
             }
         }
@@ -260,6 +261,7 @@ fun runImport() {
                     it[id] = event.user.id
                     it[name] = event.user.username
                     it[discriminator] = event.user.discriminator
+                    it[bot] = event.user.isBot
                 }
 
                 val creationTimestamp = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))

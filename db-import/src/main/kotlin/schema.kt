@@ -56,6 +56,7 @@ object Users : Table() {
     val id = snowflake("id").primaryKey()
     val name = varchar("name", 255)
     val discriminator = varchar("discriminator", 4)
+    val bot = bool("bot").default(false)
 }
 
 object UserNicknames : Table() {

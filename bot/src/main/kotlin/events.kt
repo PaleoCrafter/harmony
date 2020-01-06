@@ -99,7 +99,8 @@ fun UserInfo.Companion.of(user: User) =
         UserInfo(
             user.id.asString(),
             user.username,
-            user.discriminator
+            user.discriminator,
+            user.isBot
         )
     )
 

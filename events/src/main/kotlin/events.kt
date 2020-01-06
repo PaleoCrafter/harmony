@@ -85,7 +85,8 @@ data class ChannelRemoval(
 data class UserInfo(
     val id: String,
     val username: String,
-    val discriminator: String
+    val discriminator: String,
+    val isBot: Boolean
 )
 
 @Serializable

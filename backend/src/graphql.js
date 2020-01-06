@@ -194,6 +194,7 @@ function initLoaders (user) {
             id: user.id,
             name: user.name,
             discriminator: user.discriminator,
+            bot: user.bot,
             color: userRoles.load({ server, id: user.id }).then(roles => roles.map(role => role.color)[0] || null),
             nickname: userNicknames.load({ server, id: user.id }).then(nicks => nicks.map(nick => nick.name)[0] || null)
           }

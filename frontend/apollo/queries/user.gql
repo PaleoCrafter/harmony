@@ -3,6 +3,7 @@ query User($server: ID!, $id: ID!) {
     name
     nickname
     discriminator
+    bot
     color {
       r
       g

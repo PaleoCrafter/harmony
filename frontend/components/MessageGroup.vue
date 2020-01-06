@@ -2,7 +2,7 @@
   <section class="message-group">
     <div class="message-group__header">
       <UserName :server="group.messages[0].server" :user="group.author" use-role-color />
-
+      <BotTag v-if="group.author.bot" />
       <time :datetime="group.firstTimestamp">{{ formattedTime }}</time>
     </div>
     <Message
@@ -16,10 +16,11 @@
 <script>
 import Message from '@/components/Message.vue'
 import UserName from '@/components/UserName.vue'
+import BotTag from '@/components/BotTag.vue'
 
 export default {
   name: 'MessageGroup',
-  components: { UserName, Message },
+  components: { UserName, Message, BotTag },
   props: {
     group: {
       type: Object,

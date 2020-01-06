@@ -3,6 +3,7 @@
     <div class="user-info__header">
       <span class="user-info__name">{{ user.name }}</span>
       <span class="user-info__discriminator">#{{ user.discriminator }}</span>
+      <BotTag v-if="user.bot" />
     </div>
     <div class="user-info__details">
       <LoadingSpinner v-if="$apollo.loading" />
@@ -33,10 +34,11 @@
 import formatRelative from 'date-fns/formatRelative'
 import detailsQuery from '@/apollo/queries/user-details.gql'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import BotTag from '@/components/BotTag.vue'
 
 export default {
   name: 'UserInfo',
-  components: { LoadingSpinner },
+  components: { LoadingSpinner, BotTag },
   props: {
     load: {
       type: Boolean,
@@ -116,6 +118,11 @@ export default {
     background: #202225;
     padding: 0.75rem 1rem;
     display: flex;
+
+    .bot-tag {
+      margin-left: 0.4rem;
+      margin-top: 0.125rem;
+    }
   }
 
   &__name {

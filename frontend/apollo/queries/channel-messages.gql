@@ -7,6 +7,7 @@ query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
       name
       discriminator
       nickname
+      bot
       color {
         r
         g

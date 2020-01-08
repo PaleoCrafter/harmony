@@ -76,6 +76,12 @@ export default {
       app: ({ isDev }) => isDev ? '[name].[hash].js' : '[chunkhash].js',
       chunk: ({ isDev }) => isDev ? '[name].[hash].js' : '[chunkhash].js'
     },
+    html: {
+      minify: {
+        collapseWhitespace: true,
+        removeComments: true
+      }
+    },
     babel: {
       plugins: ['@babel/plugin-proposal-optional-chaining', '@babel/plugin-proposal-nullish-coalescing-operator']
     }

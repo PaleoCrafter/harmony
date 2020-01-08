@@ -335,7 +335,7 @@ function initLoaders (user) {
     embeds: new DataLoader(async (keys) => {
       const messages = keys.map(k => k.message)
       const embeds = await Promise.all(
-        (await Embed.findAll({ where: { message: messages } })).map(embed => ({
+        (await Embed.findAll({ where: { message: messages }, order: [['id', 'ASC']] })).map(embed => ({
           id: embed.id,
           message: embed.message,
           type: embed.type,

@@ -1,5 +1,8 @@
 <template>
-  <div :class="['embed', `embed--${embed.type.toLowerCase()}`]" :style="{ '--embed-accent': accentColor }">
+  <div
+    :class="['embed', `embed--${embed.type.toLowerCase()}`, { 'embed--images': embed.images.length > 0 }]"
+    :style="{ '--embed-accent': accentColor }"
+  >
     <Markdown
       v-if="embed.provider !== null"
       :tag="embed.provider.url !== null ? 'a' : 'div'"
@@ -20,14 +23,12 @@
       </Markdown>
     </div>
     <Markdown
-      v-if="embed.title !== null || embed.url !== null"
+      v-if="embed.title !== null"
       :tag="embed.url !== null ? 'a' : 'div'"
       :attributes="embed.url !== null ? { href: embed.url, target: '_blank', rel: 'noopener' } : {}"
-      :content="embed.title || ''"
+      :content="embed.title"
       class="embed__title embed__grid-item"
-    >
-      {{ embed.title === null ? embed.url : '' }}
-    </Markdown>
+    />
     <Markdown v-if="embed.description !== null" :content="embed.description" class="embed__description embed__grid-item" embed />
     <div v-if="embed.fields.length > 0" class="embed__fields embed__grid-item">
       <div
@@ -40,12 +41,21 @@
         <Markdown :content="field.value" class="embed__field-value" embed />
       </div>
     </div>
-    <div v-if="embed.image !== null" :style="{ width: calculateImageStyle(embed.image).width }" class="embed__image embed__grid-item">
-      <LazyImage
-        :src="imageUrl"
-        :style="calculateImageStyle(embed.image)"
-        alt="image"
-      />
+    <div
+      v-if="embed.images.length > 0"
+      :class="['embed__images', 'embed__grid-item', { 'embed__images--multiple': embed.images.length > 1 }]"
+    >
+      <div
+        v-for="image in embed.images"
+        :style="{ width: calculateImageStyle(image).width }"
+        class="embed__image-container"
+      >
+        <LazyImage
+          :src="getImageUrl(image)"
+          :style="calculateImageStyle(image)"
+          alt="image"
+        />
+      </div>
     </div>
     <div
       v-if="embed.thumbnail !== null && embed.video === null"
@@ -162,9 +172,6 @@ export default {
         []
       )
     },
-    imageUrl () {
-      return this.embed.image?.proxyUrl ?? this.embed.image?.url ?? null
-    },
     thumbnailUrl () {
       return this.embed.thumbnail?.proxyUrl ?? this.embed.thumbnail?.url ?? null
     },
@@ -214,6 +221,9 @@ export default {
       }
 
       return styles
+    },
+    getImageUrl (image) {
+      return image?.proxyUrl ?? image?.url ?? null
     }
   }
 }
@@ -287,7 +297,7 @@ export default {
     font-weight: bold;
     grid-column: 1;
     grid-row: 3;
-    white-space: normal;
+    white-space: nowrap;
   }
 
   &__description {
@@ -318,7 +328,7 @@ export default {
     }
   }
 
-  &__thumbnail, &__image {
+  &__thumbnail, &__images {
     max-width: 400px;
     max-height: 300px;
     margin-top: 1rem;
@@ -329,6 +339,39 @@ export default {
 
     @media (max-width: 768px) {
       max-width: 100%;
+    }
+  }
+
+  &__image {
+    max-width: 400px;
+    max-height: 300px;
+
+    @media (max-width: 768px) {
+      max-width: 100%;
+    }
+  }
+
+  &__images {
+    display: grid;
+    grid-template-columns: 50% 50%;
+    grid-auto-rows: 1fr;
+    grid-gap: 0.25rem;
+    max-height: unset;
+
+    &--multiple {
+      max-width: 300px;
+
+      @media (max-width: 768px) {
+        max-width: 100%;
+      }
+    }
+
+    .embed__image-container {
+      max-width: 100%;
+
+      &:only-child {
+        grid-column: 1/span 2
+      }
     }
   }
 
@@ -453,7 +496,7 @@ export default {
     }
   }
 
-  &--unknown, &--image, &--video {
+  &--unknown, &--image, &--video, &--images {
     grid-template-columns: minmax(0, min-content);
   }
 }

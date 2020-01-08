@@ -116,6 +116,18 @@ export default {
     max-width: 100%;
   }
 
+  a {
+    color: #00b0f4;
+    text-decoration: none;
+    unicode-bidi: bidi-override;
+    direction: ltr;
+    word-break: break-word;
+
+    &:hover, &:focus {
+      text-decoration: underline;
+    }
+  }
+
   &__content {
     display: grid;
     align-items: center;

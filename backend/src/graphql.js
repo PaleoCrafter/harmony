@@ -42,6 +42,27 @@ const ATTACHMENT_TYPES = {
   ogg: 'AUDIO'
 }
 
+function mergeEmbeds (embeds) {
+  function merge (target, source) {
+    if (source.image) {
+      target.images.push(source.image)
+    }
+  }
+
+  return embeds.reduce(
+    (acc, embed) => {
+      const existing = embed.url === null ? null : acc.find(e => e.url === embed.url)
+      if (existing) {
+        merge(existing, embed)
+        return acc
+      } else {
+        return [...acc, { ...embed, image: undefined, images: embed.image !== null ? [embed.image] : [] }]
+      }
+    },
+    []
+  )
+}
+
 function initLoaders (user) {
   const channelLoader = new DataLoader(async (ids) => {
     const channels = await Channel.findAll({ where: { id: ids }, order: [['position', 'ASC']] })
@@ -333,7 +354,7 @@ function initLoaders (user) {
         }))
       )
 
-      return messages.map(id => embeds.filter(e => e.message === id))
+      return messages.map(id => mergeEmbeds(embeds.filter(e => e.message === id)))
     }),
     attachments: new DataLoader(async (keys) => {
       const messages = keys.map(k => k.message)

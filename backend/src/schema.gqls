@@ -101,7 +101,7 @@ type Embed {
   color: Color
   timestamp: Timestamp
   footer: EmbedFooter
-  image: EmbedMedia
+  images: [EmbedMedia]
   thumbnail: EmbedMedia
   video: EmbedMedia
   provider: EmbedProvider

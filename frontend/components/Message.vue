@@ -86,7 +86,11 @@ export default {
         h(
           Markdown,
           {
-            props: { content: this.message.versions[0].content, context: this.message },
+            props: {
+              content: this.message.versions[0].content,
+              context: this.message,
+              embed: this.message.author.discriminator === 'HOOK'
+            },
             class: 'message__content'
           },
           slotContent
@@ -112,7 +116,7 @@ export default {
           reactions.map(reaction => h(Reaction, { props: { reaction }, on: { click: this.openReactors } }))
         ) : undefined,
         embeds.length > 0
-          ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed } })))
+          ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed, message: this.message } })))
           : undefined,
         attachments.length > 0
           ? h('div', { class: 'message__attachments' }, attachments.map(attachment => h(Attachment, { props: { attachment } })))

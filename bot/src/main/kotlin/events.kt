@@ -132,12 +132,15 @@ fun UserRolesChange.Companion.of(user: User, guild: Guild, roles: List<Snowflake
         }
 
 fun NewMessage.Companion.of(message: Message) =
-    Mono.zip(message.channel, Mono.justOrEmpty(message.author))
-        .filter { it.t1 is GuildMessageChannel }
+    Mono.zip(
+        message.channel,
+        Mono.justOrEmpty(message.author).flatMap { UserInfo.of(it) }
+            .switchIfEmpty(message.webhook.map { UserInfo(it.id.asString(), it.name.orElse("Webhook"), "HOOK", true) })
+    ).filter { it.t1 is GuildMessageChannel }
         .flatMap {
             Mono.zip(
                 ChannelInfo.of(it.t1 as GuildMessageChannel),
-                UserInfo.of(it.t2)
+                Mono.just(it.t2)
             )
         }
         .map { (channel, user) ->

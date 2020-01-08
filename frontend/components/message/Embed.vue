@@ -8,6 +8,7 @@
       :tag="embed.provider.url !== null ? 'a' : 'div'"
       :attributes="embed.provider.url !== null ? { href: embed.provider.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.provider.name || ''"
+      :context="message"
       class="embed__provider embed__grid-item"
     >
       {{ embed.provider.name === null ? embed.provider.url : '' }}
@@ -18,6 +19,7 @@
         :tag="embed.author.url !== null ? 'a' : 'span'"
         :attributes="embed.author.url !== null ? { href: embed.author.url, target: '_blank', rel: 'noopener' } : {}"
         :content="embed.author.name || ''"
+        :context="message"
       >
         {{ embed.author.name === null ? embed.author.url : '' }}
       </Markdown>
@@ -27,9 +29,16 @@
       :tag="embed.url !== null ? 'a' : 'div'"
       :attributes="embed.url !== null ? { href: embed.url, target: '_blank', rel: 'noopener' } : {}"
       :content="embed.title"
+      :context="message"
       class="embed__title embed__grid-item"
     />
-    <Markdown v-if="embed.description !== null" :content="embed.description" class="embed__description embed__grid-item" embed />
+    <Markdown
+      v-if="embed.description !== null"
+      :content="embed.description"
+      :context="message"
+      class="embed__description embed__grid-item"
+      embed
+    />
     <div v-if="embed.fields.length > 0" class="embed__fields embed__grid-item">
       <div
         v-for="(field, index) in groupedFields"
@@ -37,8 +46,8 @@
         :class="['embed__field', { 'embed__field--inline': field.inline }]"
         :style="{ gridColumn: `${field.column}/span ${field.span}`, gridRow: `${field.row}` }"
       >
-        <Markdown :content="field.name" class="embed__field-name" embed />
-        <Markdown :content="field.value" class="embed__field-value" embed />
+        <Markdown :content="field.name" :context="message" class="embed__field-name" />
+        <Markdown :content="field.value" :context="message" class="embed__field-value" embed />
       </div>
     </div>
     <div
@@ -109,7 +118,7 @@
     <div v-if="embed.footer !== null || embed.timestamp !== null" class="embed__footer embed__grid-item">
       <img v-if="footerIconUrl !== null" :src="footerIconUrl" alt="footer icon" class="embed__footer-icon">
       <div class="embed__footer-text">
-        <Markdown v-if="embed.footer !== null" :content="embed.footer.text" tag="span" embed />
+        <Markdown v-if="embed.footer !== null" :content="embed.footer.text" :context="message" tag="span" embed />
         <span v-if="embed.footer && embed.footer.text !== null && timestamp !== null" class="embed__footer-separator">•</span>
         <span v-if="timestamp !== null">{{ timestamp }}</span>
       </div>
@@ -131,6 +140,10 @@ export default {
   components: { PlayIcon, ExternalLinkIcon, LazyImage, Markdown },
   props: {
     embed: {
+      type: Object,
+      required: true
+    },
+    message: {
       type: Object,
       required: true
     }
@@ -167,7 +180,7 @@ export default {
         },
         { result: [] }
       ).result
-      const requiredColumns = groups.filter(g => Array.isArray(g)).map(g => g.length).reduce(lcm)
+      const requiredColumns = groups.filter(g => Array.isArray(g)).map(g => g.length).reduce(lcm, 1)
       return groups.reduce(
         (acc, group, row) => {
           if (!Array.isArray(group)) {

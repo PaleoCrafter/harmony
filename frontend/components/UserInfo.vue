@@ -2,10 +2,10 @@
   <div class="user-info">
     <div class="user-info__header">
       <span class="user-info__name">{{ user.name }}</span>
-      <span class="user-info__discriminator">#{{ user.discriminator }}</span>
+      <span v-if="user.discriminator !== 'HOOK'" class="user-info__discriminator">#{{ user.discriminator }}</span>
       <BotTag v-if="user.bot" />
     </div>
-    <div class="user-info__details">
+    <div v-if="$apollo.loading || (details && (details.roles.length > 0 || details.nicknames.length > 0))" class="user-info__details">
       <LoadingSpinner v-if="$apollo.loading" />
       <template v-if="details && details.roles.length > 0">
         <strong>Roles</strong>

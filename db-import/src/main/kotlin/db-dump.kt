@@ -4,6 +4,7 @@ package com.seventeenthshard.harmony.dbimport
 
 import com.seventeenthshard.harmony.events.Embed
 import com.seventeenthshard.harmony.events.NewReaction
+import com.seventeenthshard.harmony.events.UserInfo
 import com.seventeenthshard.harmony.events.toHex
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
@@ -23,6 +24,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.util.function.component1
 import reactor.util.function.component2
+import reactor.util.function.component3
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -73,6 +75,8 @@ fun runDump(arguments: List<String>) {
                 .flatMap { msg ->
                     Mono.zip(
                         Mono.just(msg),
+                        Mono.justOrEmpty(msg.author).map { UserInfo(it.id.asString(), it.username, it.discriminator, it.isBot) }
+                            .switchIfEmpty(msg.webhook.map { UserInfo(it.id.asString(), it.name.orElse("Webhook"), "HOOK", true) }),
                         Flux.fromIterable(msg.reactions)
                             .flatMap { reaction -> msg.getReactors(reaction.emoji).map { reaction.emoji to it.id } }
                             .collectList()
@@ -82,29 +86,29 @@ fun runDump(arguments: List<String>) {
                 .flatMap { group ->
                     group.collectList().map { messages ->
                         transaction {
-                            val messageIds = messages.map { (msg, _) -> msg.id.asString() }
+                            val messageIds = messages.map { (msg) -> msg.id.asString() }
                             val existing = Messages.select { Messages.id inList messageIds }
                                 .map { it[Messages.id] }
 
-                            Users.batchInsert(messages.mapNotNull { (msg, _) -> msg.author.orElse(null) }, ignore = true) {
-                                this[Users.id] = it.id.asString()
+                            Users.batchInsert(messages.mapNotNull { it.t2 }, ignore = true) {
+                                this[Users.id] = it.id
                                 this[Users.name] = it.username
                                 this[Users.discriminator] = it.discriminator
                                 this[Users.bot] = it.isBot
                             }
 
-                            Messages.batchInsert(messages.filter { (msg, _) -> msg.author.isPresent }, ignore = true) { (msg, _) ->
+                            Messages.batchInsert(messages, ignore = true) { (msg, author) ->
                                 val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
 
                                 this[Messages.id] = msg.id.asString()
                                 this[Messages.server] = guild.id.asString()
                                 this[Messages.channel] = msg.channelId.asString()
-                                this[Messages.user] = msg.author.map { u -> u.id.asString() }.orElse(null) ?: return@batchInsert
+                                this[Messages.user] = author.id
                                 this[Messages.createdAt] = creationTimestamp
                             }
 
                             val (existingMessages, newMessages) = messages.partition { it.t1.id.asString() in existing }
-                            existingMessages.forEach { (msg, _) ->
+                            existingMessages.forEach { (msg) ->
                                 val lastVersion = MessageVersions.select { MessageVersions.message eq msg.id.asString() }
                                     .orderBy(MessageVersions.timestamp, SortOrder.DESC).limit(1).firstOrNull()
 
@@ -129,7 +133,7 @@ fun runDump(arguments: List<String>) {
                                 }
                             }
 
-                            newMessages.forEach { (msg, _) ->
+                            newMessages.forEach { (msg) ->
                                 val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
                                 MessageVersions.replace {
                                     it[message] = msg.id.asString()
@@ -161,7 +165,7 @@ fun runDump(arguments: List<String>) {
 
                             MessageEmbeds.deleteWhere { MessageEmbeds.message inList messageIds }
 
-                            messages.flatMap { (msg, _) -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
+                            messages.flatMap { (msg) -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
                                 val embedId = MessageEmbeds.insertAndGetId {
                                     it[message] = msg
                                     it[type] = Embed.Type.valueOf(embed.type.name)
@@ -209,7 +213,7 @@ fun runDump(arguments: List<String>) {
                             }
 
                             MessageReactions.batchInsert(
-                                messages.flatMap { (msg, reactions) -> reactions.map { msg.id to it } },
+                                messages.flatMap { (msg, _, reactions) -> reactions.map { msg.id to it } },
                                 ignore = true
                             ) { (messageId, reaction) ->
                                 val (emoji, user) = reaction

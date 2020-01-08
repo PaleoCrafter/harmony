@@ -32,27 +32,15 @@
         </div>
       </div>
     </div>
-    <transition :duration="300" name="channel__modal">
-      <div v-if="channelModalOpen" @click.self="$store.commit('closeChannelModal')" class="channel__modal-container">
-        <div class="channel__modal">
-          <div class="channel__modal-header">
-            <h4>{{ channelModalTitle }}</h4>
-            <XIcon @click="$store.commit('closeChannelModal')" />
-          </div>
-          <portal-target ref="modalContent" name="channel-modal" class="channel__modal-content" />
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
 <script>
-import { XIcon } from 'vue-feather-icons'
 import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz'
 import addDays from 'date-fns/addDays'
 import startOfDay from 'date-fns/startOfDay'
 import endOfDay from 'date-fns/endOfDay'
-import { mapState, mapGetters } from 'vuex'
+import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
@@ -60,7 +48,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { Divider, LoadingSpinner, MessageList, XIcon },
+  components: { Divider, LoadingSpinner, MessageList },
   validate ({ params: { date } }) {
     if (date === undefined) {
       return true
@@ -85,8 +73,7 @@ export default {
     }
   },
   computed: {
-    ...mapState(['timezone', 'channelModalTitle']),
-    ...mapGetters(['channelModalOpen']),
+    ...mapState(['timezone']),
     mayNotLoad () {
       return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
     },
@@ -98,12 +85,10 @@ export default {
   },
   watch: {
     date () {
-      this.$store.commit('closeChannelModal')
       this.messages = undefined
     },
     '$route.params.channelId': {
       handler () {
-        this.$store.commit('closeChannelModal')
         this.messages = undefined
       }
     },
@@ -194,7 +179,7 @@ export default {
     const self = this
     return {
       alignmentBounds () {
-        let element = self.channelModalOpen ? self.$refs.modalContent : self.$refs.container
+        let element = self.$refs.container
         if (element === undefined) {
           return undefined
         }
@@ -302,100 +287,6 @@ export default {
 
     input {
       margin-right: 0.5rem;
-    }
-  }
-
-  &__modal {
-    display: flex;
-    flex-direction: column;
-    cursor: default;
-    max-width: 640px;
-    height: 60%;
-    max-height: 60%;
-    background: #36393f;
-    box-shadow: 0 0 0 1px rgba(32, 34, 37, .6), 0 2px 10px 0 rgba(0, 0, 0, .2);
-    border-radius: 0.5rem;
-    padding: 1rem;
-    align-items: stretch;
-    justify-content: stretch;
-    overflow: hidden;
-    flex-grow: 1;
-
-    @media (max-width: 1200px) {
-      max-width: 90%;
-    }
-
-    @media (max-width: 768px) {
-      width: 100%;
-      max-width: 100%;
-      height: 60%;
-      align-self: flex-end;
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-    }
-
-    &-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      bottom: 0;
-      right: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.7);
-      cursor: pointer;
-      z-index: 51;
-    }
-
-    &-header {
-      display: flex;
-      align-items: center;
-      padding-bottom: 0.5rem;
-
-      h4 {
-        font-size: 1.5rem;
-        font-weight: bold;
-        line-height: 1;
-        color: rgba(255, 255, 255, 0.8);
-      }
-
-      .feather {
-        margin-left: auto;
-        cursor: pointer;
-      }
-    }
-
-    &-content {
-      display: flex;
-      flex-direction: column;
-      align-items: stretch;
-      flex: 1;
-      overflow: hidden;
-    }
-
-    &-enter-active, &-leave-active {
-      transition: background .3s ease-in-out;
-    }
-
-    &-enter-active .channel__modal {
-      transition: transform .3s cubic-bezier(0.420, 0.000, 0.630, 1.2);
-
-      @media (max-width: 768px) {
-        transition: transform .3s ease-out;
-      }
-    }
-
-    &-enter, &-leave-to {
-      background: rgba(0, 0, 0, 0.0);
-
-      .channel__modal {
-        transform: scale(0);
-
-        @media (max-width: 768px) {
-          transform: translateY(100%);
-        }
-      }
     }
   }
 }

@@ -3,6 +3,7 @@
     <img
       ref="image"
       v-show="!loading && !error"
+      @click="openOverlay"
       :src="visible ? src : undefined"
       :alt="alt"
       v-bind="attributes"
@@ -15,10 +16,16 @@
       alt="Could not load image"
       class="lazy-image__error"
     >
+    <portal v-if="overlayActive" to="modal">
+      <div class="lazy-image__overlay">
+        <img :src="src" :alt="alt">
+      </div>
+    </portal>
   </div>
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 export default {
@@ -44,13 +51,21 @@ export default {
       visible: false,
       loading: true,
       error: false,
-      intersectionObserver: null
+      intersectionObserver: null,
+      overlayActive: false,
+      aspect: 1
     }
   },
+  computed: mapGetters(['modalOpen']),
   watch: {
     src () {
       this.error = false
       this.loading = true
+    },
+    modalOpen (newState) {
+      if (newState === false) {
+        this.overlayActive = false
+      }
     }
   },
   mounted () {
@@ -69,11 +84,18 @@ export default {
     this.$refs.image.addEventListener('load', () => {
       this.loading = false
       this.error = false
+      this.aspect = this.$refs.image.width / this.$refs.image.height
     })
     this.$refs.image.addEventListener('error', () => {
       this.loading = false
       this.error = true
     })
+  },
+  methods: {
+    openOverlay () {
+      this.$store.commit('openModal', { type: 'simple' })
+      this.overlayActive = true
+    }
   }
 }
 </script>
@@ -95,6 +117,7 @@ export default {
 
   &__content {
     top: 0;
+    cursor: pointer;
   }
 
   &__loading {
@@ -102,6 +125,22 @@ export default {
     top: 50%;
     margin-top: -0.5em;
     font-size: 2em;
+  }
+
+  &__overlay {
+    max-width: 100%;
+    align-self: center;
+    display: flex;
+    justify-content: stretch;
+    align-items: stretch;
+    overflow: hidden;
+
+    img {
+      max-width: 100%;
+      max-height: 600px;
+      object-fit: contain;
+      border-radius: 0.25rem;
+    }
   }
 }
 </style>

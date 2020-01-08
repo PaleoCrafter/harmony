@@ -8,12 +8,12 @@ export const state = () => ({
   sidebarOpen: false,
   sidebarTab: 'channels',
   collapsedCategories: {},
-  channelModalTitle: null
+  modal: null
 })
 
 export const getters = {
-  channelModalOpen (state) {
-    return state.channelModalTitle !== null
+  modalOpen (state) {
+    return state.modal !== null
   }
 }
 
@@ -46,11 +46,11 @@ export const mutations = {
       window.localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories))
     }
   },
-  openChannelModal (state, title) {
-    state.channelModalTitle = title
+  openModal (state, modal) {
+    state.modal = modal
   },
-  closeChannelModal (state) {
-    state.channelModalTitle = null
+  closeModal (state) {
+    state.modal = null
   }
 }
 

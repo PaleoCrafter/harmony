@@ -24,7 +24,7 @@ export default {
       selectedReaction: null
     }
   },
-  computed: mapGetters(['channelModalOpen']),
+  computed: mapGetters(['modalOpen']),
   apollo: {
     details: {
       query: detailsQuery,
@@ -40,7 +40,7 @@ export default {
     }
   },
   watch: {
-    channelModalOpen (newState) {
+    modalOpen (newState) {
       if (newState === false) {
         this.historyActive = false
         this.selectedReaction = null
@@ -49,11 +49,11 @@ export default {
   },
   methods: {
     openHistory () {
-      this.$store.commit('openChannelModal', 'Message History')
+      this.$store.commit('openModal', { title: 'Message History' })
       this.historyActive = true
     },
     openReactors (reaction) {
-      this.$store.commit('openChannelModal', 'Reactions')
+      this.$store.commit('openModal', { title: 'Reactions' })
       this.selectedReaction = reaction
     }
   },
@@ -118,11 +118,11 @@ export default {
           ? h('div', { class: 'message__attachments' }, attachments.map(attachment => h(Attachment, { props: { attachment } })))
           : undefined,
         this.historyActive
-          ? h('portal', { props: { to: 'channel-modal' } }, [h(MessageHistory, { props: { message: this.message } })])
+          ? h('portal', { props: { to: 'modal' } }, [h(MessageHistory, { props: { message: this.message } })])
           : undefined,
         this.selectedReaction !== null ? h(
           'portal',
-          { props: { to: 'channel-modal' } },
+          { props: { to: 'modal' } },
           [h(MessageReactors, { props: { message: this.message, reactions, initialSelection: this.selectedReaction } })]
         ) : undefined
       ]

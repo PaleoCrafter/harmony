@@ -1,6 +1,6 @@
 <template>
   <div
-    :class="['embed', `embed--${embed.type.toLowerCase()}`, { 'embed--images': embed.images.length > 0 }]"
+    :class="['embed', `embed--${embed.type.toLowerCase()}`, { 'embed--videos': embed.video !== null, 'embed--images': embed.images.length > 0 }]"
     :style="{ '--embed-accent': accentColor }"
   >
     <Markdown
@@ -75,15 +75,28 @@
     >
       <div :style="calculateImageStyle(embed.thumbnail)" class="embed__video-container">
         <div class="embed__video-content">
-          <iframe v-if="playingVideo" :src="videoUrl" width="100%" height="100%" allowfullscreen />
-          <LazyImage
-            v-else-if="embed.thumbnail"
-            :src="thumbnailUrl"
-            alt="thumbnail"
-            class="embed__thumbnail"
+          <template v-if="videoType === 'embed'">
+            <iframe v-if="playingVideo" :src="videoUrl" width="100%" height="100%" allowfullscreen />
+            <LazyImage
+              v-else-if="embed.thumbnail"
+              :src="thumbnailUrl"
+              alt="thumbnail"
+              class="embed__thumbnail"
+            />
+          </template>
+          <video
+            ref="video"
+            v-else
+            :src="embed.video.proxyUrl"
+            :poster="thumbnailUrl"
+            :controls="playingVideo"
+            width="100%"
+            height="100%"
+            preload="metadata"
+            playsinline
           />
           <div v-if="!playingVideo" class="embed__video-actions">
-            <a @click.prevent="playingVideo = true" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
+            <a @click.prevent="playVideo" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
               <PlayIcon fill="currentColor" stroke="none" />
             </a>
             <a :href="embed.url" target="_blank" rel="noopener" aria-label="Open video">
@@ -175,6 +188,9 @@ export default {
     thumbnailUrl () {
       return this.embed.thumbnail?.proxyUrl ?? this.embed.thumbnail?.url ?? null
     },
+    videoType () {
+      return this.embed.video?.proxyUrl !== null ? 'inline' : 'embed'
+    },
     videoUrl () {
       const url = this.embed.video?.url
       if (url === null) {
@@ -183,7 +199,7 @@ export default {
 
       const query = url.includes('?') ? '&' : '?'
 
-      return `${url}${query}autoplay=1`
+      return `${url}${query}autoplay=1&auto_play=1`
     },
     footerIconUrl () {
       return this.embed.footer?.proxyIconUrl ?? this.embed.footer?.iconUrl ?? null
@@ -205,6 +221,12 @@ export default {
     }
   },
   methods: {
+    playVideo () {
+      if (this.videoType === 'inline') {
+        this.$refs.video.play()
+      }
+      this.playingVideo = true
+    },
     calculateImageStyle (image) {
       if (image === null) {
         return undefined
@@ -481,7 +503,7 @@ export default {
     max-width: 100%;
   }
 
-  &--rich {
+  &--rich:not(.embed--videos) {
     .embed__thumbnail {
       max-width: 80px;
       max-height: 80px;
@@ -496,7 +518,7 @@ export default {
     }
   }
 
-  &--unknown, &--image, &--video, &--images {
+  &--unknown, &--image, &--video, &--images, &--videos {
     grid-template-columns: minmax(0, min-content);
   }
 }

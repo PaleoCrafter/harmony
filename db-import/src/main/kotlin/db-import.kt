@@ -2,96 +2,16 @@
 
 package com.seventeenthshard.harmony.dbimport
 
-import com.seventeenthshard.harmony.events.ChannelDeletion
-import com.seventeenthshard.harmony.events.ChannelInfo
-import com.seventeenthshard.harmony.events.ChannelRemoval
-import com.seventeenthshard.harmony.events.Embed
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.MessageEmbedUpdate
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.events.NewReaction
-import com.seventeenthshard.harmony.events.ReactionClear
-import com.seventeenthshard.harmony.events.ReactionRemoval
-import com.seventeenthshard.harmony.events.RoleDeletion
-import com.seventeenthshard.harmony.events.RoleInfo
-import com.seventeenthshard.harmony.events.ServerDeletion
-import com.seventeenthshard.harmony.events.ServerInfo
-import com.seventeenthshard.harmony.events.UserInfo
-import com.seventeenthshard.harmony.events.UserNicknameChange
-import com.seventeenthshard.harmony.events.UserRolesChange
-import com.sksamuel.avro4k.Avro
+import com.seventeenthshard.harmony.events.*
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import io.confluent.kafka.serializers.subject.RecordNameStrategy
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.MissingFieldException
-import kotlinx.serialization.serializer
-import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.logging.log4j.LogManager
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.replace
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.util.Properties
-
-class EventHandler(init: EventHandler.() -> Unit) {
-    private val handlers = mutableMapOf<String, Handler<*>>()
-    private val logger = LogManager.getLogger("EventHandler")
-
-    init {
-        this.init()
-    }
-
-    fun <T> addHandler(
-        schemaName: String,
-        deserializer: DeserializationStrategy<T>,
-        handler: (id: String, event: T) -> Unit
-    ) {
-        handlers[schemaName] = Handler(deserializer, handler)
-    }
-
-    inline fun <reified T : Any> listen(noinline handler: (id: String, event: T) -> Unit) {
-        addHandler(T::class.java.name, T::class.serializer(), handler)
-    }
-
-    fun consume(settings: Map<String, Any>, vararg topics: String) {
-        val props = Properties()
-        props.putAll(settings)
-
-        KafkaConsumer<String, GenericRecord>(props).use { consumer ->
-            consumer.subscribe(topics.toList())
-
-            while (true) {
-                consumer.poll(Duration.ofMillis(100)).forEach {
-                    val record = it.value()
-                    try {
-                        (handlers[it.value().schema.fullName] as? Handler<Any>)?.let { handler ->
-                            val event = Avro.default.fromRecord(handler.deserializer, record)
-                            handler.run(it.key(), event)
-                            logger.info("Handled ${event.javaClass}")
-                        } ?: logger.warn("Skipping event $it")
-                    } catch (e: MissingFieldException) {
-                        logger.warn("Skipping event due to missing fields")
-                    }
-                }
-            }
-        }
-    }
-
-    private data class Handler<T>(val deserializer: DeserializationStrategy<T>, val run: (id: String, event: T) -> Unit)
-}
 
 private fun insertEmbeds(messageId: String, embeds: List<Embed>) {
     MessageEmbeds.deleteWhere { MessageEmbeds.message eq messageId }
@@ -405,8 +325,9 @@ fun runImport() {
 
     events.consume(
         mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to (System.getenv("BROKER_URLS")
-                ?: throw IllegalArgumentException("BROKER_URLS env variable must be set!")),
+            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to requireNotNull(System.getenv("BROKER_URLS")) {
+                "BROKER_URLS env variable must be set!"
+            },
             ConsumerConfig.GROUP_ID_CONFIG to "db-import",
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true",
             ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG to "1000",
@@ -414,8 +335,9 @@ fun runImport() {
             ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
             ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
             KafkaAvroDeserializerConfig.VALUE_SUBJECT_NAME_STRATEGY to RecordNameStrategy::class.java,
-            KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to (System.getenv("SCHEMA_REGISTRY_URL")
-                ?: throw IllegalArgumentException("SCHEMA_REGISTRY_URL env variable must be set!"))
+            KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to requireNotNull(System.getenv("SCHEMA_REGISTRY_URL")) {
+                "SCHEMA_REGISTRY_URL env variable must be set!"
+            }
         ),
         "servers", "messages", "channels", "users", "roles"
     )

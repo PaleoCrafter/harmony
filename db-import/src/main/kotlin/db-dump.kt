@@ -46,8 +46,7 @@ fun runDump(arguments: List<String>) {
     val startDate = arguments.firstOrNull()?.let { LocalDate.parse(it) }
         ?: throw IllegalArgumentException("Dump start date must be provided via YYYY-MM-DD argument")
     val client = DiscordClientBuilder(
-        System.getenv("BOT_TOKEN")
-            ?: throw IllegalArgumentException("Bot token must be provided via BOT_TOKEN environment variable")
+        requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
 
     logger.info("Starting dump up until $startDate")

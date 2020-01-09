@@ -11,10 +11,10 @@ fun main(args: Array<String>) {
     val action = args.firstOrNull() ?: "import"
 
     Database.connect(
-        System.getenv("DB_CONNECTION") ?: throw IllegalArgumentException("DB_CONNECTION env variable must be set!"),
-        System.getenv("DB_DRIVER") ?: throw IllegalArgumentException("DB_DRIVER env variable must be set!"),
-        System.getenv("DB_USER") ?: throw IllegalArgumentException("DB_USER env variable must be set!"),
-        System.getenv("DB_PASSWORD") ?: throw IllegalArgumentException("DB_PASSWORD env variable must be set!")
+        requireNotNull(System.getenv("DB_CONNECTION")) { "DB_CONNECTION env variable must be set!" },
+        requireNotNull(System.getenv("DB_DRIVER")) { "DB_DRIVER env variable must be set!" },
+        requireNotNull(System.getenv("DB_USER")) { "DB_USER env variable must be set!" },
+        requireNotNull(System.getenv("DB_PASSWORD")) { "DB_PASSWORD env variable must be set!" }
     )
 
     transaction {

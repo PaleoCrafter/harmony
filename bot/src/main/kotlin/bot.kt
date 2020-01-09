@@ -146,8 +146,7 @@ fun KafkaProducer<String, GenericRecord>.emit(record: ProducerRecord<String, Gen
 @ImplicitReflectionSerializer
 fun main() {
     val client = DiscordClientBuilder(
-        System.getenv("BOT_TOKEN")
-            ?: throw IllegalArgumentException("Bot token must be provided via BOT_TOKEN environment variable")
+        requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
     val ignoredChannels = ConcurrentHashMap.newKeySet<String>()
     try {
@@ -161,15 +160,17 @@ fun main() {
     }
 
     val props = Properties()
-    props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = System.getenv("BROKER_URLS")
-        ?: throw IllegalArgumentException("BROKER_URLS env variable must be set!")
+    props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = requireNotNull(System.getenv("BROKER_URLS")) {
+        "BROKER_URLS env variable must be set!"
+    }
     props[ProducerConfig.ACKS_CONFIG] = "all"
     props[ProducerConfig.RETRIES_CONFIG] = 0
     props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
     props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = KafkaAvroSerializer::class.java
     props[KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY] = RecordNameStrategy::class.java
-    props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = System.getenv("SCHEMA_REGISTRY_URL")
-        ?: throw IllegalArgumentException("SCHEMA_REGISTRY_URL env variable must be set!")
+    props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = requireNotNull(System.getenv("SCHEMA_REGISTRY_URL")) {
+        "SCHEMA_REGISTRY_URL env variable must be set!"
+    }
     val producer = KafkaProducer<String, GenericRecord>(props)
 
     client.eventDispatcher.listen<GuildCreateEvent>(producer) { event ->

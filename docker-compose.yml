@@ -2,7 +2,7 @@
 version: '3.4'
 services:
   proxy:
-    image: 'marvinroesch/harmony-proxy:latest'
+    image: marvinroesch/harmony-proxy:latest
     build:
       context: .
     ports:
@@ -12,7 +12,7 @@ services:
       - backend
 
   frontend:
-    image: 'marvinroesch/harmony-frontend:latest'
+    image: marvinroesch/harmony-frontend:latest
     build:
       context: frontend
       target: ${ENV:-dev}
@@ -25,7 +25,7 @@ services:
     tty: true
 
   backend:
-    image: 'marvinroesch/harmony-backend:latest'
+    image: marvinroesch/harmony-backend:latest
     build:
       context: backend
       target: ${ENV:-dev}
@@ -42,7 +42,7 @@ services:
     tty: true
 
   bot:
-    image: 'marvinroesch/harmony-bot:latest'
+    image: marvinroesch/harmony-bot:latest
     container_name: harmony-bot
     build:
       context: .
@@ -58,7 +58,7 @@ services:
       - schema-registry
 
   db-import:
-    image: 'marvinroesch/harmony-db-import:latest'
+    image: marvinroesch/harmony-db-import:latest
     container_name: harmony-db-import
     build:
       context: .
@@ -131,6 +131,23 @@ services:
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
       SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL: forward
 
+  elasticsearch:
+    image: marvinroesch/harmony-elasticsearch:latest
+    container_name: harmony-search
+    build:
+      context: ./elastic-ingress
+      dockerfile: Dockerfile-elasticsearch
+    volumes:
+      - esdata:/usr/share/elasticsearch/data
+    environment:
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - discovery.type=single-node
+    ports:
+      - "9300:9300"
+      - "9200:9200"
+
 volumes:
   frontend_modules:
   backend_modules:
+  esdata:

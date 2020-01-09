@@ -19,5 +19,19 @@ open class Node<R> {
     }
   }
 
-  open fun render(builder: StringBuilder, renderContext: R) {}
+  fun addChildren(children: Iterable<Node<R>>) {
+    this.children = (this.children ?: ArrayList()).apply {
+      addAll(children)
+    }
+  }
+
+  open fun render(builder: StringBuilder, renderContext: R) {
+    // First render all child nodes, as these are the nodes we want to apply the styles to.
+    getChildren()?.forEach { it.render(builder, renderContext) }
+  }
+
+  override fun toString(): String = "${javaClass.simpleName} >\n" +
+      getChildren()?.joinToString("\n->", prefix = ">>", postfix = "\n>|") {
+        it.toString()
+      }
 }

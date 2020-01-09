@@ -7,12 +7,13 @@ import kotlinx.serialization.serializer
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
 import java.time.Duration
 import java.util.Properties
 
 class EventHandler(init: EventHandler.() -> Unit) {
     private val handlers = mutableMapOf<String, Handler<*>>()
-    private val logger = LogManager.getLogger("EventHandler")
+    val logger: Logger = LogManager.getLogger("EventHandler")
 
     init {
         this.init()

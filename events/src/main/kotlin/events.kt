@@ -40,7 +40,7 @@ data class ChannelInfo(
     val id: String,
     val server: ServerInfo,
     val name: String,
-    val category: String,
+    val category: String = "Text channels",
     val position: Int,
     val type: Type,
     val permissionOverrides: List<PermissionOverride>

@@ -13,6 +13,18 @@ type Query {
   reactors(message: ID!, type: String!, emoji: String!, emojiId: ID): [Reactor!]!
 
   userDetails(server: ID!, id: ID!): UserDetails
+
+  search(server: ID!, parameters: SearchParameters!): Boolean!
+}
+
+input SearchParameters {
+  query: String!
+  sort: SortOrder
+  afterMessage: ID
+}
+
+enum SortOrder {
+  ASCENDING, DESCENDING
 }
 
 scalar Timestamp

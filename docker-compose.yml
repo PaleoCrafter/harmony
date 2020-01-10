@@ -135,7 +135,7 @@ services:
     image: marvinroesch/harmony-elasticsearch:latest
     container_name: harmony-search
     build:
-      context: ./elastic-ingress
+      context: ./elastic-ingest
       dockerfile: Dockerfile-elasticsearch
     volumes:
       - esdata:/usr/share/elasticsearch/data

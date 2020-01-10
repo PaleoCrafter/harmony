@@ -1,4 +1,4 @@
-@file:JvmName("ElasticIngress")
+@file:JvmName("ElasticIngest")
 
 package com.seventeenthshard.harmony.search
 
@@ -37,6 +37,7 @@ const val INDEX = "messages"
 @Language("JSON")
 const val MESSAGES_MAPPING = """{
     "properties": {
+        "tie_breaker_id": { "type": "keyword" },
         "server": { "type": "keyword" },
         "channel": {
             "properties": {
@@ -284,6 +285,8 @@ fun main() {
 
             elasticClient.index(
                 IndexRequest(INDEX).id(id).source(mapOf(
+                    "tie_breaker_id" to id,
+                    "server" to event.channel.server.id,
                     "channel" to mapOf("id" to event.channel.id, "name" to event.channel.name),
                     "author" to mapOf("id" to event.user.id, "name" to event.user.username, "discriminator" to event.user.discriminator),
                     "content" to event.content,

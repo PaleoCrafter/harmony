@@ -22,11 +22,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 }
 
 application {
-    mainClassName = "com.seventeenthshard.harmony.dbimport.DBTools"
+    mainClassName = "com.seventeenthshard.harmony.search.ElasticIngest"
 }
 
 tasks.withType<Jar> {
-    archiveFileName.set("harmony-db-import.jar")
+    archiveFileName.set("harmony-elastic-ingest.jar")
     manifest {
         attributes(
             mapOf(

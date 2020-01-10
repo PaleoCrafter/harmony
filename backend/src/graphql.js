@@ -6,6 +6,7 @@ const Sequelize = require('sequelize')
 const { Op, QueryTypes } = Sequelize
 const { database, Server, Channel, User, Message, MessageVersion, Role, Embed, EmbedField, Attachment, Reaction } = require('./db')
 const { checkAuth, getPermissions } = require('./auth')
+const search = require('./search')
 
 const typeDefs = gql(fs.readFileSync(path.join(__dirname, 'schema.gqls'), 'utf8'))
 
@@ -513,6 +514,9 @@ const queryResolver = {
         nicknames: request.loaders.userNicknames.load({ server, id })
       }
       : null
+  },
+  search (parent, { server, parameters }, { request }) {
+
   }
 }
 

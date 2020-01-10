@@ -530,7 +530,12 @@ module.exports = {
         console.error(err.extensions.exception)
         return err
       },
-      context: context => ({ request: context.req })
+      context: context => ({ request: context.req }),
+      playground: {
+        settings: {
+          'request.credentials': 'include'
+        }
+      }
     })
     app.use('/api/graphql', checkAuth, server.getMiddleware({ path: '/' }))
   }

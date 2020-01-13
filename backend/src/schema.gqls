@@ -14,7 +14,7 @@ type Query {
 
   userDetails(server: ID!, id: ID!): UserDetails
 
-  search(server: ID!, parameters: SearchParameters!): Boolean!
+  search(server: ID!, parameters: SearchParameters!): SearchResult!
 }
 
 input SearchParameters {
@@ -176,4 +176,15 @@ type Reactor {
   user: User!
   createdAt: Timestamp!
   deletedAt: Timestamp
+}
+
+type SearchResult {
+  total: Int!
+  messages: [SearchResultEntry]!
+}
+
+type SearchResultEntry {
+  previous: Message
+  message: Message!
+  next: Message
 }

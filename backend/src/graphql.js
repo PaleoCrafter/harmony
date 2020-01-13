@@ -64,6 +64,23 @@ function mergeEmbeds (embeds) {
   )
 }
 
+function prepareMessage (message, versions, editedAt, permissions, request) {
+  const infoKey = { message: message.id, canSeeDeleted: permissions.has('manageMessages') }
+
+  return {
+    id: message.id,
+    author: request.loaders.users.load({ server: message.server, id: message.user }),
+    server: message.server,
+    versions: permissions.has('manageMessages') ? versions : [versions[0]],
+    createdAt: message.createdAt,
+    editedAt,
+    deletedAt: message.deletedAt,
+    hasReactions: async () => (await request.loaders.messageCounts.load(infoKey)).reactions > 0,
+    hasEmbeds: async () => (await request.loaders.messageCounts.load(infoKey)).embeds > 0,
+    hasAttachments: async () => (await request.loaders.messageCounts.load(infoKey)).attachments > 0
+  }
+}
+
 function initLoaders (user) {
   const channelLoader = new DataLoader(async (ids) => {
     const channels = await Channel.findAll({ where: { id: ids }, order: [['position', 'ASC']] })
@@ -281,7 +298,7 @@ function initLoaders (user) {
     messageVersions: new DataLoader(async (ids) => {
       const versions = await MessageVersion.findAll({
         where: {
-          message: ids
+          message: ids.filter(id => id !== 'ignored')
         },
         order: [['timestamp', 'DESC']]
       })
@@ -373,6 +390,11 @@ function initLoaders (user) {
       )
 
       return messages.map(id => attachments.filter(e => e.message === id))
+    }),
+    searchMessages: new DataLoader(async (ids) => {
+      const messages = await Message.findAll({ where: { id: ids.filter(id => id !== 'ignored') } })
+
+      return ids.map(id => messages.find(msg => msg.id === id) || null)
     })
   }
 }
@@ -429,25 +451,13 @@ const queryResolver = {
         )
       },
       limit,
-      order: [['createdAt', 'ASC']]
+      order: [['createdAt', 'ASC'], ['id', 'ASC']]
     })
 
     return Promise.all(messages.map(async (msg) => {
       const versions = await request.loaders.messageVersions.load(msg.id)
-      const infoKey = { message: msg.id, canSeeDeleted: permissions.has('manageMessages') }
 
-      return {
-        id: msg.id,
-        author: request.loaders.users.load({ server: msg.server, id: msg.user }),
-        server: msg.server,
-        versions: permissions.has('manageMessages') ? versions : [versions[0]],
-        createdAt: msg.createdAt,
-        editedAt: versions.length > 1 ? versions[0].timestamp : null,
-        deletedAt: msg.deletedAt,
-        hasReactions: async () => (await request.loaders.messageCounts.load(infoKey)).reactions > 0,
-        hasEmbeds: async () => (await request.loaders.messageCounts.load(infoKey)).embeds > 0,
-        hasAttachments: async () => (await request.loaders.messageCounts.load(infoKey)).attachments > 0
-      }
+      return prepareMessage(msg, versions, versions.length > 1 ? versions[0].timestamp : null, permissions, request)
     }))
   },
   async messageDetails (parent, { message: messageId }, { request }) {
@@ -515,8 +525,97 @@ const queryResolver = {
       }
       : null
   },
-  search (parent, { server, parameters }, { request }) {
+  async search (parent, { server, parameters }, { request }) {
+    let after
 
+    if (parameters.afterMessage) {
+      const message = await Message.find(parameters.afterMessage)
+      after = { id: message.id, timestamp: message.timestamp }
+    }
+
+    const permissions = (await getPermissions(request.user, server)).channels
+    const readableChannels = Object.keys(permissions).filter(c => permissions[c].has('readMessages'))
+    const manageableChannels = Object.keys(permissions).filter(c => permissions[c].has('manageMessages'))
+
+    const { total, messages: rawMessages } = await search(
+      server,
+      parameters.query,
+      parameters.sortOrder,
+      readableChannels,
+      manageableChannels,
+      after
+    )
+
+    if (total === 0) {
+      return { total: 0, messages: [] }
+    }
+
+    const messageIds = rawMessages.map(msg => msg.id)
+
+    const contextMessages = await database.query(
+      `
+        SELECT
+          (SELECT "prevMessage"."id" FROM "messages" AS "prevMessage"
+           WHERE "prevMessage"."channel" = "messages"."channel" AND
+             ("prevMessage"."createdAt" < "messages"."createdAt"
+                OR ("prevMessage"."createdAt" = "messages"."createdAt" AND "prevMessage"."id" < "messages"."id"))
+           ORDER BY "prevMessage"."createdAt" DESC, "prevMessage"."id" DESC LIMIT 1) AS "prev",
+          "messages"."id" AS "message",
+          (SELECT "nextMessage"."id" FROM "messages" AS "nextMessage"
+           WHERE "nextMessage"."channel" = "messages"."channel" AND
+             ("nextMessage"."createdAt" > "messages"."createdAt"
+                OR ("nextMessage"."createdAt" = "messages"."createdAt" AND "nextMessage"."id" > "messages"."id"))
+           ORDER BY "nextMessage"."createdAt" ASC, "nextMessage"."id" ASC LIMIT 1) AS "next"
+        FROM "messages"
+        WHERE "messages"."id" IN (${messageIds.map((_, i) => `$${i + 1}::bigint`).join(', ')})
+        `,
+      {
+        bind: messageIds,
+        type: QueryTypes.SELECT
+      }
+    )
+
+    console.log(messageIds)
+
+    const messages = Promise.all(contextMessages.map(async ({ prev: prevId, message: msgId, next: nextId }) => {
+      const searchResult = rawMessages.find(msg => msg.id === msgId).content
+      const [prev, message, next] = await request.loaders.searchMessages.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
+      const channelPermissions = permissions[message.channel]
+      const [prevVersions, versions, nextVersions] = await request.loaders.messageVersions.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
+
+      const messageResult = { previous: null, message: null, next: null }
+      messageResult.message = prepareMessage(
+        message,
+        [{ ...versions[0], content: searchResult }],
+        versions.length > 1 ? versions[0].timestamp : null,
+        channelPermissions,
+        request
+      )
+
+      if (prev) {
+        messageResult.previous = prepareMessage(
+          prev,
+          [prevVersions[0]],
+          prevVersions.length > 1 ? prevVersions[0].timestamp : null,
+          channelPermissions,
+          request
+        )
+      }
+
+      if (next) {
+        messageResult.next = prepareMessage(
+          next,
+          [nextVersions[0]],
+          nextVersions.length > 1 ? nextVersions[0].timestamp : null,
+          channelPermissions,
+          request
+        )
+      }
+
+      return messageResult
+    }))
+
+    return { total, messages }
   }
 }
 

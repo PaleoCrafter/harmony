@@ -87,7 +87,7 @@ object DiscordMarkdownRules {
             override fun parse(matcher: Matcher, parser: Parser<Unit, in Node<Unit>, State>, state: State): ParseSpec<Unit, Node<Unit>, State> {
                 return ParseSpec.createTerminal(
                     TextNode("@${matcher.group(1)}"),
-                    state.also { it.mentionedUsers + matcher.group(1) }
+                    state.also { it.mentionedUsers += matcher.group(1) }
                 )
             }
         }

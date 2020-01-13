@@ -85,7 +85,9 @@ const val MESSAGES_MAPPING = """{
         "mentions": { "type": "keyword" },
         "attachments": { "type": "boolean" },
         "timestamp": { "type": "date", "format": "basic_date_time||epoch_millis" },
-        "deletedAt": { "type": "date", "format": "basic_date_time||epoch_millis", "null_value": 0 }
+        "deletedAt": { "type": "date", "format": "basic_date_time||epoch_millis", "null_value": 0 },
+        "from": { "type": "alias", "path": "author.id" },
+        "in": { "type": "alias", "path": "channel.id" }
     }
 }"""
 
@@ -248,8 +250,6 @@ val Embed.mediaTypes: Iterable<String>
 
         return types
     }
-
-fun List<Node<Unit>>.render() = StringBuilder().also { builder -> this.forEach { it.render(builder, Unit) } }.toString()
 
 fun main() {
     val elasticHosts = requireNotNull(System.getenv("ELASTIC_HOST")) {

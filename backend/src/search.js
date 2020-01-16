@@ -33,14 +33,15 @@ module.exports = async function search (server, query, sortOrder, readableChanne
               default_operator: 'AND',
               quote_field_suffix: '.exact'
             }
-          }
+          },
+          filter
         }
       },
       search_after: after
         ? [sortOrder ? after.timestamp : undefined, after.id].filter(a => a !== undefined)
         : undefined,
       sort: {
-        ...(sortOrder ? { timestamp: sortOrder } : {}),
+        ...(sortOrder ? { timestamp: sortOrder === 'ASCENDING' ? 'asc' : 'desc' } : {}),
         tie_breaker_id: 'asc'
       },
       highlight: {

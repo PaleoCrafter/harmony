@@ -540,7 +540,7 @@ const queryResolver = {
     const { total, messages: rawMessages } = await search(
       server,
       parameters.query,
-      parameters.sortOrder,
+      parameters.sort,
       readableChannels,
       manageableChannels,
       after
@@ -575,9 +575,7 @@ const queryResolver = {
       }
     )
 
-    console.log(messageIds)
-
-    const messages = Promise.all(contextMessages.map(async ({ prev: prevId, message: msgId, next: nextId }) => {
+    const entries = Promise.all(contextMessages.map(async ({ prev: prevId, message: msgId, next: nextId }) => {
       const searchResult = rawMessages.find(msg => msg.id === msgId).content
       const [prev, message, next] = await request.loaders.searchMessages.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
       const channelPermissions = permissions[message.channel]
@@ -615,7 +613,7 @@ const queryResolver = {
       return messageResult
     }))
 
-    return { total, messages }
+    return { total, entries }
   }
 }
 

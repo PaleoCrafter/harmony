@@ -1,0 +1,100 @@
+query Search($server: ID!, $parameters: SearchParameters!) {
+  search(server: $server, parameters: $parameters) {
+    total
+
+    entries {
+      previous {
+        id
+
+        author {
+          id
+          name
+          discriminator
+          nickname
+          bot
+          color {
+            r
+            g
+            b
+          }
+        }
+
+        server
+
+        versions {
+          content
+          timestamp
+        }
+
+        createdAt
+        editedAt
+        deletedAt
+
+        hasEmbeds
+        hasAttachments
+      }
+
+      message {
+        id
+
+        author {
+          id
+          name
+          discriminator
+          nickname
+          bot
+          color {
+            r
+            g
+            b
+          }
+        }
+
+        server
+
+        versions {
+          content
+          timestamp
+        }
+
+        createdAt
+        editedAt
+        deletedAt
+
+        hasEmbeds
+        hasAttachments
+      }
+
+      next {
+        id
+
+        author {
+          id
+          name
+          discriminator
+          nickname
+          bot
+          color {
+            r
+            g
+            b
+          }
+        }
+
+        server
+
+        versions {
+          content
+          timestamp
+        }
+
+        createdAt
+        editedAt
+        deletedAt
+
+        hasEmbeds
+        hasAttachments
+      }
+    }
+  }
+}

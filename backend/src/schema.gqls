@@ -180,7 +180,7 @@ type Reactor {
 
 type SearchResult {
   total: Int!
-  messages: [SearchResultEntry]!
+  entries: [SearchResultEntry]!
 }
 
 type SearchResultEntry {

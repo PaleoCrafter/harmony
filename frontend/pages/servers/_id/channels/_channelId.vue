@@ -30,6 +30,7 @@
           </button>
         </div>
       </client-only>
+      <SearchBox />
     </header>
     <nuxt-child :date="date" />
   </div>
@@ -42,9 +43,10 @@ import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
+import SearchBox from '@/components/SearchBox.vue'
 
 export default {
-  components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
+  components: { SearchBox, Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
   computed: {
     ...mapState(['timezone']),
     date () {

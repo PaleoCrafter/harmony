@@ -4,16 +4,18 @@ import { keymap } from 'prosemirror-keymap'
 import { chainCommands, joinBackward, selectNodeBackward } from 'prosemirror-commands'
 import { NodeSelection, Plugin } from 'prosemirror-state'
 import { Fragment, Slice } from 'prosemirror-model'
+import { findMatchingParenthesis, findParentheses } from '@/components/search/ParenthesisMatching'
+import { findClosest } from '@/components/search/utils'
 
 const deleteCommand = chainCommands(joinBackward, selectNodeBackward)
 
-function undoInputRuleNoop (state, dispatch, view) {
+function undoFieldInputRule (state, dispatch, view) {
   const plugins = state.plugins
   for (let i = 0; i < plugins.length; i++) {
     const plugin = plugins[i]
-    if (plugin.spec.isInputRules && plugin.getState(state)) {
+    const cursor = state.selection.$cursor
+    if (plugin.spec.isInputRules && plugin.getState(state) && cursor && cursor.nodeBefore.type.name === 'field') {
       if (dispatch) {
-        const cursor = state.selection.$cursor
         const selection = NodeSelection.create(state.doc, cursor.pos - 1)
         dispatch(state.tr.setSelection(selection).deleteSelection().scrollIntoView())
       }
@@ -84,37 +86,61 @@ function nodePasteRule (regexp, type, getAttrs) {
   })
 }
 
-export function findField ({ selection }) {
+export function findField ({ doc, selection }) {
   const cursor = selection.$cursor
   if (!cursor) {
     return null
   }
 
-  const before = cursor.parent.childBefore(cursor.parentOffset)
+  let field = null
+  let fieldPos = null
+  doc.content.descendants(
+    (node, pos) => {
+      if (pos > cursor.pos) {
+        return false
+      }
 
-  let reference = before.node
-  let referencePos = before.offset
-  if (reference && reference.type.name !== 'field') {
-    const prevChild = cursor.parent.childBefore(before.offset)
-    reference = prevChild.node
-    referencePos = prevChild.offset
-  }
+      if (node.type.name === 'field') {
+        field = node
+        fieldPos = pos
+      }
+    },
+    0
+  )
 
-  if (!reference || reference.type.name !== 'field') {
+  if (field === null) {
     return null
   }
 
-  const queryPos = referencePos + reference.content.size + 1
-  const queryNode = cursor.parent.childAfter(queryPos).node
+  const parentheses = findParentheses(doc).filter(p => p.index >= fieldPos)
+  const firstParen = parentheses[0]
 
-  if (queryNode && queryNode.type.name !== 'text') {
+  let maxQueryEnd = findClosest(doc, fieldPos + 1, 1, /\s/, true) - 1
+
+  // If the field has a grouped value, make sure the cursor is inside that group
+  if (firstParen && firstParen.type === '(' && firstParen.index === fieldPos + 1) {
+    parentheses.shift()
+    const closing = findMatchingParenthesis(parentheses, false)
+    if (closing !== null && cursor.pos > closing) {
+      return null
+    }
+
+    if (closing !== null) {
+      maxQueryEnd = closing
+    }
+  } else if (firstParen && firstParen.type === ')' && cursor.pos > firstParen.index) {
     return null
   }
 
-  const fullQueryText = queryNode?.text ?? ''
-  const match = /[(\s)]/g.exec(fullQueryText)
-  const query = fullQueryText.substring(0, match?.index ?? fullQueryText.length)
-  return { reference, pos: referencePos, query, queryStart: queryPos, cutOff: match }
+  const queryStart = findClosest(doc, cursor.pos, -1, /[\s()]/, true) + 1
+  const queryEnd = findClosest(doc, cursor.pos, 1, /[\s()]/, true) - 1
+
+  if (queryEnd > maxQueryEnd) {
+    return null
+  }
+
+  const query = doc.content.textBetween(queryStart, queryEnd)
+  return { reference: field, pos: fieldPos, query, queryStart, queryEnd, cutOff: false }
 }
 
 export default class Field extends Node {
@@ -157,7 +183,7 @@ export default class Field extends Node {
 
     return [
       keymap({
-        Backspace: undoInputRuleNoop
+        Backspace: undoFieldInputRule
       }),
       new Plugin({
         view () {

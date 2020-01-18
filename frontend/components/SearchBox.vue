@@ -1,7 +1,8 @@
 <template>
   <div @mousedown.capture="acquireFocus" :class="['search-box', { 'search-box--focus': popupActive, 'search-box--empty': editorEmpty }]">
-    <EditorContent :editor="editor" class="search-box__container" />
-    <SearchIcon class="search-box__icon" size="1x" stroke-width="3" />
+    <EditorContent ref="editor" :editor="editor" class="search-box__container" />
+    <SearchIcon v-if="editorEmpty" class="search-box__icon" size="1x" stroke-width="3" />
+    <XIcon v-else @click="editor.clearContent()" class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" />
     <div v-if="popupActive" class="search-box__popup">
       <SuggestionPopup ref="suggestions" :groups="activeSuggestions" :editor="editor" :default-suggestion="defaultSuggestion" />
     </div>
@@ -10,19 +11,21 @@
 
 <script>
 import { Editor, EditorContent, Text } from 'tiptap'
-import { SearchIcon } from 'vue-feather-icons'
-import { Doc, Root } from '@/components/search/BaseExtensions'
+import { SearchIcon, XIcon } from 'vue-feather-icons'
+import { Doc, Root, Submit } from '@/components/search/BaseExtensions'
 import Field from '@/components/search/Field'
 import ParenthesisMatching from '@/components/search/ParenthesisMatching'
 import defaultSuggestions from '@/components/search/suggestions/default'
 import fieldSuggestions from '@/components/search/suggestions/fields'
 import SuggestionPopup from '@/components/search/SuggestionPopup.vue'
 import serialize from '@/components/search/serialize'
-import FieldValue from '@/components/search/FieldValue.js'
+import FieldValue from '@/components/search/FieldValue'
+import Operators from '@/components/search/Operators'
+import Quotes from '@/components/search/Quotes'
 
 export default {
   name: 'SearchBox',
-  components: { SuggestionPopup, EditorContent, SearchIcon },
+  components: { SuggestionPopup, EditorContent, SearchIcon, XIcon },
   data () {
     return {
       editor: null,
@@ -90,7 +93,14 @@ export default {
           reset: this.resetSuggestions
         }),
         new FieldValue(),
-        new ParenthesisMatching()
+        new ParenthesisMatching(),
+        new Operators(),
+        new Quotes(),
+        new Submit({
+          onSubmit () {
+            return true
+          }
+        })
       ],
       useBuiltInExtensions: false,
       onFocus () {
@@ -106,8 +116,9 @@ export default {
   },
   methods: {
     acquireFocus (event) {
-      this.editor.focus()
-      event.preventDefault()
+      if (!this.$refs.editor.$el.contains(event.target)) {
+        event.preventDefault()
+      }
     },
     resetSuggestions () {
       this.activeSuggestions = defaultSuggestions
@@ -196,9 +207,23 @@ export default {
     }
   }
 
+  &__operator {
+    font-weight: bold;
+    color: #adb2ba;
+  }
+
   &__icon {
     color: #72767d;
     margin-left: 0.5rem;
+
+    &--clear {
+      color: #dcddde;
+      cursor: pointer;
+
+      &:hover {
+        color: white;
+      }
+    }
   }
 
   &__field, &__field-value {

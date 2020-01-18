@@ -1,4 +1,5 @@
-import { Node } from 'tiptap'
+import { Extension, Node } from 'tiptap'
+import { keymap } from 'prosemirror-keymap'
 
 export class Doc extends Node {
   get name () {
@@ -27,5 +28,15 @@ export class Root extends Node {
       }],
       toDOM: () => ['div', { class: 'search-box__root' }, 0]
     }
+  }
+}
+
+export class Submit extends Extension {
+  get plugins () {
+    return [
+      keymap({
+        Enter: this.options.onSubmit
+      })
+    ]
   }
 }

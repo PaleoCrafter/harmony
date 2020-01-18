@@ -1,7 +1,11 @@
 import { Extension, Plugin } from 'tiptap'
 import { Decoration, DecorationSet } from 'prosemirror-view'
+import { InputRule } from 'prosemirror-inputrules'
+import { TextSelection } from 'prosemirror-state'
+import { keymap } from 'prosemirror-keymap'
+import { removeMatchedCharacters } from '@/components/search/utils'
 
-function findMatchingParenthesis (parens, backward) {
+export function findMatchingParenthesis (parens, backward) {
   if (backward) {
     parens.reverse()
   }
@@ -25,13 +29,59 @@ function findMatchingParenthesis (parens, backward) {
   return null
 }
 
+export function findParentheses (doc) {
+  const parens = []
+  doc.content.descendants(
+    (node, pos) => {
+      if (node.isText) {
+        const regex = /[()]/g
+        let match
+        while ((match = regex.exec(node.text)) !== null) {
+          const index = pos + match.index
+          parens.push({ type: match[0], index })
+        }
+      }
+    },
+    0
+  )
+
+  return parens
+}
+
 export default class ParenthesisMatching extends Extension {
   get name () {
     return 'parentheses'
   }
 
+  inputRules () {
+    return [
+      new InputRule(/([()])$/, function (state, match, start, end) {
+        const tr = state.tr
+        const type = match[1]
+
+        if (type === '(') {
+          if (end > start) {
+            tr.insertText('(', start, start)
+              .insertText(')', end + 1, end + 1)
+              .setSelection(TextSelection.create(tr.doc, end + 2, end + 2))
+          } else {
+            tr.insertText('()').setSelection(TextSelection.create(tr.doc, start + 1, start + 1))
+          }
+        } else if (type === ')') {
+          tr.insertText(')', start, start + 1)
+            .setSelection(TextSelection.create(tr.doc, start + 1, start + 1))
+        }
+
+        return tr
+      })
+    ]
+  }
+
   get plugins () {
     return [
+      keymap({
+        Backspace: removeMatchedCharacters('(', ')')
+      }),
       new Plugin({
         props: {
           decorations: (state) => {
@@ -40,20 +90,7 @@ export default class ParenthesisMatching extends Extension {
               return DecorationSet.empty
             }
 
-            const allParens = []
-            state.doc.content.descendants(
-              (node, pos) => {
-                if (node.isText) {
-                  const regex = /[()]/g
-                  let match
-                  while ((match = regex.exec(node.text)) !== null) {
-                    const index = pos + match.index
-                    allParens.push({ type: match[0], index })
-                  }
-                }
-              },
-              0
-            )
+            const allParens = findParentheses(state.doc)
             const unmatchedParens = allParens.filter(({ type, index }, i) =>
               findMatchingParenthesis(
                 type === ')' ? allParens.slice(0, i) : allParens.slice(i + 1),

@@ -32,10 +32,10 @@ export default {
       return {
         insertValue: (id, label) => {
           const state = this.editor.state
-          const { queryStart, query } = findField(state)
+          const { queryStart, queryEnd } = findField(state)
           this.editor.view.dispatch(
             state.tr
-              .setSelection(TextSelection.create(state.doc, queryStart + 1, queryStart + 1 + query.length))
+              .setSelection(TextSelection.create(state.doc, queryStart, queryEnd))
               .replaceSelectionWith(state.schema.node('fieldValue', { id, label }))
               .insertText(' ')
               .scrollIntoView()
@@ -117,9 +117,9 @@ export default {
       }
 
       // pressing enter or tab
-      if (event.keyCode === 13 || event.keyCode === 9) {
+      if (event.keyCode === 13 || event.keyCode === 9 || event.keyCode === 32) {
         this.performSelectionAction()
-        return true
+        return this.selectedItem !== null || event.keyCode !== 32
       }
 
       return false

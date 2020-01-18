@@ -63,7 +63,7 @@ export default {
         title: 'In Channel',
         items: channels.filter(channel => channel.name.includes(adjustedQuery)),
         action ({ id, name }, { insertValue }) {
-          insertValue(id, `#${name}`)
+          insertValue(id, name)
         },
         render (h, channel) {
           return [

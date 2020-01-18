@@ -9,8 +9,8 @@ export default function (slice, elasticQuery) {
       separated = false
     } else if (node.type.name === 'field') {
       text += `${node.attrs.field}:`
-    } else if (node.type.name === 'fieldvalue') {
-      text += `${elasticQuery ? node.attrs.id : node.attrs.label}:`
+    } else if (node.type.name === 'fieldValue') {
+      text += `${elasticQuery ? node.attrs.id : node.attrs.label}`
     } else if (!separated && node.isBlock) {
       text += '\n\n'
       separated = true

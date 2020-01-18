@@ -7,6 +7,9 @@ export default [
       { field: 'has', example: 'linked, embed or file' },
       { field: 'in', example: 'channel' }
     ],
+    action ({ field }, { insertNode }) {
+      insertNode('field', { field })
+    },
     render (h, { field, example }) {
       return [
         h('span', { class: 'search-suggestions__options-field' }, [`${field}:`]),

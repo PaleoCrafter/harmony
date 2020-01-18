@@ -1,0 +1,10 @@
+query UserSuggestions($server: ID!, $query: String!) {
+  searchSuggestions(server: $server) {
+    users(query: $query) {
+      id
+      name
+      discriminator
+      nickname
+    }
+  }
+}

@@ -1,22 +1,24 @@
 <template>
-  <div :class="['search-box', { 'search-box--focus': popupActive }]">
+  <div @mousedown.capture="acquireFocus" :class="['search-box', { 'search-box--focus': popupActive, 'search-box--empty': editorEmpty }]">
     <EditorContent :editor="editor" class="search-box__container" />
     <SearchIcon class="search-box__icon" size="1x" stroke-width="3" />
     <div v-if="popupActive" class="search-box__popup">
-      <SuggestionPopup ref="suggestions" :groups="activeSuggestions" />
+      <SuggestionPopup ref="suggestions" :groups="activeSuggestions" :editor="editor" :default-suggestion="defaultSuggestion" />
     </div>
   </div>
 </template>
 
 <script>
 import { Editor, EditorContent, Text } from 'tiptap'
-import { Placeholder } from 'tiptap-extensions'
 import { SearchIcon } from 'vue-feather-icons'
 import { Doc, Root } from '@/components/search/BaseExtensions'
 import Field from '@/components/search/Field'
 import ParenthesisMatching from '@/components/search/ParenthesisMatching'
 import defaultSuggestions from '@/components/search/suggestions/default'
+import fieldSuggestions from '@/components/search/suggestions/fields'
 import SuggestionPopup from '@/components/search/SuggestionPopup.vue'
+import serialize from '@/components/search/serialize'
+import FieldValue from '@/components/search/FieldValue.js'
 
 export default {
   name: 'SearchBox',
@@ -25,7 +27,13 @@ export default {
     return {
       editor: null,
       popupActive: false,
-      activeSuggestions: defaultSuggestions
+      activeSuggestions: defaultSuggestions,
+      defaultSuggestion: null
+    }
+  },
+  computed: {
+    editorEmpty () {
+      return this.editor?.state?.doc?.firstChild?.childCount === 0
     }
   },
   mounted () {
@@ -45,7 +53,8 @@ export default {
           }
 
           return self.$refs.suggestions.onKeyDown(event)
-        }
+        },
+        clipboardTextSerializer: serialize
       },
       emptyDocument: {
         type: 'doc',
@@ -57,27 +66,53 @@ export default {
         new Doc(),
         new Root(),
         new Text(),
-        new Field(),
-        new Placeholder({
-          emptyNodeText: 'Search',
-          emptyNodeClass: 'search-box__placeholder'
+        new Field({
+          onQuery: (field, query) => {
+            const suggestionResolver = fieldSuggestions[field]
+
+            if (!suggestionResolver) {
+              this.resetSuggestions()
+              return
+            }
+
+            Promise.resolve(fieldSuggestions[field](
+              query,
+              {
+                server: this.$route.params.id,
+                apollo: this.$apollo.provider.defaultClient
+              }))
+              .then((suggestions) => {
+                this.activeSuggestions = suggestions
+                this.defaultSuggestion = 0
+              })
+          },
+          onCommit: this.resetSuggestions,
+          reset: this.resetSuggestions
         }),
+        new FieldValue(),
         new ParenthesisMatching()
       ],
       useBuiltInExtensions: false,
-      onInit ({ state }) {
-        console.log(state)
-      },
       onFocus () {
         self.popupActive = true
       },
-      onBlur () {
+      onBlur (event) {
         self.popupActive = false
       }
     })
   },
   beforeDestroy () {
     this.editor.destroy()
+  },
+  methods: {
+    acquireFocus (event) {
+      this.editor.focus()
+      event.preventDefault()
+    },
+    resetSuggestions () {
+      this.activeSuggestions = defaultSuggestions
+      this.defaultSuggestion = null
+    }
   }
 }
 </script>
@@ -91,7 +126,6 @@ export default {
   display: flex;
   align-items: center;
   height: 24px;
-  width: 160px;
   padding: 2px 0.5rem 2px 2px;
   font-family: monospace;
   margin-left: auto;
@@ -99,14 +133,30 @@ export default {
   position: relative;
   font-size: 0.9rem;
 
+  &--empty {
+    .search-box__content {
+      width: 160px;
+
+      &:before {
+        content: 'Search';
+        pointer-events: none;
+        color: #72767d;
+        float: left;
+        height: 0;
+      }
+    }
+  }
+
   &--focus {
-    width: 240px;
+    .search-box__content {
+      width: 240px;
+    }
   }
 
   &__container {
     flex: 1;
     border: none;
-    overflow: visible;
+    overflow: hidden;
     height: 20px;
     line-height: 20px;
     vertical-align: baseline;
@@ -124,7 +174,8 @@ export default {
     vertical-align: baseline;
     height: inherit;
     text-align: initial;
-    padding: 0 2px;
+    padding: 0 2px 20px;
+    width: 240px;
   }
 
   &__root {
@@ -138,31 +189,28 @@ export default {
 
   &__parens {
     font-weight: bold;
-    color: yellow;
+    color: #f0e354;
 
     &--unmatched {
-      color: red;
+      color: #f04747;
     }
-  }
-
-  &__placeholder:before {
-    content: attr(data-empty-text);
-    pointer-events: none;
-    color: #72767d;
-    float: left;
-    height: 0;
   }
 
   &__icon {
     color: #72767d;
+    margin-left: 0.5rem;
   }
 
-  &__field {
+  &__field, &__field-value {
     background-color: #34383d;
     border-radius: 2px;
     display: inline-block;
     padding: 0 2px;
     margin-left: -2px;
+
+    &--invalid {
+      color: #f04747;
+    }
   }
 
   &__popup {
@@ -172,14 +220,14 @@ export default {
     background: #36393F;
     border: #202225;
     border-radius: 0.25rem;
-    width: 280px;
+    width: 300px;
     left: 50%;
-    margin-left: -140px;
+    transform: translateX(-50%);
     padding: 0.6rem;
     cursor: default;
     box-shadow: 0 0 0 1px rgba(32, 34, 37, .6), 0 2px 10px 0 rgba(0, 0, 0, .2);
   }
 }
 
-@import '~/components/search/suggestions/default';
+@import '~/components/search/suggestions/styles';
 </style>

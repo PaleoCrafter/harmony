@@ -8,4 +8,15 @@
       color: #72767d;
     }
   }
+
+  &__user {
+    &-name {
+      color: white;
+      font-weight: 600;
+    }
+
+    &-exact-name {
+      color: #72767d;
+    }
+  }
 }

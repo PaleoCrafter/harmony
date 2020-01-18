@@ -15,6 +15,8 @@ type Query {
   userDetails(server: ID!, id: ID!): UserDetails
 
   search(server: ID!, parameters: SearchParameters!): SearchResult!
+
+  searchSuggestions(server: ID!): SearchSuggestions!
 }
 
 input SearchParameters {
@@ -187,4 +189,8 @@ type SearchResultEntry {
   previous: Message
   message: Message!
   next: Message
+}
+
+type SearchSuggestions {
+  users(query: String!): [User!]!
 }

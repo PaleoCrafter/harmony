@@ -526,6 +526,10 @@ const queryResolver = {
       : null
   },
   async search (parent, { server, parameters }, { request }) {
+    if (!request.user.servers.find(s => s.id === server)) {
+      return { total: 0, entries: [] }
+    }
+
     let after
 
     if (parameters.afterMessage) {
@@ -614,6 +618,42 @@ const queryResolver = {
     }))
 
     return { total, entries }
+  },
+  searchSuggestions (parent, { server }, { request }) {
+    if (!request.user.servers.find(s => s.id === server)) {
+      return { users: [] }
+    }
+
+    return {
+      users ({ query }) {
+        return database.query(
+          `
+          SELECT
+            "id", "name", "discriminator", "nickname"
+          FROM (
+            SELECT
+              "users"."id" AS "id",
+              "users"."name" AS "name",
+              "users"."discriminator" AS "discriminator",
+              (
+                SELECT "usernicknames"."name"
+                FROM "usernicknames"
+                WHERE "usernicknames"."server" = $server AND "usernicknames"."user" = "users"."id"
+                ORDER BY "usernicknames"."timestamp" DESC
+                LIMIT 1
+              ) AS "nickname"
+            FROM "users"
+            LIMIT 10
+          ) AS "users"
+          WHERE "nickname" ILIKE $query OR CONCAT("name", '#', "discriminator") ILIKE $query AND "discriminator" != 'HOOK'
+          `,
+          {
+            bind: { server, query: `%${query}%` },
+            type: QueryTypes.SELECT
+          }
+        )
+      }
+    }
   }
 }
 

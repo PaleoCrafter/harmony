@@ -30,10 +30,10 @@
           </button>
         </div>
       </client-only>
-      <SearchBox />
+      <SearchBox @submit="query = $event" />
     </header>
     <nuxt-child :date="date" class="channel__child" />
-    <SearchResults query="from:224540019816136704" class="channel__search-results" />
+    <SearchResults v-if="query !== null" :query="query" class="channel__search-results" />
   </div>
 </template>
 
@@ -49,6 +49,11 @@ import SearchResults from '@/components/search/SearchResults.vue'
 
 export default {
   components: { SearchResults, SearchBox, Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
+  data () {
+    return {
+      query: null
+    }
+  },
   computed: {
     ...mapState(['timezone']),
     date () {

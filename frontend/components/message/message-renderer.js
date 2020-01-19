@@ -95,6 +95,8 @@ export default function renderNode (node, h, message, emojisOnly) {
           large: emojisOnly
         }
       })
+    case 'searchHighlight':
+      return h('mark', node.content.map(child => renderNode(child, h, message, false)))
     case 'text':
       return node.content
     case 'br':

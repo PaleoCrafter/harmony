@@ -14,6 +14,7 @@
 </template>
 
 <script>
+import formatRelative from 'date-fns/formatRelative'
 import Message from '@/components/Message.vue'
 import UserName from '@/components/UserName.vue'
 import BotTag from '@/components/BotTag.vue'
@@ -25,10 +26,18 @@ export default {
     group: {
       type: Object,
       required: true
+    },
+    relativeTime: {
+      type: Boolean,
+      default: () => false
     }
   },
   computed: {
     formattedTime () {
+      if (this.relativeTime) {
+        return formatRelative(this.group.firstTimestamp, new Date())
+      }
+
       const format = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: 'numeric' })
       return format.format(this.group.firstTimestamp)
     }
@@ -44,6 +53,7 @@ export default {
   flex-basis: 0;
   padding: 1.5rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: relative;
 
   &__header {
     time {

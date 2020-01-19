@@ -118,6 +118,16 @@ const rules = {
         content: parse(capture[1], state)
       }
     }
+  },
+  searchHighlight: {
+    order: markdown.defaultRules.u.order - 1,
+    match: markdown.inlineRegex(/^__HARMONY_SEARCH_\d+__((?:\\[\s\S]|[^\\])+?)__HARMONY_SEARCH_\d+__/),
+    quality: capture => capture[0].length,
+    parse (capture, parse, state) {
+      return {
+        content: parse(capture[1], state)
+      }
+    }
   }
 }
 

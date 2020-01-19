@@ -4,6 +4,10 @@
       <span v-if="!$apollo.loading" class="search-results__number">
         {{ formattedTotal }} {{ result.total !== 1 ? 'Results' : 'Results' }}
       </span>
+      <span v-else class="search-results__number">
+        Searching...
+        <LoadingSpinner />
+      </span>
       <ul class="search-results__orders">
         <li class="search-results__order search-results__order--active">
           Newest
@@ -18,9 +22,14 @@
     </div>
     <ul ref="items" class="search-results__items">
       <template v-for="group in groupedEntries">
-        <li>{{ group.channel.name }}</li>
-        <li v-for="entry in group.entries">
-          <MessageGroup :group="entry.message" />
+        <li class="search-results__item-header">
+          {{ `#${group.channel.name}` }}
+          <hr>
+        </li>
+        <li v-for="entry in group.entries" class="search-results__item">
+          <MessageGroup v-if="entry.previous" :group="entry.previous" class="search-results__item-context" relative-time />
+          <MessageGroup :group="entry.message" class="search-results__item-message" relative-time />
+          <MessageGroup v-if="entry.next" :group="entry.next" class="search-results__item-context" relative-time />
         </li>
       </template>
     </ul>
@@ -30,6 +39,7 @@
 <script>
 import searchQuery from '@/apollo/queries/search.gql'
 import MessageGroup from '@/components/MessageGroup.vue'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 function prepareMessage (message) {
   if (message === null) {
@@ -44,7 +54,7 @@ function prepareMessage (message) {
 
 export default {
   name: 'SearchResults',
-  components: { MessageGroup },
+  components: { LoadingSpinner, MessageGroup },
   props: {
     query: {
       type: String,
@@ -162,10 +172,49 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    padding: 0;
+    padding: 0 0.5rem;
     list-style-type: none;
     flex: 1;
     overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  &__item {
+    padding: 0.5rem 0;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      padding: 0.25rem 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+
+      hr {
+        flex: 1;
+        margin-left: 0.5rem;
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+    }
+
+    .message-group {
+      border: none !important;
+      padding: 0.7rem 0.5rem !important;
+    }
+
+    &-message.message-group {
+      border: 2px solid rgba(28, 36, 43, .6) !important;
+      border-radius: 4px;
+      background-color: #36393f;
+      box-shadow: 0 0 10px 6px #2f3136;
+    }
+
+    &-context {
+      opacity: 0.3;
+      max-height: 48px;
+      overflow: hidden;
+      pointer-events: none;
+    }
   }
 
   ::-webkit-scrollbar-track {

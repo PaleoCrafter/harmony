@@ -84,6 +84,11 @@ export default {
     }
   }
 
+  mark {
+    color: inherit;
+    background: rgba(250, 166, 26, .3);
+  }
+
   &__code {
     width: auto;
     height: auto;

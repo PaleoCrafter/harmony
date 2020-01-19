@@ -2,7 +2,7 @@
   <div @mousedown.capture="acquireFocus" :class="['search-box', { 'search-box--focus': popupActive, 'search-box--empty': editorEmpty }]">
     <EditorContent ref="editor" :editor="editor" class="search-box__container" />
     <SearchIcon v-if="editorEmpty" class="search-box__icon" size="1x" stroke-width="3" />
-    <XIcon v-else @click="editor.clearContent()" class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" />
+    <XIcon v-else @click="clear" class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" />
     <div v-if="popupActive" class="search-box__popup">
       <SuggestionPopup ref="suggestions" :groups="activeSuggestions" :editor="editor" :default-suggestion="defaultSuggestion" />
     </div>
@@ -97,7 +97,8 @@ export default {
         new Operators(),
         new Quotes(),
         new Submit({
-          onSubmit () {
+          onSubmit: () => {
+            this.submit()
             return true
           }
         })
@@ -123,6 +124,17 @@ export default {
     resetSuggestions () {
       this.activeSuggestions = defaultSuggestions
       this.defaultSuggestion = null
+    },
+    clear () {
+      this.editor.clearContent()
+    },
+    submit () {
+      if (this.editorEmpty) {
+        this.$emit('submit', null)
+      } else {
+        this.$emit('submit', serialize(this.editor.state.doc, true))
+      }
+      this.editor.blur()
     }
   }
 }

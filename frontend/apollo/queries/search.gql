@@ -3,6 +3,11 @@ query Search($server: ID!, $parameters: SearchParameters!) {
     total
 
     entries {
+      channel {
+        id
+        name
+      }
+
       previous {
         id
 

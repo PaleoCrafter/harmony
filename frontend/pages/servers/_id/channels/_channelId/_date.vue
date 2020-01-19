@@ -1,5 +1,5 @@
 <template>
-  <div ref="container" class="channel__messages">
+  <div class="channel__messages">
     <div
       v-infinite-scroll="loadMore"
       infinite-scroll-disabled="mayNotLoad"
@@ -173,24 +173,6 @@ export default {
     async performAutoRefresh () {
       await this.loadMore()
       this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
-    }
-  },
-  provide () {
-    const self = this
-    return {
-      alignmentBounds () {
-        let element = self.$refs.container
-        if (element === undefined) {
-          return undefined
-        }
-
-        element = element.$el ?? element
-
-        const scrollbarWidth = element.offsetWidth - element.clientWidth
-        const scrollbarHeight = element.offsetHeight - element.clientHeight
-        const baseRect = element.getBoundingClientRect()
-        return new DOMRect(baseRect.x, baseRect.y, baseRect.width - scrollbarWidth, baseRect.height - scrollbarHeight)
-      }
     }
   }
 }

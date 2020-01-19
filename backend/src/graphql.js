@@ -551,7 +551,7 @@ const queryResolver = {
     )
 
     if (total === 0) {
-      return { total: 0, messages: [] }
+      return { total: 0, entries: [] }
     }
 
     const messageIds = rawMessages.map(msg => msg.id)
@@ -585,10 +585,11 @@ const queryResolver = {
       const channelPermissions = permissions[message.channel]
       const [prevVersions, versions, nextVersions] = await request.loaders.messageVersions.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
 
-      const messageResult = { previous: null, message: null, next: null }
+      const messageResult = { channel: request.loaders.channels.load(message.channel), previous: null, message: null, next: null }
+      versions[0].content = searchResult
       messageResult.message = prepareMessage(
         message,
-        [{ ...versions[0], content: searchResult }],
+        [versions[0]],
         versions.length > 1 ? versions[0].timestamp : null,
         channelPermissions,
         request

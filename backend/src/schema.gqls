@@ -186,6 +186,7 @@ type SearchResult {
 }
 
 type SearchResultEntry {
+  channel: Channel!,
   previous: Message
   message: Message!
   next: Message

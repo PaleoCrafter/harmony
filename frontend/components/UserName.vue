@@ -4,11 +4,10 @@
 
     <UserInfo
       ref="aligned"
-      @loaded="calculateAlignment()"
       :load="infoVisible"
       :server="server"
       :user="user"
-      :class="['user-name__info', `user-name__info--${alignment}`, `user-name__info--${verticalAlignment}`]"
+      class="user-name__info"
     />
   </span>
 </template>
@@ -42,8 +41,8 @@ export default {
   data () {
     return {
       infoVisible: false,
-      defaultAlignment: 'right',
-      defaultVerticalAlignment: 'bottom'
+      alignment: 'right-start',
+      overflowAlignments: ['bottom-start', 'top-start']
     }
   },
   computed: {
@@ -79,17 +78,17 @@ export default {
   },
   methods: {
     toggleInfoBox () {
-      if (!this.infoVisible) {
-        this.calculateAlignment(() => {
-          this.infoVisible = true
-        })
+      if (this.infoVisible) {
+        this.stopAlignment()
       } else {
-        this.infoVisible = false
+        this.startAlignment()
       }
+      this.infoVisible = !this.infoVisible
     },
     handleOutsideClick (event) {
       if (!this.$el.contains(event.target)) {
         this.infoVisible = false
+        this.stopAlignment()
       }
     }
   }
@@ -115,46 +114,10 @@ export default {
   &__info {
     display: none;
     position: absolute;
-    bottom: 0;
-    margin-left: 0.5rem;
     box-shadow: 0 2px 10px 0 rgba(0, 0, 0, .2), 0 0 0 1px rgba(32, 34, 37, .6);
     min-width: 250px;
     max-width: 250px;
     z-index: 50;
-
-    &--right {
-      left: 100%;
-      --enter-transform: translateX(1rem);
-    }
-
-    &--bottom {
-      bottom: auto;
-      top: 0;
-    }
-
-    &--middle {
-      bottom: auto;
-      top: auto;
-    }
-
-    &--left {
-      left: 0;
-      margin-left: 0;
-
-      &.user-name__info--top {
-        bottom: 100%;
-        top: auto;
-        margin-bottom: 0.5rem;
-        --enter-transform: translateY(1rem);
-      }
-
-      &.user-name__info--bottom {
-        top: 100%;
-        bottom: auto;
-        margin-top: 0.5rem;
-        --enter-transform: translateY(1rem);
-      }
-    }
   }
 
   &--info-visible .user-name__info {
@@ -167,11 +130,9 @@ export default {
 
 @keyframes user-name__info--enter {
   0% {
-    transform: var(--enter-transform);
     opacity: 0;
   }
   100% {
-    transform: translate(0, 0);
     opacity: 1;
   }
 }

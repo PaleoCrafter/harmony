@@ -201,35 +201,35 @@ export default {
   }
 
   ::-webkit-scrollbar {
-    width: 0.5rem;
-    height: 0.5rem;
+    width: 0.5rem !important;
+    height: 0.5rem !important;
   }
 
   ::-webkit-scrollbar-corner {
-    background-color: transparent;
+    background-color: transparent !important;
   }
 
   ::-webkit-scrollbar-track {
-    border-width: initial;
-    background-color: transparent;
-    border-color: transparent;
+    border-width: initial !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
   }
 
   ::-webkit-scrollbar-track, ::-webkit-scrollbar-thumb {
     background-clip: padding-box;
-    border-width: 2px;
-    border-style: solid;
-    border-radius: 3px;
+    border-width: 2px !important;
+    border-style: solid !important;
+    border-radius: 3px !important;
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: #202225;
-    border: 1px solid #36393f;
+    background-color: #202225 !important;
+    border: 1px solid #36393f !important;
   }
 
   ::-webkit-scrollbar-track-piece {
-    background-color: #2f3136;
-    border: 1px solid #36393f;
+    background-color: #2f3136 !important;
+    border: 1px solid #36393f !important;
     border-radius: 7px;
   }
 }

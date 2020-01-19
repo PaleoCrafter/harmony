@@ -32,7 +32,8 @@
       </client-only>
       <SearchBox />
     </header>
-    <nuxt-child :date="date" />
+    <nuxt-child :date="date" class="channel__child" />
+    <SearchResults query="from:224540019816136704" class="channel__search-results" />
   </div>
 </template>
 
@@ -43,10 +44,11 @@ import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
-import SearchBox from '@/components/SearchBox.vue'
+import SearchBox from '@/components/search/SearchBox.vue'
+import SearchResults from '@/components/search/SearchResults.vue'
 
 export default {
-  components: { SearchBox, Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
+  components: { SearchResults, SearchBox, Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
   computed: {
     ...mapState(['timezone']),
     date () {
@@ -108,8 +110,9 @@ export default {
 <style lang="scss">
 .channel {
   flex-grow: 1;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr auto;
   align-items: stretch;
   overflow: hidden;
 
@@ -121,6 +124,7 @@ export default {
     height: 4rem;
     line-height: 1;
     z-index: 51;
+    grid-column: 1/span 2;
 
     @media (max-width: 470px) {
       display: grid;
@@ -225,6 +229,13 @@ export default {
         pointer-events: all;
       }
     }
+  }
+
+  &__search-results {
+    background: #2F3136;
+    grid-row: 2;
+    grid-column: 2;
+    width: 330px;
   }
 
   ::-webkit-scrollbar {

@@ -100,19 +100,16 @@ export default {
   },
   watch: {
     date () {
-      this.messages = undefined
-      this.scrolledToMessage = false
+      this.reset()
     },
     '$route.params.channelId': {
       handler () {
-        this.messages = undefined
-        this.scrolledToMessage = false
+        this.reset()
       }
     },
     '$route.query': {
       handler () {
-        this.messages = undefined
-        this.scrolledToMessage = false
+        this.reset()
       }
     },
     autoRefresh (refresh) {
@@ -170,9 +167,7 @@ export default {
     }
   },
   mounted () {
-    this.$nextTick(() => {
-      this.scrollToMessage()
-    })
+    this.scrollToMessage()
   },
   methods: {
     scrollToMessage () {
@@ -181,6 +176,7 @@ export default {
         const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${message}"]`)
         messageElement.scrollIntoView()
         this.scrolledToMessage = true
+        this.$store.commit('setHighlightedMessage', message)
       }
     },
     getInitialDates () {
@@ -268,6 +264,11 @@ export default {
     async performAutoRefresh () {
       await this.loadMoreForward()
       this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
+    },
+    reset () {
+      this.messages = undefined
+      this.scrolledToMessage = false
+      this.$store.commit('resetHighlightedMessage')
     }
   }
 }

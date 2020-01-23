@@ -138,6 +138,7 @@ export default {
 
   &--spoiler {
     pointer-events: none !important;
+    z-index: 1;
 
     .attachment__content {
       filter: blur(50px);

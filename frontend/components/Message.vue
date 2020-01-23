@@ -1,6 +1,6 @@
 <script>
 import { ClockIcon } from 'vue-feather-icons'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import detailsQuery from '@/apollo/queries/message-details.gql'
 import Embed from '@/components/message/Embed.vue'
 import Markdown from '@/components/message/Markdown.vue'
@@ -24,7 +24,10 @@ export default {
       selectedReaction: null
     }
   },
-  computed: mapGetters(['modalOpen']),
+  computed: {
+    ...mapState(['highlightedMessage']),
+    ...mapGetters(['modalOpen'])
+  },
   apollo: {
     details: {
       query: detailsQuery,
@@ -80,7 +83,13 @@ export default {
     return h(
       'article',
       {
-        class: ['message', { 'message--deleted': this.message.deletedAt !== null }]
+        class: [
+          'message',
+          {
+            'message--deleted': this.message.deletedAt !== null,
+            'message--highlighted': this.highlightedMessage === this.message.id
+          }
+        ]
       },
       [
         h(
@@ -157,7 +166,7 @@ export default {
 
   &__anchor {
     position: absolute;
-    top: -2rem;
+    top: calc(-50vh + 50%);
   }
 
   &__content {
@@ -227,6 +236,22 @@ export default {
     .message__content, .message__note {
       color: #f04747;
     }
+  }
+
+  &--highlighted {
+    background: rgba(114, 137, 218, 0.5);
+    animation: message--highlight 1s;
+    animation-delay: 1s;
+    animation-fill-mode: forwards;
+  }
+}
+
+@keyframes message--highlight {
+  0% {
+    background: rgba(114, 137, 218, 0.5);
+  }
+  100% {
+    background: rgba(114, 137, 218, 0);
   }
 }
 </style>

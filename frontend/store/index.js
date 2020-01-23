@@ -8,7 +8,8 @@ export const state = () => ({
   sidebarOpen: false,
   sidebarTab: 'channels',
   collapsedCategories: {},
-  modal: null
+  modal: null,
+  highlightedMessage: null
 })
 
 export const getters = {
@@ -51,6 +52,12 @@ export const mutations = {
   },
   closeModal (state) {
     state.modal = null
+  },
+  setHighlightedMessage (state, message) {
+    state.highlightedMessage = message
+  },
+  resetHighlightedMessage (state) {
+    state.highlightedMessage = null
   }
 }
 

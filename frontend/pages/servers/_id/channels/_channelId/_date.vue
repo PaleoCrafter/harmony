@@ -167,7 +167,13 @@ export default {
     }
   },
   mounted () {
-    this.scrollToMessage()
+    if (this.$refs.messages) {
+      this.scrollToMessage()
+    } else {
+      this.nextTick(() => {
+        this.scrollToMessage()
+      })
+    }
   },
   methods: {
     scrollToMessage () {
@@ -295,6 +301,13 @@ export default {
       align-items: center;
       overflow-y: scroll;
     }
+
+    .message--highlighted {
+      background: rgba(114, 137, 218, 0.5);
+      animation: message--highlight 1s;
+      animation-delay: 1s;
+      animation-fill-mode: forwards;
+    }
   }
 
   &__loading {
@@ -366,6 +379,15 @@ export default {
     input {
       margin-right: 0.5rem;
     }
+  }
+}
+
+@keyframes message--highlight {
+  0% {
+    background: rgba(114, 137, 218, 0.5);
+  }
+  100% {
+    background: rgba(114, 137, 218, 0);
   }
 }
 </style>

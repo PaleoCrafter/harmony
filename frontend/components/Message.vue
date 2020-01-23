@@ -128,17 +128,17 @@ export default {
             )
           ]
         ) : undefined,
-        reactions.length > 0 ? h(
-          'div',
-          { class: 'message__reactions' },
-          reactions.map(reaction => h(Reaction, { props: { reaction }, on: { click: this.openReactors } }))
-        ) : undefined,
         embeds.length > 0
           ? h('div', { class: 'message__embeds' }, embeds.map(embed => h(Embed, { props: { embed, message: this.message } })))
           : undefined,
         attachments.length > 0
           ? h('div', { class: 'message__attachments' }, attachments.map(attachment => h(Attachment, { props: { attachment } })))
           : undefined,
+        reactions.length > 0 ? h(
+          'div',
+          { class: 'message__reactions' },
+          reactions.map(reaction => h(Reaction, { props: { reaction }, on: { click: this.openReactors } }))
+        ) : undefined,
         this.historyActive
           ? h('portal', { props: { to: 'modal' } }, [h(MessageHistory, { props: { message: this.message } })])
           : undefined,
@@ -180,7 +180,7 @@ export default {
   }
 
   &__reactions, &__embeds, &__attachments {
-    padding: 0.5rem 0;
+    padding: 0.25rem 0;
     flex-basis: 0;
 
     @media (max-width: 768px) {
@@ -191,28 +191,28 @@ export default {
     }
   }
 
-  &__reactions {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    grid-column: 1/span 2;
-    grid-row: 2;
-
-    @media (max-width: 768px) {
-      flex-direction: row;
-    }
-  }
-
   &__embeds {
     grid-column: 1/span 2;
-    grid-row: 3;
+    grid-row: 2;
   }
 
   &__attachments {
     display: flex;
     flex-direction: column;
     grid-column: 1/span 2;
+    grid-row: 3;
+  }
+
+  &__reactions {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    grid-column: 1/span 2;
     grid-row: 4;
+
+    @media (max-width: 768px) {
+      flex-direction: row;
+    }
   }
 
   &__history-button {
@@ -236,22 +236,6 @@ export default {
     .message__content, .message__note {
       color: #f04747;
     }
-  }
-
-  &--highlighted {
-    background: rgba(114, 137, 218, 0.5);
-    animation: message--highlight 1s;
-    animation-delay: 1s;
-    animation-fill-mode: forwards;
-  }
-}
-
-@keyframes message--highlight {
-  0% {
-    background: rgba(114, 137, 218, 0.5);
-  }
-  100% {
-    background: rgba(114, 137, 218, 0);
   }
 }
 </style>

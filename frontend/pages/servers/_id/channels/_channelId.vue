@@ -30,10 +30,10 @@
           </button>
         </div>
       </client-only>
-      <SearchBox @submit="query = $event" />
+      <portal-target name="search-box" class="channel__search-box" />
     </header>
     <nuxt-child :date="date" class="channel__child" />
-    <SearchResults v-if="query !== null" :query="query" class="channel__search-results" />
+    <portal-target name="search-results" class="channel__search-results" />
   </div>
 </template>
 
@@ -44,16 +44,9 @@ import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
-import SearchBox from '@/components/search/SearchBox.vue'
-import SearchResults from '@/components/search/SearchResults.vue'
 
 export default {
-  components: { SearchResults, SearchBox, Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
-  data () {
-    return {
-      query: null
-    }
-  },
+  components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
   computed: {
     ...mapState(['timezone']),
     date () {
@@ -236,11 +229,23 @@ export default {
     }
   }
 
+  &__search-box {
+    margin-left: auto;
+  }
+
   &__search-results {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
     background: #2F3136;
     grid-row: 2;
     grid-column: 2;
     width: 330px;
+
+    &:empty {
+      display: none;
+    }
   }
 
   ::-webkit-scrollbar {

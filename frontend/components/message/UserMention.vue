@@ -28,7 +28,7 @@ export default {
   },
   render (h) {
     if (this.user === null || this.user === undefined) {
-      return h('span', { class: 'user-mention' }, [`@${this.id}`])
+      return h('span', { class: 'user-mention user-mention--unknown' }, [`@${this.id}`])
     }
 
     return h(UserName, { class: 'user-mention', props: { server: this.server, user: { id: this.id, ...this.user }, prefix: '@' } })
@@ -38,7 +38,7 @@ export default {
 
 <style lang="scss">
 .user-mention {
-  & > span {
+  & > span, &--unknown {
     color: #7289da;
     background-color: rgba(114, 137, 218, .1);
     transition: background-color 50ms ease-out, color 50ms ease-out;

@@ -116,10 +116,10 @@ export default {
         return true
       }
 
-      // pressing enter or tab
+      // pressing enter, tab or space
       if (event.keyCode === 13 || event.keyCode === 9 || event.keyCode === 32) {
         this.performSelectionAction()
-        return this.selectedItem !== null || event.keyCode !== 32
+        return this.selectedItem !== null || event.keyCode === 9
       }
 
       return false

@@ -9,6 +9,7 @@ export const state = () => ({
   sidebarTab: 'channels',
   collapsedCategories: {},
   modal: null,
+  searchQuery: null,
   highlightedMessage: null
 })
 
@@ -58,6 +59,12 @@ export const mutations = {
   },
   resetHighlightedMessage (state) {
     state.highlightedMessage = null
+  },
+  search (state, query) {
+    state.searchQuery = query
+  },
+  resetSearch (state) {
+    state.searchQuery = null
   }
 }
 

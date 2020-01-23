@@ -78,7 +78,8 @@ export default {
             query: this.query
           }
         }
-      }
+      },
+      fetchPolicy: 'network-only'
     }
   },
   computed: {

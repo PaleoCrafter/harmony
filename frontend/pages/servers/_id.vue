@@ -28,6 +28,12 @@
       <AlertCircleIcon class="server__error-icon" size="4x" />
       The requested server does not exist!
     </div>
+    <portal to="search-box">
+      <SearchBox @submit="updateQuery" />
+    </portal>
+    <portal to="search-results">
+      <SearchResults v-if="searchQuery !== null" :query="searchQuery" class="channel__search-results" />
+    </portal>
   </div>
 </template>
 
@@ -37,11 +43,13 @@ import { mapState } from 'vuex'
 import channelsQuery from '@/apollo/queries/server-channels.gql'
 import ChannelList from '@/components/ChannelList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import SearchBox from '@/components/search/SearchBox.vue'
+import SearchResults from '@/components/search/SearchResults.vue'
 
 export default {
-  components: { LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon, ArrowLeftIcon },
+  components: { SearchResults, SearchBox, LoadingSpinner, ChannelList, AlertCircleIcon, MenuIcon, ArrowLeftIcon },
   computed: {
-    ...mapState(['sidebarTab']),
+    ...mapState(['sidebarTab', 'searchQuery']),
     isIndex () {
       const server = this.$route.params.id
       let route = this.$route.path
@@ -69,6 +77,11 @@ export default {
     return {
       title: null,
       titleTemplate: titleChunk => titleChunk ? `${titleChunk}${channelSuffix} - Harmony` : defaultTitle
+    }
+  },
+  methods: {
+    updateQuery (query) {
+      this.$store.commit('search', query)
     }
   }
 }

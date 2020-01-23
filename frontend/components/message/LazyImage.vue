@@ -76,7 +76,6 @@ export default {
         }
       },
       {
-        root: document.querySelector('.channel__messages'),
         threshold: 0.25
       }
     )

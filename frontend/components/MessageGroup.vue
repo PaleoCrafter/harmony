@@ -4,6 +4,7 @@
       <UserName :server="group.messages[0].server" :user="group.author" use-role-color />
       <BotTag v-if="group.author.bot" />
       <time :datetime="group.firstTimestamp">{{ formattedTime }}</time>
+      <slot name="header" />
     </div>
     <Message
       v-for="message in group.messages"

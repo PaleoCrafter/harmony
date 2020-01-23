@@ -8,15 +8,16 @@ type Query {
   user(server: ID!, id: ID!): User
   role(server: ID!, id: ID!): Role
 
-  messages(channel: ID!, after: Timestamp!, before: Timestamp!, limit: Int!): [Message!]!
+  messages(channel: ID!, paginationMode: PaginationMode!,  paginationReference: PaginationReference!, limit: Int!): [Message!]!
   messageDetails(message: ID!): MessageDetails
   reactors(message: ID!, type: String!, emoji: String!, emojiId: ID): [Reactor!]!
 
   userDetails(server: ID!, id: ID!): UserDetails
 
   search(server: ID!, parameters: SearchParameters!): SearchResult!
-
   searchSuggestions(server: ID!): SearchSuggestions!
+
+  redirectMessage(id: ID!): RedirectMessage
 }
 
 input SearchParameters {
@@ -72,6 +73,16 @@ type Color {
   r: Int!
   g: Int!
   b: Int!
+}
+
+enum PaginationMode {
+  BEFORE, AROUND, AFTER
+}
+
+input PaginationReference {
+  message: ID
+  minTime: Timestamp
+  maxTime: Timestamp
 }
 
 type Message {
@@ -194,4 +205,10 @@ type SearchResultEntry {
 
 type SearchSuggestions {
   users(query: String!): [User!]!
+}
+
+type RedirectMessage {
+  server: ID!
+  channel: ID!
+  createdAt: ID!
 }

@@ -1,14 +1,19 @@
 <template>
   <div class="channel__messages">
     <div
-      v-infinite-scroll="loadMore"
-      infinite-scroll-disabled="mayNotLoad"
+      v-infinite-scroll="loadMoreForward"
+      infinite-scroll-disabled="mayNotLoadForward"
+      infinite-scroll-backward="loadMoreBackward"
+      infinite-scroll-backward-disabled="mayNotLoadBackward"
       infinite-scroll-distance="100"
       class="channel__messages-container"
     >
-      <MessageList v-if="fetchingMore || !loading" :messages="messages || []" />
+      <div v-if="fetchingMoreBackward" class="channel__loading">
+        <LoadingSpinner />
+      </div>
+      <MessageList ref="messages" v-if="fetchingMoreBackward || fetchingMore || !loading" :messages="messages || []" />
       <div
-        v-if="loading || messages === undefined"
+        v-if="(loading && !fetchingMoreBackward) || messages === undefined"
         :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
       >
         <LoadingSpinner />
@@ -21,7 +26,7 @@
           There are currently no messages in this channel for the selected date.
         </div>
         <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
-          <button @click="loadMore" :disabled="autoRefresh" class="channel__button">
+          <button @click="loadMoreForward" :disabled="autoRefresh" class="channel__button">
             Refresh
           </button>
           <Divider />
@@ -66,16 +71,26 @@ export default {
     return {
       ...this.getInitialDates(),
       loading: false,
+      startReached: this.$route.query.message === undefined,
       endReached: false,
       autoRefresh: false,
       refreshHandle: null,
-      fetchingMore: false
+      fetchingMoreBackward: false,
+      fetchingMore: false,
+      scrolledToMessage: false
     }
   },
   computed: {
     ...mapState(['timezone']),
-    mayNotLoad () {
-      return this.$apollo.loading || this.endReached || this.messages === undefined || this.messages?.length === 0
+    mayNotLoadBackward () {
+      return this.startReached || this.mayNotLoadCommon
+    },
+    mayNotLoadForward () {
+      return this.endReached || this.mayNotLoadCommon
+    },
+    mayNotLoadCommon () {
+      return this.$apollo.loading || this.messages === undefined || this.messages?.length === 0 ||
+        (this.$route.query.message && !this.scrolledToMessage)
     },
     isToday () {
       const today = utcToZonedTime(Date.now(), this.timezone)
@@ -86,10 +101,18 @@ export default {
   watch: {
     date () {
       this.messages = undefined
+      this.scrolledToMessage = false
     },
     '$route.params.channelId': {
       handler () {
         this.messages = undefined
+        this.scrolledToMessage = false
+      }
+    },
+    '$route.query': {
+      handler () {
+        this.messages = undefined
+        this.scrolledToMessage = false
       }
     },
     autoRefresh (refresh) {
@@ -112,23 +135,54 @@ export default {
     messages: {
       query: messagesQuery,
       variables () {
+        const { query } = this.$route
         const { startDate, endDate } = this.getInitialDates()
+
+        const paginationParameters = {
+          paginationMode: 'AFTER',
+          paginationReference: {
+            minTime: startDate.toISOString(),
+            maxTime: endDate.toISOString()
+          }
+        }
+        if (query.message) {
+          paginationParameters.paginationMode = 'AROUND'
+          paginationParameters.paginationReference.message = query.message
+        }
 
         return {
           channel: this.$route.params.channelId,
-          after: startDate.toISOString(),
-          before: endDate.toISOString()
+          ...paginationParameters
         }
       },
       fetchPolicy: 'cache-and-network',
       watchLoading (loading) {
         this.$nextTick(() => {
           this.loading = loading
+
+          if (process.client) {
+            this.$nextTick(() => {
+              this.scrollToMessage()
+            })
+          }
         })
       }
     }
   },
+  mounted () {
+    this.$nextTick(() => {
+      this.scrollToMessage()
+    })
+  },
   methods: {
+    scrollToMessage () {
+      const { message } = this.$route.query
+      if (!this.scrolledToMessage && !this.loading && message) {
+        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${message}"]`)
+        messageElement.scrollIntoView()
+        this.scrolledToMessage = true
+      }
+    },
     getInitialDates () {
       const zoned = zonedTimeToUtc(this.date, this.timezone)
       const startDate = zonedTimeToUtc(endOfDay(addDays(zoned, -1)), this.timezone)
@@ -136,11 +190,8 @@ export default {
 
       return { startDate, endDate }
     },
-    async loadMore () {
+    async loadMoreForward () {
       const lastMessage = this.messages[this.messages.length - 1]
-      if (lastMessage !== undefined) {
-        this.startDate = new Date(lastMessage.createdAt)
-      }
       // Fetch more data and transform the original result
       try {
         this.fetchingMore = true
@@ -148,8 +199,12 @@ export default {
           {
             variables: {
               channel: this.$route.params.channelId,
-              after: this.startDate.toISOString(),
-              before: this.endDate.toISOString()
+              paginationMode: 'AFTER',
+              paginationReference: {
+                message: lastMessage.id,
+                minTime: this.startDate.toISOString(),
+                maxTime: this.endDate.toISOString()
+              }
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
               const oldMessages = previousResult?.messages ?? []
@@ -170,8 +225,48 @@ export default {
       }
       this.fetchingMore = false
     },
+    async loadMoreBackward () {
+      const firstMessage = this.messages[0]
+      // Fetch more data and transform the original result
+      try {
+        this.fetchingMoreBackward = true
+        await this.$apollo.queries.messages.fetchMore(
+          {
+            variables: {
+              channel: this.$route.params.channelId,
+              paginationMode: 'BEFORE',
+              paginationReference: {
+                message: firstMessage.id,
+                minTime: this.startDate.toISOString(),
+                maxTime: this.endDate.toISOString()
+              }
+            },
+            updateQuery: (previousResult, { fetchMoreResult }) => {
+              const oldMessages = previousResult?.messages ?? []
+              const newMessages = [...fetchMoreResult.messages]
+              newMessages.reverse()
+              const hasMore = newMessages.length > 0
+
+              this.startReached = !hasMore
+
+              return {
+                messages: [...newMessages.filter(msg => oldMessages.find(old => old.id === msg.id) === undefined), ...oldMessages]
+              }
+            }
+          }
+        )
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error(error)
+      }
+      this.$nextTick(() => {
+        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${firstMessage.id}"]`)
+        messageElement.scrollIntoView()
+        this.fetchingMoreBackward = false
+      })
+    },
     async performAutoRefresh () {
-      await this.loadMore()
+      await this.loadMoreForward()
       this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
     }
   }

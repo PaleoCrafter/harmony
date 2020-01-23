@@ -23,12 +23,18 @@
     <ul ref="items" class="search-results__items">
       <template v-for="group in groupedEntries">
         <li class="search-results__item-header">
-          {{ `#${group.channel.name}` }}
+          <nuxt-link :to="`/servers/${$route.params.id}/channels/${group.channel.id}`">
+            {{ `#${group.channel.name}` }}
+          </nuxt-link>
           <hr>
         </li>
         <li v-for="entry in group.entries" class="search-results__item">
           <MessageGroup v-if="entry.previous" :group="entry.previous" class="search-results__item-context" relative-time />
-          <MessageGroup :group="entry.message" class="search-results__item-message" relative-time />
+          <MessageGroup :group="entry.message" class="search-results__item-message" relative-time>
+            <nuxt-link slot="header" :to="`/messages/${entry.id}`" class="search-results__item-jump">
+              Jump
+            </nuxt-link>
+          </MessageGroup>
           <MessageGroup v-if="entry.next" :group="entry.next" class="search-results__item-context" relative-time />
         </li>
       </template>
@@ -97,6 +103,7 @@ export default {
 
       this.result.entries.forEach((rawEntry) => {
         const entry = {
+          id: rawEntry.message.id,
           channel: rawEntry.channel,
           previous: prepareMessage(rawEntry.previous),
           message: prepareMessage(rawEntry.message),
@@ -189,6 +196,15 @@ export default {
       font-size: 0.9rem;
       font-weight: 600;
 
+      a {
+        color: inherit;
+        text-decoration: none;
+
+        &:hover, &:active, &:focus {
+          text-decoration: underline;
+        }
+      }
+
       hr {
         flex: 1;
         margin-left: 0.5rem;
@@ -214,6 +230,33 @@ export default {
       max-height: 48px;
       overflow: hidden;
       pointer-events: none;
+    }
+
+    &-jump {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: 0.5rem;
+      top: 0.5rem;
+      background: #535559;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.7rem;
+      border-radius: 0.15rem;
+      padding: 0.2rem 0.6rem;
+      text-decoration: none;
+
+      &:hover, &:active, &:focus {
+        color: white;
+      }
+
+      &:active {
+        margin-top: 1px;
+      }
+    }
+
+    &-message:hover .search-results__item-jump {
+      display: flex;
     }
   }
 

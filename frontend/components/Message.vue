@@ -84,6 +84,15 @@ export default {
       },
       [
         h(
+          'span',
+          {
+            class: 'message__anchor',
+            attrs: {
+              'data-message-id': this.message.id
+            }
+          }
+        ),
+        h(
           Markdown,
           {
             props: {
@@ -144,6 +153,12 @@ export default {
   grid-template-columns: 1fr minmax(0, auto);
   grid-auto-rows: auto;
   grid-column-gap: 0.25rem;
+  position: relative;
+
+  &__anchor {
+    position: absolute;
+    top: -2rem;
+  }
 
   &__content {
     grid-column: 1;

@@ -1,5 +1,5 @@
-query ChannelMessages($channel: ID!, $after: Timestamp!, $before: Timestamp!) {
-  messages(channel: $channel, after: $after, before: $before, limit: 100) {
+query ChannelMessages($channel: ID!, $paginationMode: PaginationMode!,  $paginationReference: PaginationReference!) {
+  messages(channel: $channel, paginationMode: $paginationMode, paginationReference: $paginationReference, limit: 100) {
     id
 
     author {

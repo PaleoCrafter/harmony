@@ -424,7 +424,7 @@ const queryResolver = {
   role (parent, { server, id }, { request }) {
     return request.user.servers.find(s => s.id === server) ? request.loaders.roles.load({ server, id }) : null
   },
-  async messages (parent, { channel: channelId, before, after, limit }, { request }) {
+  async messages (parent, { channel: channelId, paginationMode, paginationReference, limit }, { request }) {
     if (limit > 100) {
       throw new Error('You may request at most 100 messages at once!')
     }
@@ -436,12 +436,65 @@ const queryResolver = {
       return []
     }
 
+    const { message: refMessageId, minTime, maxTime } = paginationReference
+
+    const refMessage = refMessageId ? await Message.findOne({ where: { id: refMessageId } }) : null
+    if (refMessageId && !refMessage) {
+      return []
+    }
+
+    let paginationCondition = {}
+    if (refMessage && paginationMode !== 'AROUND') {
+      paginationCondition = {
+        [Op.or]: [
+          { createdAt: { [paginationMode === 'BEFORE' ? Op.lt : Op.gt]: refMessage.createdAt } },
+          {
+            [Op.and]: {
+              createdAt: refMessage.createdAt,
+              id: { [paginationMode === 'BEFORE' ? Op.lt : Op.gt]: refMessageId }
+            }
+          }
+        ]
+      }
+    } else if (refMessage) {
+      const firstMessage = (await Message.findAll({
+        where: {
+          [Op.or]: [
+            { id: refMessageId },
+            { createdAt: { [Op.lt]: refMessage.createdAt } },
+            {
+              [Op.and]: {
+                createdAt: refMessage.createdAt,
+                id: { [Op.lt]: refMessageId }
+              }
+            }
+          ]
+        },
+        limit: Math.ceil(limit / 2),
+        order: [['createdAt', 'DESC'], ['id', 'DESC']]
+      })).pop()
+
+      paginationCondition = {
+        [Op.or]: [
+          { id: firstMessage.id },
+          { createdAt: { [Op.gt]: firstMessage.createdAt } },
+          {
+            [Op.and]: {
+              createdAt: firstMessage.createdAt,
+              id: { [Op.gt]: refMessageId }
+            }
+          }
+        ]
+      }
+    }
+
     const messages = await Message.findAll({
       where: {
         channel: channel.id,
         createdAt: {
-          [Op.and]: { [Op.gt]: after, [Op.lt]: before }
+          [Op.and]: { [Op.gt]: minTime, [Op.lt]: maxTime }
         },
+        ...paginationCondition,
         ...(
           permissions.has('manageMessages')
             ? {}
@@ -451,7 +504,7 @@ const queryResolver = {
         )
       },
       limit,
-      order: [['createdAt', 'ASC'], ['id', 'ASC']]
+      order: [['createdAt', paginationMode === 'BEFORE' ? 'DESC' : 'ASC'], ['id', paginationMode === 'BEFORE' ? 'DESC' : 'ASC']]
     })
 
     return Promise.all(messages.map(async (msg) => {
@@ -655,6 +708,21 @@ const queryResolver = {
         )
       }
     }
+  },
+  async redirectMessage(parent, { id }, { request }) {
+    const message = await Message.findOne({ where: { id } })
+
+    if (!request.user.servers.find(s => s.id === message.server)) {
+      return null
+    }
+
+    const permissions = (await getPermissions(request.user, message.server)).channels[message.channel]
+
+    if (permissions === undefined || !permissions.has('readMessages')) {
+      return null
+    }
+
+    return message
   }
 }
 

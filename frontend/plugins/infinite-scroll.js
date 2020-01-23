@@ -104,7 +104,7 @@ const doBind = function () {
   directive.throttleDelay = throttleDelay
 
   directive.scrollEventTarget = getScrollEventTarget(element)
-  directive.scrollListener = throttle(doCheck.bind(directive), directive.throttleDelay)
+  directive.scrollListener = throttle(doBothChecks.bind(directive), directive.throttleDelay)
   directive.scrollEventTarget.addEventListener('scroll', directive.scrollListener)
 
   this.vm.$on('hook:beforeDestroy', function () {
@@ -142,15 +142,46 @@ const doBind = function () {
   }
   directive.immediateCheck = immediateCheck
 
+  const backwardExpr = element.getAttribute('infinite-scroll-backward')
+  if (backwardExpr) {
+    directive.backwardHandler = directive.vm[backwardExpr]
+    const backwardDisabledExpr = element.getAttribute('infinite-scroll-backward-disabled')
+    let disabled = false
+
+    if (backwardDisabledExpr) {
+      this.vm.$watch(backwardDisabledExpr, function (value) {
+        directive.backwardDisabled = value
+        if (!value && directive.immediateCheck) {
+          doBackwardCheck.call(directive)
+        }
+      })
+      disabled = Boolean(directive.vm[backwardDisabledExpr])
+    }
+    directive.backwardDisabled = disabled
+  }
+
   if (immediateCheck) {
     doCheck.call(directive)
+    if (backwardExpr) {
+      doBackwardCheck.call(directive)
+    }
   }
 
   const eventName = element.getAttribute('infinite-scroll-listen-for-event')
   if (eventName) {
     directive.vm.$on(eventName, function () {
       doCheck.call(directive)
+      if (backwardExpr) {
+        doBackwardCheck.call(directive)
+      }
     })
+  }
+}
+
+const doBothChecks = function (force) {
+  doCheck.bind(this).call(force)
+  if (this.backwardHandler) {
+    doBackwardCheck.bind(this).call(force)
   }
 }
 
@@ -175,6 +206,29 @@ const doCheck = function (force) {
 
   if (shouldTrigger && this.expression) {
     this.expression()
+  }
+}
+
+const doBackwardCheck = function (force) {
+  const scrollEventTarget = this.scrollEventTarget
+  const element = this.el
+  const distance = this.distance
+
+  if (force !== true && this.backwardDisabled) return //eslint-disable-line
+  const viewportScrollTop = getScrollTop(scrollEventTarget)
+
+  let shouldTrigger = false
+
+  if (scrollEventTarget === element) {
+    shouldTrigger = viewportScrollTop <= distance
+  } else {
+    const elementBottom = getElementTop(element) - getElementTop(scrollEventTarget) + element.offsetHeight + viewportScrollTop
+
+    shouldTrigger = elementBottom <= distance
+  }
+
+  if (shouldTrigger && this.backwardHandler) {
+    this.backwardHandler()
   }
 }
 

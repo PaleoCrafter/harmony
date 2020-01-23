@@ -41,3 +41,18 @@ COPY --from=builder /app/db-import/build/libs/harmony-db-import.jar /app/harmony
 WORKDIR /app
 
 ENTRYPOINT ["java", "-server", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "harmony-db-import.jar"]
+
+FROM openjdk:8-jre-alpine AS elastic-ingest
+
+ENV APPLICATION_USER elasticingest
+RUN adduser -D -g '' $APPLICATION_USER
+
+RUN mkdir /app
+RUN chown -R $APPLICATION_USER /app
+
+USER $APPLICATION_USER
+
+COPY --from=builder /app/elastic-ingest/build/libs/harmony-elastic-ingest.jar /app/harmony-elastic-ingest.jar
+WORKDIR /app
+
+ENTRYPOINT ["java", "-server", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-XX:InitialRAMFraction=2", "-XX:MinRAMFraction=2", "-XX:MaxRAMFraction=2", "-XX:+UseG1GC", "-XX:MaxGCPauseMillis=100", "-XX:+UseStringDeduplication", "-jar", "harmony-elastic-ingest.jar"]

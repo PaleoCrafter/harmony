@@ -7,6 +7,8 @@ import com.seventeenthshard.harmony.search.simpleast.core.parser.Parser
 import com.seventeenthshard.harmony.search.simpleast.core.parser.Rule
 import java.util.regex.Matcher
 import java.util.regex.Pattern
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
 
 object DiscordMarkdownRules {
     private val PATTERN_BOLD = Pattern.compile("^\\*\\*([\\s\\S]+?)\\*\\*(?!\\*)")
@@ -123,28 +125,30 @@ object DiscordMarkdownRules {
             }
         }
 
-    private val PARSER = Parser<Unit, Node<Unit>, State>().also { parser ->
-        parser.addRules(
-            listOf(
-                createBlockQuoteRule(),
-                createTerminalRule(PATTERN_CODE_BLOCK) { it.group(3) },
-                createNewlineRule(),
-                createEscapeRule(),
-                createLinkRule(PATTERN_AUTOLINK),
-                createLinkRule(PATTERN_URL),
-                createUserMentionRule(),
-                createTerminalRule(PATTERN_CHANNEL_MENTION) { "#${it.group(1)}" },
-                createTerminalRule(PATTERN_ROLE_MENTION) { "@${it.group(1)}" },
-                createTerminalRule(PATTERN_EMOJI) { ":${it.group(2)}:" },
-                createNonTerminalRule(PATTERN_BOLD),
-                createNonTerminalRule(PATTERN_UNDERLINE),
-                createItalicsRule(),
-                createNonTerminalRule(PATTERN_STRIKETHRU),
-                createNonTerminalRule(PATTERN_SPOILER),
-                createTerminalRule(PATTERN_INLINE_CODE) { it.group(2) },
-                createTextRule()
+    private val PARSER by threadLocalLazy {
+        Parser<Unit, Node<Unit>, State>().also { parser ->
+            parser.addRules(
+                listOf(
+                    createBlockQuoteRule(),
+                    createTerminalRule(PATTERN_CODE_BLOCK) { it.group(3) },
+                    createNewlineRule(),
+                    createEscapeRule(),
+                    createLinkRule(PATTERN_AUTOLINK),
+                    createLinkRule(PATTERN_URL),
+                    createUserMentionRule(),
+                    createTerminalRule(PATTERN_CHANNEL_MENTION) { "#${it.group(1)}" },
+                    createTerminalRule(PATTERN_ROLE_MENTION) { "@${it.group(1)}" },
+                    createTerminalRule(PATTERN_EMOJI) { ":${it.group(2)}:" },
+                    createNonTerminalRule(PATTERN_BOLD),
+                    createNonTerminalRule(PATTERN_UNDERLINE),
+                    createItalicsRule(),
+                    createNonTerminalRule(PATTERN_STRIKETHRU),
+                    createNonTerminalRule(PATTERN_SPOILER),
+                    createTerminalRule(PATTERN_INLINE_CODE) { it.group(2) },
+                    createTextRule()
+                )
             )
-        )
+        }
     }
 
     fun parse(content: String) =
@@ -166,3 +170,14 @@ object DiscordMarkdownRules {
 
     data class State(var quote: Boolean = false, val mentionedUsers: MutableSet<String> = mutableSetOf(), var hasLinks: Boolean = false)
 }
+
+class ThreadLocalLazy<T>(val provider: () -> T) : ReadOnlyProperty<Any?, T> {
+    private val threadLocal = object : ThreadLocal<T>() {
+        override fun initialValue(): T = provider()
+    }
+
+    override fun getValue(thisRef: Any?, property: KProperty<*>): T =
+        threadLocal.get()
+}
+
+fun <T> threadLocalLazy(provider: () -> T) = ThreadLocalLazy(provider)

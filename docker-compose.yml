@@ -78,6 +78,24 @@ services:
       - broker
       - schema-registry
 
+  elastic-ingest:
+    image: marvinroesch/harmony-elastic-ingest:latest
+    container_name: harmony-elastic-ingest
+    build:
+      context: .
+      dockerfile: Dockerfile-gradle
+      target: elastic-ingest
+    env_file:
+      - ./elastic-ingest/.env
+    environment:
+      - BROKER_URLS=broker:29092
+      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
+      - ELASTIC_HOST=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+      - broker
+      - schema-registry
+
   db:
     image: postgres:12
     container_name: harmony-db

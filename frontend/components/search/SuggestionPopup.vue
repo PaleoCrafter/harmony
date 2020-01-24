@@ -20,11 +20,16 @@ export default {
     defaultSuggestion: {
       type: Number,
       default: () => null
+    },
+    filtered: {
+      type: Boolean,
+      required: true
     }
   },
   data () {
     return {
-      selectedItem: null
+      selectedItem: null,
+      hadUserInteraction: false
     }
   },
   computed: {
@@ -58,6 +63,7 @@ export default {
   watch: {
     groups () {
       this.selectedItem = null
+      this.hadUserInteraction = false
       if (this.defaultSuggestion !== null) {
         this.selectItem(0, this.defaultSuggestion)
       }
@@ -108,18 +114,26 @@ export default {
       // pressing up arrow
       if (event.keyCode === 38) {
         this.moveSelection(-1)
+        this.hadUserInteraction = true
         return true
       }
       // pressing down arrow
       if (event.keyCode === 40) {
         this.moveSelection(1)
+        this.hadUserInteraction = true
         return true
       }
 
-      // pressing enter, tab or space
-      if (event.keyCode === 13 || event.keyCode === 9 || event.keyCode === 32) {
+      // tab always triggers selection
+      if (event.keyCode === 9) {
         this.performSelectionAction()
-        return this.selectedItem !== null || event.keyCode === 9
+        return true
+      }
+
+      // pressing enter or space triggers only filtered selection
+      if ((this.filtered || this.hadUserInteraction) && (event.keyCode === 13 || event.keyCode === 32)) {
+        this.performSelectionAction()
+        return this.selectedItem !== null
       }
 
       return false

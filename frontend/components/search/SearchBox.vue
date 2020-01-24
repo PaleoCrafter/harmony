@@ -4,7 +4,13 @@
     <SearchIcon v-if="editorEmpty" class="search-box__icon" size="1x" stroke-width="3" />
     <XIcon v-else @click="clear" class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" />
     <div v-if="popupActive" class="search-box__popup">
-      <SuggestionPopup ref="suggestions" :groups="activeSuggestions" :editor="editor" :default-suggestion="defaultSuggestion" />
+      <SuggestionPopup
+        ref="suggestions"
+        :groups="activeSuggestions"
+        :editor="editor"
+        :default-suggestion="defaultSuggestion"
+        :filtered="filteredSuggestions"
+      />
     </div>
   </div>
 </template>
@@ -31,7 +37,8 @@ export default {
       editor: null,
       popupActive: false,
       activeSuggestions: defaultSuggestions,
-      defaultSuggestion: null
+      defaultSuggestion: null,
+      filteredSuggestions: false
     }
   },
   computed: {
@@ -87,6 +94,7 @@ export default {
               .then((suggestions) => {
                 this.activeSuggestions = suggestions
                 this.defaultSuggestion = 0
+                this.filteredSuggestions = query !== ''
               })
           },
           onCommit: this.resetSuggestions,

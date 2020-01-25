@@ -1,6 +1,7 @@
 query ChannelMessages($channel: ID!, $paginationMode: PaginationMode!,  $paginationReference: PaginationReference!) {
   messages(channel: $channel, paginationMode: $paginationMode, paginationReference: $paginationReference, limit: 100) {
     id
+    ref
 
     author {
       id

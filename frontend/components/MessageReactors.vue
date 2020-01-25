@@ -62,7 +62,7 @@ export default {
       query: reactorsQuery,
       variables () {
         return {
-          message: this.message.id,
+          message: this.message.ref,
           type: this.selectedReaction.type,
           emoji: this.selectedReaction.emoji,
           emojiId: this.selectedReaction.emojiId

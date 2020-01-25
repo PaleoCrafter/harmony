@@ -203,7 +203,7 @@ export default {
               channel: this.$route.params.channelId,
               paginationMode: 'AFTER',
               paginationReference: {
-                message: lastMessage.id,
+                message: lastMessage.ref,
                 minTime: this.startDate.toISOString(),
                 maxTime: this.endDate.toISOString()
               }
@@ -238,7 +238,7 @@ export default {
               channel: this.$route.params.channelId,
               paginationMode: 'BEFORE',
               paginationReference: {
-                message: firstMessage.id,
+                message: firstMessage.ref,
                 minTime: this.startDate.toISOString(),
                 maxTime: this.endDate.toISOString()
               }
@@ -262,7 +262,7 @@ export default {
         console.error(error)
       }
       this.$nextTick(() => {
-        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${firstMessage.id}"]`)
+        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${firstMessage.ref}"]`)
         messageElement.scrollIntoView()
         this.fetchingMoreBackward = false
       })

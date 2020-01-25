@@ -3,7 +3,7 @@ const { Client } = require('@elastic/elasticsearch')
 const INDEX = 'messages'
 const client = new Client({ node: process.env.ELASTIC_HOST })
 
-module.exports = async function search (server, query, sortOrder, readableChannels, manageableChannels, after) {
+module.exports = async function search (server, query, sortOrder, readableChannels, manageableChannels, page) {
   const highlightTag = `__HARMONY_SEARCH_${Date.now()}__`
 
   const filter = {
@@ -23,7 +23,8 @@ module.exports = async function search (server, query, sortOrder, readableChanne
   const { body: rawResult } = await client.search({
     index: INDEX,
     body: {
-      size: 10,
+      size: 25,
+      from: page * 25,
       query: {
         bool: {
           must: {
@@ -37,13 +38,12 @@ module.exports = async function search (server, query, sortOrder, readableChanne
           filter
         }
       },
-      search_after: after
-        ? [sortOrder ? after.timestamp : undefined, after.id].filter(a => a !== undefined)
-        : undefined,
-      sort: {
-        ...(sortOrder ? { timestamp: sortOrder === 'ASCENDING' ? 'asc' : 'desc' } : {}),
-        tie_breaker_id: 'asc'
-      },
+      sort: [
+        ...(sortOrder
+          ? [{ timestamp: sortOrder === 'ASCENDING' ? 'asc' : 'desc' }]
+          : [{ _score: 'desc' }, { timestamp: 'desc' }]),
+        { tie_breaker_id: sortOrder === 'ASCENDING' ? 'asc' : 'desc' }
+      ],
       highlight: {
         fields: {
           'content.cs': {
@@ -60,6 +60,10 @@ module.exports = async function search (server, query, sortOrder, readableChanne
 
   return {
     total: rawResult.hits.total.value,
-    messages: rawResult.hits.hits.map(msg => ({ id: msg._id, content: msg.highlight ? msg.highlight['content.cs'][0] : msg._source.content }))
+    totalPages: Math.ceil(rawResult.hits.total.value / 25),
+    messages: rawResult.hits.hits.map(msg => ({
+      id: msg._id,
+      content: msg.highlight ? msg.highlight['content.cs'][0] : msg._source.content
+    }))
   }
 }

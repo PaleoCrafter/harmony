@@ -26,6 +26,24 @@
 
 import markdown from 'simple-markdown'
 
+const highlightRules = {
+  text: Object.assign({}, markdown.defaultRules.text, {
+    match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00C0-\uFFFF-]|\n\n|\n|\w+:\S|$)/.exec(source)
+  }),
+  searchHighlight: {
+    order: markdown.defaultRules.u.order - 1,
+    match: markdown.inlineRegex(/^__HARMONY_SEARCH_\d+__((?:\\[\s\S]|[^\\])+?)__HARMONY_SEARCH_\d+__/),
+    quality: capture => capture[0].length,
+    parse (capture, parse, state) {
+      return {
+        content: parse(capture[1], state)
+      }
+    }
+  }
+}
+const highlightParser = markdown.parserFor(highlightRules)
+const INLINE_CODE_ESCAPE_BACKTICKS_R = /^ (?= *`)|(` *) $/g
+
 const rules = {
   blockQuote: Object.assign({}, markdown.defaultRules.blockQuote, {
     match (source, state, prevSource) {
@@ -58,7 +76,7 @@ const rules = {
     parse (capture, parse, state) {
       return {
         lang: (capture[2] || '').trim(),
-        content: capture[3] || '',
+        content: highlightParser(capture[3], { inline: true }) || '',
         inQuote: state.inQuote || false
       }
     }
@@ -93,10 +111,14 @@ const rules = {
   strike: Object.assign({}, markdown.defaultRules.del, {
     match: markdown.inlineRegex(/^~~([\s\S]+?)~~(?!_)/)
   }),
-  inlineCode: markdown.defaultRules.inlineCode,
-  text: Object.assign({}, markdown.defaultRules.text, {
-    match: source => /^[\s\S]+?(?=[^0-9A-Za-z\s\u00C0-\uFFFF-]|\n\n|\n|\w+:\S|$)/.exec(source)
-  }),
+  inlineCode: {
+    ...markdown.defaultRules.inlineCode,
+    parse (capture) {
+      return {
+        content: highlightParser(capture[2].replace(INLINE_CODE_ESCAPE_BACKTICKS_R, '$1'), { inline: true })
+      }
+    }
+  },
   emoticon: {
     order: markdown.defaultRules.text.order,
     match: source => /^(¯\\_\(ツ\)_\/¯)/.exec(source),
@@ -119,16 +141,7 @@ const rules = {
       }
     }
   },
-  searchHighlight: {
-    order: markdown.defaultRules.u.order - 1,
-    match: markdown.inlineRegex(/^__HARMONY_SEARCH_\d+__((?:\\[\s\S]|[^\\])+?)__HARMONY_SEARCH_\d+__/),
-    quality: capture => capture[0].length,
-    parse (capture, parse, state) {
-      return {
-        content: parse(capture[1], state)
-      }
-    }
-  }
+  ...highlightRules
 }
 
 const discordRules = {

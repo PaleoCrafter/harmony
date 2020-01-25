@@ -241,7 +241,7 @@ export default {
     background: #2F3136;
     grid-row: 2;
     grid-column: 2;
-    width: 330px;
+    width: 360px;
 
     &:empty {
       display: none;

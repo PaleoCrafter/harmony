@@ -68,7 +68,8 @@ function prepareMessage (message, versions, editedAt, permissions, request) {
   const infoKey = { message: message.id, canSeeDeleted: permissions.has('manageMessages') }
 
   return {
-    id: message.id,
+    id: message.idSuffix ? `${message.id}-${message.idSuffix}` : message.id,
+    ref: message.id,
     author: request.loaders.users.load({ server: message.server, id: message.user }),
     server: message.server,
     versions: permissions.has('manageMessages') ? versions : [versions[0]],
@@ -583,24 +584,24 @@ const queryResolver = {
       return { total: 0, entries: [] }
     }
 
-    let after
-
-    if (parameters.afterMessage) {
-      const message = await Message.find(parameters.afterMessage)
-      after = { id: message.id, timestamp: message.timestamp }
+    function prepareVersion (messageId, version) {
+      return {
+        timestamp: version.timestamp,
+        content: version.content
+      }
     }
 
     const permissions = (await getPermissions(request.user, server)).channels
     const readableChannels = Object.keys(permissions).filter(c => permissions[c].has('readMessages'))
     const manageableChannels = Object.keys(permissions).filter(c => permissions[c].has('manageMessages'))
 
-    const { total, messages: rawMessages } = await search(
+    const { total, totalPages, messages: rawMessages } = await search(
       server,
       parameters.query,
       parameters.sort,
       readableChannels,
       manageableChannels,
-      after
+      parameters.page
     )
 
     if (total === 0) {
@@ -632,26 +633,30 @@ const queryResolver = {
       }
     )
 
-    const entries = Promise.all(contextMessages.map(async ({ prev: prevId, message: msgId, next: nextId }) => {
+    const orderedContextMessages = messageIds.map(msgId => contextMessages.find(c => c.message === msgId)).filter(c => c !== undefined)
+    const entries = Promise.all(orderedContextMessages.map(async ({ prev: prevId, message: msgId, next: nextId }) => {
       const searchResult = rawMessages.find(msg => msg.id === msgId).content
       const [prev, message, next] = await request.loaders.searchMessages.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
       const channelPermissions = permissions[message.channel]
       const [prevVersions, versions, nextVersions] = await request.loaders.messageVersions.loadMany([prevId || 'ignored', msgId, nextId || 'ignored'])
 
       const messageResult = { channel: request.loaders.channels.load(message.channel), previous: null, message: null, next: null }
+
+      message.idSuffix = 'search-result'
       versions[0].content = searchResult
       messageResult.message = prepareMessage(
         message,
-        [versions[0]],
+        [prepareVersion(msgId, versions[0])],
         versions.length > 1 ? versions[0].timestamp : null,
         channelPermissions,
         request
       )
 
       if (prev) {
+        prev.idSuffix = 'search-result'
         messageResult.previous = prepareMessage(
           prev,
-          [prevVersions[0]],
+          [prepareVersion(prevId, prevVersions[0])],
           prevVersions.length > 1 ? prevVersions[0].timestamp : null,
           channelPermissions,
           request
@@ -659,9 +664,10 @@ const queryResolver = {
       }
 
       if (next) {
+        next.idSuffix = 'search-result'
         messageResult.next = prepareMessage(
           next,
-          [nextVersions[0]],
+          [prepareVersion(nextId, nextVersions[0])],
           nextVersions.length > 1 ? nextVersions[0].timestamp : null,
           channelPermissions,
           request
@@ -671,7 +677,7 @@ const queryResolver = {
       return messageResult
     }))
 
-    return { total, entries }
+    return { total, totalPages, entries }
   },
   searchSuggestions (parent, { server }, { request }) {
     if (!request.user.servers.find(s => s.id === server)) {
@@ -681,7 +687,7 @@ const queryResolver = {
     return {
       users ({ query }) {
         return database.query(
-          `
+            `
           SELECT
             "id", "name", "discriminator", "nickname"
           FROM (
@@ -709,7 +715,7 @@ const queryResolver = {
       }
     }
   },
-  async redirectMessage(parent, { id }, { request }) {
+  async redirectMessage (parent, { id }, { request }) {
     const message = await Message.findOne({ where: { id } })
 
     if (!request.user.servers.find(s => s.id === message.server)) {

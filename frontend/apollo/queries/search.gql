@@ -1,6 +1,7 @@
 query Search($server: ID!, $parameters: SearchParameters!) {
   search(server: $server, parameters: $parameters) {
     total
+    totalPages
 
     entries {
       channel {
@@ -10,6 +11,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
 
       previous {
         id
+        ref
 
         author {
           id
@@ -41,6 +43,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
 
       message {
         id
+        ref
 
         author {
           id
@@ -72,6 +75,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
 
       next {
         id
+        ref
 
         author {
           id

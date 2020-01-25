@@ -332,7 +332,6 @@ export default {
     font-weight: bold;
     grid-column: 1;
     grid-row: 3;
-    white-space: nowrap;
   }
 
   &__description {
@@ -364,7 +363,7 @@ export default {
   }
 
   &__thumbnail, &__images {
-    max-width: 400px;
+    max-width: 100%;
     max-height: 300px;
     margin-top: 1rem;
     border-radius: 4px;
@@ -418,7 +417,7 @@ export default {
     margin-top: 0.5rem;
     grid-column: 1;
     grid-row: 6;
-    max-width: 400px;
+    max-width: 100%;
     max-height: 300px;
     border-radius: 4px;
     overflow: hidden;

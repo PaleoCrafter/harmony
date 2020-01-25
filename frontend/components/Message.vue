@@ -36,7 +36,7 @@ export default {
       },
       variables () {
         return {
-          message: this.message.id
+          message: this.message.ref
         }
       },
       update: data => data.messageDetails
@@ -87,7 +87,7 @@ export default {
           'message',
           {
             'message--deleted': this.message.deletedAt !== null,
-            'message--highlighted': this.highlightedMessage === this.message.id
+            'message--highlighted': this.highlightedMessage === this.message.ref
           }
         ]
       },
@@ -97,7 +97,7 @@ export default {
           {
             class: 'message__anchor',
             attrs: {
-              'data-message-id': this.message.id
+              'data-message-id': this.message.ref
             }
           }
         ),

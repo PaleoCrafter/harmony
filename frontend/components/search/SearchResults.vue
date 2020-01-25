@@ -1,22 +1,20 @@
 <template>
   <div class="search-results">
     <div class="search-results__header">
-      <span v-if="!$apollo.loading" class="search-results__number">
+      <span v-if="!$apollo.loading && result" class="search-results__number">
         {{ formattedTotal }} {{ result.total !== 1 ? 'Results' : 'Results' }}
       </span>
-      <span v-else class="search-results__number">
+      <span v-else class="search-results__loading">
         Searching...
         <LoadingSpinner />
       </span>
       <ul class="search-results__orders">
-        <li class="search-results__order search-results__order--active">
-          Newest
-        </li>
-        <li class="search-results__order">
-          Oldest
-        </li>
-        <li class="search-results__order">
-          Most Relevant
+        <li
+          v-for="entry in sortOptions"
+          @click="sortOrder = entry.order"
+          :class="['search-results__order', { 'search-results__order--active': sortOrder === entry.order }]"
+        >
+          {{ entry.label }}
         </li>
       </ul>
     </div>
@@ -29,20 +27,45 @@
           <hr>
         </li>
         <li v-for="entry in group.entries" class="search-results__item">
-          <MessageGroup v-if="entry.previous" :group="entry.previous" class="search-results__item-context" relative-time />
+          <MessageGroup
+            v-if="entry.previous"
+            :group="entry.previous"
+            class="search-results__item-context search-results__item-context--previous"
+            relative-time
+          />
           <MessageGroup :group="entry.message" class="search-results__item-message" relative-time>
             <nuxt-link slot="header" :to="`/messages/${entry.id}`" class="search-results__item-jump">
               Jump
             </nuxt-link>
           </MessageGroup>
-          <MessageGroup v-if="entry.next" :group="entry.next" class="search-results__item-context" relative-time />
+          <MessageGroup
+            v-if="entry.next"
+            :group="entry.next"
+            class="search-results__item-context search-results__item-context--next"
+            relative-time
+          />
         </li>
       </template>
     </ul>
+    <nav v-if="result" class="search-results__pagination">
+      <button @click="changePage(-1)" :disabled="page === 0" class="search-results__pagination-button" aria-label="Previous page">
+        <ChevronLeftIcon size="1x" stroke-width="3" />
+      </button>
+      Page {{ page + 1 }} of {{ result.totalPages }}
+      <button
+        @click="changePage(1)"
+        :disabled="page === result.totalPages - 1"
+        class="search-results__pagination-button"
+        aria-label="Next page"
+      >
+        <ChevronRightIcon size="1x" stroke-width="3" />
+      </button>
+    </nav>
   </div>
 </template>
 
 <script>
+import { ChevronLeftIcon, ChevronRightIcon } from 'vue-feather-icons'
 import searchQuery from '@/apollo/queries/search.gql'
 import MessageGroup from '@/components/MessageGroup.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
@@ -60,26 +83,53 @@ function prepareMessage (message) {
 
 export default {
   name: 'SearchResults',
-  components: { LoadingSpinner, MessageGroup },
+  components: { LoadingSpinner, MessageGroup, ChevronLeftIcon, ChevronRightIcon },
   props: {
     query: {
       type: String,
       required: true
     }
   },
+  data () {
+    return {
+      sortOrder: 'DESCENDING',
+      sortOptions: [
+        {
+          label: 'Newest',
+          order: 'DESCENDING'
+        },
+        {
+          label: 'Oldest',
+          order: 'ASCENDING'
+        },
+        {
+          label: 'Most Relevant',
+          order: null
+        }
+      ],
+      page: 0
+    }
+  },
   apollo: {
     result: {
       query: searchQuery,
-      update: data => data.search,
+      update: (data) => {
+        return data.search
+      },
       variables () {
         return {
           server: this.$route.params.id,
           parameters: {
-            query: this.query
+            query: this.query,
+            sort: this.sortOrder,
+            page: this.page
           }
         }
       },
-      fetchPolicy: 'network-only'
+      fetchPolicy: 'network-only',
+      result () {
+        this.$refs.items.scrollTop = 0
+      }
     }
   },
   computed: {
@@ -104,7 +154,7 @@ export default {
 
       this.result.entries.forEach((rawEntry) => {
         const entry = {
-          id: rawEntry.message.id,
+          id: rawEntry.message.ref,
           channel: rawEntry.channel,
           previous: prepareMessage(rawEntry.previous),
           message: prepareMessage(rawEntry.message),
@@ -128,6 +178,11 @@ export default {
 
       return groups
     }
+  },
+  methods: {
+    changePage (direction) {
+      this.page = Math.max(0, Math.min(this.page + direction, this.result.totalPages - 1))
+    }
   }
 }
 </script>
@@ -146,6 +201,15 @@ export default {
     color: #72767d;
     padding: 0 1rem;
     border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  }
+
+  &__loading {
+    display: flex;
+    align-items: center;
+
+    .loading-spinner {
+      margin-left: 0.5rem;
+    }
   }
 
   &__orders {
@@ -231,6 +295,20 @@ export default {
       max-height: 48px;
       overflow: hidden;
       pointer-events: none;
+      position: relative;
+
+      &--next {
+        &:after {
+          position: absolute;
+          content: '';
+          height: 10px;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          background: linear-gradient(to top, #2f3136, rgba(47, 49, 54, 0));
+          z-index: 2;
+        }
+      }
     }
 
     &-jump {
@@ -261,6 +339,40 @@ export default {
     }
   }
 
+  &__pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    color: #dcddde;
+    font-size: 0.9rem;
+
+    &-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #dcddde;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: none;
+      border-radius: 3px;
+      padding: 2px 2px;
+      margin: 0 2rem;
+      cursor: pointer;
+      outline: none;
+      font-size: 1rem;
+
+      &:not(:disabled):hover, &:focus {
+        color: white;
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+  }
+
   ::-webkit-scrollbar-track {
     border-width: initial;
     background-color: transparent;
@@ -275,13 +387,13 @@ export default {
   }
 
   ::-webkit-scrollbar-thumb {
-    background-color: #181a1d !important;;
+    background-color: #181a1d !important;
     border-color: transparent;
   }
 
   ::-webkit-scrollbar-track-piece {
     background-color: #26282c !important;
-    border: 3px solid #2F3136 !important;;
+    border: 3px solid #2F3136 !important;
     border-radius: 7px;
   }
 }

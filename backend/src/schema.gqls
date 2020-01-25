@@ -23,7 +23,7 @@ type Query {
 input SearchParameters {
   query: String!
   sort: SortOrder
-  afterMessage: ID
+  page: Int!
 }
 
 enum SortOrder {
@@ -87,6 +87,7 @@ input PaginationReference {
 
 type Message {
   id: ID!
+  ref: ID!
   author: User!
   server: ID!
   versions: [MessageVersion!]!
@@ -193,6 +194,7 @@ type Reactor {
 
 type SearchResult {
   total: Int!
+  totalPages: Int!
   entries: [SearchResultEntry]!
 }
 

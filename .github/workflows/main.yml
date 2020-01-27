@@ -80,3 +80,13 @@ jobs:
           dockerfile: Dockerfile-gradle
           buildoptions: "--target db-import"
           cache: true
+
+      - name: Publish elastic-ingest
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: marvinroesch/harmony-elastic-ingest
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          dockerfile: Dockerfile-gradle
+          buildoptions: "--target elastic-ingest"
+          cache: true

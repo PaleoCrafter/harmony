@@ -235,7 +235,7 @@ export default {
     display: flex;
     align-items: stretch;
     justify-content: stretch;
-    max-width: 400px;
+    max-width: 100%;
     max-height: 300px;
     border-radius: 4px;
     overflow: hidden;

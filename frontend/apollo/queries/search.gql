@@ -2,6 +2,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
   search(server: $server, parameters: $parameters) {
     total
     totalPages
+    error
 
     entries {
       channel {

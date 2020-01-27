@@ -595,17 +595,22 @@ const queryResolver = {
     const readableChannels = Object.keys(permissions).filter(c => permissions[c].has('readMessages'))
     const manageableChannels = Object.keys(permissions).filter(c => permissions[c].has('manageMessages'))
 
-    const { total, totalPages, messages: rawMessages } = await search(
-      server,
-      parameters.query,
-      parameters.sort,
-      readableChannels,
-      manageableChannels,
-      parameters.page
-    )
+    let total, totalPages, rawMessages
+    try {
+      ({ total, totalPages, messages: rawMessages } = await search(
+        server,
+        parameters.query,
+        parameters.sort,
+        readableChannels,
+        manageableChannels,
+        parameters.page
+      ))
+    } catch (e) {
+      return { total: 0, totalPages: 1, entries: [], error: 'Invalid search parameters' }
+    }
 
-    if (total === 0) {
-      return { total: 0, entries: [] }
+    if (total === 0 || rawMessages.length === 0) {
+      return { total: 0, totalPages: 1, entries: [] }
     }
 
     const messageIds = rawMessages.map(msg => msg.id)
@@ -687,7 +692,7 @@ const queryResolver = {
     return {
       users ({ query }) {
         return database.query(
-            `
+          `
           SELECT
             "id", "name", "discriminator", "nickname"
           FROM (

@@ -196,6 +196,7 @@ type SearchResult {
   total: Int!
   totalPages: Int!
   entries: [SearchResultEntry]!
+  error: String
 }
 
 type SearchResultEntry {

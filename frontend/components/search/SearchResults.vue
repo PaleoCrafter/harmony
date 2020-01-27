@@ -18,6 +18,9 @@
         </li>
       </ul>
     </div>
+    <div v-if="result && result.error" class="search-results__error">
+      Could not complete search: {{ result.error }}
+    </div>
     <ul ref="items" class="search-results__items">
       <template v-for="group in groupedEntries">
         <li class="search-results__item-header">
@@ -337,6 +340,12 @@ export default {
     &-message:hover .search-results__item-jump {
       display: flex;
     }
+  }
+
+  &__error {
+    color: #f04747;
+    padding: 0.5rem;
+    text-align: center;
   }
 
   &__pagination {

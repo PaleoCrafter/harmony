@@ -57,7 +57,7 @@ export function removeMatchedCharacters (startCharacter, endCharacter) {
 
     for (let i = 0; i < plugins.length; i++) {
       const plugin = plugins[i]
-      if (plugin.spec.isInputRules && plugin.getState(state) && cursor.nodeBefore.text?.endsWith(')')) {
+      if (plugin.spec.isInputRules && plugin.getState(state) && cursor.nodeBefore.text?.endsWith(endCharacter)) {
         if (dispatch) {
           const selection = TextSelection.create(state.doc, cursor.pos - 1, cursor.pos)
           dispatch(state.tr.setSelection(selection).deleteSelection().scrollIntoView())

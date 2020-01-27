@@ -135,6 +135,7 @@ export default {
     },
     clear () {
       this.editor.clearContent()
+      this.$emit('submit', null)
     },
     submit () {
       if (this.$refs.suggestions.onKeyDown({ keyCode: 13 })) {

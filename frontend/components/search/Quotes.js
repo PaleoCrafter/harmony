@@ -8,11 +8,9 @@ function findQuotes (doc) {
   const parens = []
   doc.content.descendants(
     (node, pos) => {
-      console.log(node)
       if (node.isText) {
         const regex = /"/g
         let match
-        console.log(node.text)
         while ((match = regex.exec(node.text)) !== null) {
           const index = pos + match.index
           parens.push({ type: match[0], index })

@@ -7,10 +7,12 @@ COPY ./bot/src /app/bot/src
 COPY ./bot/build.gradle.kts /app/bot
 COPY ./db-import/src /app/db-import/src
 COPY ./db-import/build.gradle.kts /app/db-import
+COPY ./elastic-ingest/src /app/elastic-ingest/src
+COPY ./elastic-ingest/build.gradle.kts /app/elastic-ingest
 COPY ./build.gradle.kts /app
 COPY ./settings.gradle.kts /app
 
-RUN gradle :bot:build :bot:shadowJar :db-import:build :db-import:shadowJar
+RUN gradle :bot:build :bot:shadowJar :db-import:build :db-import:shadowJar :elastic-ingest:build :elastic-ingest:shadowJar
 
 FROM openjdk:8-jre-alpine AS bot
 

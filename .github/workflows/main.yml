@@ -105,5 +105,5 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           context: elastic-ingest
-          dockerfile: Dockerfile-elasticsearch
+          dockerfile: elastic-ingest/Dockerfile-elasticsearch
           cache: true

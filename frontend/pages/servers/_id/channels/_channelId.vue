@@ -1,9 +1,9 @@
 <template>
-  <div class="channel">
+  <div :class="['channel', { 'channel--search': searchActive }]">
     <header v-if="channel" class="channel__header">
-      <a @click.prevent="$store.commit('openSidebar')" href="#" class="channel__header-menu-toggle">
+      <button @click.prevent="$store.commit('openSidebar')" class="channel__header-menu-toggle" aria-label="Toggle menu">
         <MenuIcon />
-      </a>
+      </button>
       <h3>
         <ChannelName :channel="channel" />
       </h3>
@@ -31,6 +31,10 @@
         </div>
       </client-only>
       <portal-target name="search-box" class="channel__search-box" />
+      <button @click.prevent="searchActive = !searchActive" class="channel__search-toggle" aria-label="Toggle search">
+        <SearchIcon v-if="!searchActive" />
+        <ArrowLeftIcon v-else />
+      </button>
     </header>
     <nuxt-child :date="date" class="channel__child" />
     <portal-target name="search-results" class="channel__search-results" />
@@ -38,7 +42,7 @@
 </template>
 
 <script>
-import { ChevronLeftIcon, ChevronRightIcon, MenuIcon } from 'vue-feather-icons'
+import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MenuIcon, SearchIcon } from 'vue-feather-icons'
 import { utcToZonedTime } from 'date-fns-tz'
 import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
@@ -46,7 +50,12 @@ import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon },
+  components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon, ArrowLeftIcon },
+  data () {
+    return {
+      searchActive: false
+    }
+  },
   computed: {
     ...mapState(['timezone']),
     date () {
@@ -124,9 +133,9 @@ export default {
     z-index: 51;
     grid-column: 1/span 2;
 
-    @media (max-width: 470px) {
+    @media (max-width: 499px) {
       display: grid;
-      grid-template-columns: auto 1fr;
+      grid-template-columns: auto 1fr auto;
       height: auto;
       row-gap: 0.5rem;
       padding-bottom: 0.5rem;
@@ -142,6 +151,10 @@ export default {
 
     &-menu-toggle {
       color: white;
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
       margin-right: 0.25rem;
 
       @media (min-width: 768px) {
@@ -155,8 +168,8 @@ export default {
       display: flex;
       align-items: stretch;
 
-      @media (max-width: 470px) {
-        grid-column: 1/span 2;
+      @media (max-width: 499px) {
+        grid-column: 1/span 3;
         justify-content: center;
       }
     }
@@ -245,6 +258,68 @@ export default {
 
     &:empty {
       display: none;
+    }
+  }
+
+  &__search-toggle {
+    display: none;
+    color: white;
+    background: none;
+    border: none;
+    outline: none;
+    margin-left: auto;
+    cursor: pointer;
+
+    @media (max-width: 499px) {
+      grid-row: 1;
+      grid-column: 3;
+    }
+  }
+
+  @media (max-width: 959px) {
+    .channel__search-box, .channel__search-results {
+      display: none;
+    }
+
+    .channel__search-toggle {
+      display: block;
+    }
+
+    &--search {
+      .channel__header {
+        display: grid !important;
+        grid-template-columns: auto minmax(0, 1fr) !important;
+        padding: 1rem;
+
+        &-menu-toggle, h3, .channel__date-selection, .divider {
+          display: none;
+        }
+      }
+
+      .channel__child {
+        display: none;
+      }
+
+      .channel__search-toggle {
+        grid-column: 1 !important;
+        grid-row: 1;
+        padding: 0 0.5rem 0 0;
+        margin-left: 0;
+      }
+
+      .channel__search-box {
+        grid-column: 2 !important;
+        grid-row: 1;
+        display: block;
+        flex: 1;
+        margin-left: 0;
+      }
+
+      .channel__search-results {
+        display: flex;
+        width: 100%;
+        grid-column: 1/span 2;
+      }
     }
   }
 

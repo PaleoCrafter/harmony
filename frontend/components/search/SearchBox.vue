@@ -277,6 +277,18 @@ export default {
     cursor: default;
     box-shadow: 0 0 0 1px rgba(32, 34, 37, .6), 0 2px 10px 0 rgba(0, 0, 0, .2);
   }
+
+  @media (max-width: 959px) {
+    margin: 0;
+
+    &__content {
+      width: 100% !important;
+    }
+
+    &__popup {
+      max-width: 100%;
+    }
+  }
 }
 
 @import '~/components/search/suggestions/styles';

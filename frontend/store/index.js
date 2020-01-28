@@ -10,7 +10,8 @@ export const state = () => ({
   collapsedCategories: {},
   modal: null,
   searchQuery: null,
-  highlightedMessage: null
+  highlightedMessage: null,
+  modalSearchActive: false
 })
 
 export const getters = {
@@ -65,6 +66,12 @@ export const mutations = {
   },
   resetSearch (state) {
     state.searchQuery = null
+  },
+  startModalSearch (state) {
+    state.modalSearchActive = true
+  },
+  stopModalSearch (state) {
+    state.modalSearchActive = false
   }
 }
 

@@ -18,6 +18,7 @@
 <script>
 import { Editor, EditorContent, Text } from 'tiptap'
 import { SearchIcon, XIcon } from 'vue-feather-icons'
+import { mapState } from 'vuex'
 import { Doc, Root, Submit } from '@/components/search/BaseExtensions'
 import Field from '@/components/search/Field'
 import ParenthesisMatching from '@/components/search/ParenthesisMatching'
@@ -42,8 +43,18 @@ export default {
     }
   },
   computed: {
+    ...mapState(['modalSearchActive']),
     editorEmpty () {
       return this.editor?.state?.doc?.firstChild?.childCount === 0
+    }
+  },
+  watch: {
+    modalSearchActive (active) {
+      if (active && this.editorEmpty && this.editor) {
+        this.$nextTick(() => {
+          this.editor.focus()
+        })
+      }
     }
   },
   mounted () {

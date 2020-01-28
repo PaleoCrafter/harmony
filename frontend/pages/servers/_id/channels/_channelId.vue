@@ -1,5 +1,5 @@
 <template>
-  <div :class="['channel', { 'channel--search': searchActive }]">
+  <div :class="['channel', { 'channel--search': modalSearchActive }]">
     <header v-if="channel" class="channel__header">
       <button @click.prevent="$store.commit('openSidebar')" class="channel__header-menu-toggle" aria-label="Toggle menu">
         <MenuIcon />
@@ -31,8 +31,8 @@
         </div>
       </client-only>
       <portal-target name="search-box" class="channel__search-box" />
-      <button @click.prevent="searchActive = !searchActive" class="channel__search-toggle" aria-label="Toggle search">
-        <SearchIcon v-if="!searchActive" />
+      <button @click.prevent="toggleModalSearch" class="channel__search-toggle" aria-label="Toggle search">
+        <SearchIcon v-if="!modalSearchActive" />
         <ArrowLeftIcon v-else />
       </button>
     </header>
@@ -51,13 +51,8 @@ import Divider from '@/components/Divider.vue'
 
 export default {
   components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon, ArrowLeftIcon },
-  data () {
-    return {
-      searchActive: false
-    }
-  },
   computed: {
-    ...mapState(['timezone']),
+    ...mapState(['timezone', 'modalSearchActive']),
     date () {
       if (this.$route.params.date === undefined) {
         return utcToZonedTime(Date.now(), this.timezone)
@@ -79,6 +74,11 @@ export default {
           id: this.$route.params.channelId
         }
       }
+    }
+  },
+  watch: {
+    $route () {
+      this.$store.commit('stopModalSearch')
     }
   },
   methods: {
@@ -104,6 +104,9 @@ export default {
       const paddedDay = day.length === 1 ? `0${day}` : day
       const isoDate = `${year}-${paddedMonth}-${paddedDay}`
       this.$router.push(`/servers/${this.$route.params.id}/channels/${this.$route.params.channelId}/${isoDate}`)
+    },
+    toggleModalSearch () {
+      this.$store.commit(this.modalSearchActive ? 'stopModalSearch' : 'startModalSearch')
     }
   },
   head () {
@@ -319,6 +322,17 @@ export default {
         display: flex;
         width: 100%;
         grid-column: 1/span 2;
+
+        &:empty {
+          display: flex;
+
+          &:before {
+            content: 'Enter your search terms in the field above.';
+            display: block;
+            text-align: center;
+            padding: 1rem;
+          }
+        }
       }
     }
   }

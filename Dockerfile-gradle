@@ -1,14 +1,8 @@
 FROM gradle:5.4.1-jdk8 AS builder
 WORKDIR /app
 
-COPY ./events/src /app/events/src
-COPY ./events/build.gradle.kts /app/events
 COPY ./bot/src /app/bot/src
 COPY ./bot/build.gradle.kts /app/bot
-COPY ./db-import/src /app/db-import/src
-COPY ./db-import/build.gradle.kts /app/db-import
-COPY ./elastic-ingest/src /app/elastic-ingest/src
-COPY ./elastic-ingest/build.gradle.kts /app/elastic-ingest
 COPY ./build.gradle.kts /app
 COPY ./settings.gradle.kts /app
 

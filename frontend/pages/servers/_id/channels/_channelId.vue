@@ -43,7 +43,7 @@
 
 <script>
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MenuIcon, SearchIcon } from 'vue-feather-icons'
-import { utcToZonedTime } from 'date-fns-tz'
+import { utcToZonedTime, toDate } from 'date-fns-tz'
 import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
 import ChannelName from '@/components/ChannelName.vue'
@@ -58,7 +58,7 @@ export default {
         return utcToZonedTime(Date.now(), this.timezone)
       }
 
-      return utcToZonedTime(this.$route.params.date, this.timezone)
+      return toDate(this.$route.params.date, { timeZone: this.timezone })
     },
     nextDayDisabled () {
       const today = utcToZonedTime(Date.now(), this.timezone)

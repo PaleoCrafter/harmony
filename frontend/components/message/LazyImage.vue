@@ -83,7 +83,9 @@ export default {
     this.$refs.image.addEventListener('load', () => {
       this.loading = false
       this.error = false
-      this.aspect = this.$refs.image.width / this.$refs.image.height
+      if (this.$refs.image) {
+        this.aspect = this.$refs.image.width / this.$refs.image.height
+      }
     })
     this.$refs.image.addEventListener('error', () => {
       this.loading = false

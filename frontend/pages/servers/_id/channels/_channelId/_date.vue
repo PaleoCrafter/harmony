@@ -69,7 +69,7 @@ export default {
   },
   data () {
     return {
-      ...this.getInitialDates(),
+      ...this.getInitialDates(this.$store.state.timezone),
       loading: false,
       startReached: this.$route.query.message === undefined,
       endReached: false,
@@ -185,10 +185,11 @@ export default {
         this.$store.commit('setHighlightedMessage', message)
       }
     },
-    getInitialDates () {
-      const zoned = zonedTimeToUtc(this.date, this.timezone)
-      const startDate = zonedTimeToUtc(endOfDay(addDays(zoned, -1)), this.timezone)
-      const endDate = zonedTimeToUtc(startOfDay(addDays(zoned, 1)), this.timezone)
+    getInitialDates (timezone) {
+      const usedTimezone = this.timezone || timezone
+      const zoned = utcToZonedTime(this.date, usedTimezone)
+      const startDate = zonedTimeToUtc(endOfDay(addDays(zoned, -1)), usedTimezone)
+      const endDate = zonedTimeToUtc(startOfDay(addDays(zoned, 1)), usedTimezone)
 
       return { startDate, endDate }
     },

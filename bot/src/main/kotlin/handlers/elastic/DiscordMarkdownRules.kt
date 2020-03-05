@@ -1,10 +1,10 @@
-package com.seventeenthshard.harmony.search
+package com.seventeenthshard.harmony.bot.handlers.elastic
 
-import com.seventeenthshard.harmony.search.simpleast.core.node.Node
-import com.seventeenthshard.harmony.search.simpleast.core.node.TextNode
-import com.seventeenthshard.harmony.search.simpleast.core.parser.ParseSpec
-import com.seventeenthshard.harmony.search.simpleast.core.parser.Parser
-import com.seventeenthshard.harmony.search.simpleast.core.parser.Rule
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node.Node
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node.TextNode
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser.ParseSpec
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser.Parser
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser.Rule
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import kotlin.properties.ReadOnlyProperty
@@ -44,30 +44,47 @@ object DiscordMarkdownRules {
     private val PATTERN_CODE_BLOCK = Pattern.compile("^```(([a-z0-9-]+?)\\n+)?\\n*(.+?)\\n*```", Pattern.CASE_INSENSITIVE)
 
     private fun <R> createTextRule() =
-        object : Rule<R, Node<R>, State>(PATTERN_TEXT) {
+        object : Rule<R, Node<R>, State>(
+            PATTERN_TEXT
+        ) {
             override fun parse(matcher: Matcher, parser: Parser<R, in Node<R>, State>, state: State): ParseSpec<R, Node<R>, State> {
-                val node = TextNode<R>(matcher.group())
+                val node =
+                    TextNode<R>(
+                        matcher.group()
+                    )
                 return ParseSpec.createTerminal(node, state)
             }
         }
 
     private fun <R> createNewlineRule() =
-        object : Rule.BlockRule<R, Node<R>, State>(PATTERN_NEWLINE) {
+        object : Rule.BlockRule<R, Node<R>, State>(
+            PATTERN_NEWLINE
+        ) {
             override fun parse(matcher: Matcher, parser: Parser<R, in Node<R>, State>, state: State): ParseSpec<R, Node<R>, State> {
-                val node = TextNode<R>("\n")
+                val node =
+                    TextNode<R>(
+                        "\n"
+                    )
                 return ParseSpec.createTerminal(node, state)
             }
         }
 
     private fun <R> createEscapeRule() =
-        object : Rule<R, Node<R>, State>(PATTERN_ESCAPE) {
+        object : Rule<R, Node<R>, State>(
+            PATTERN_ESCAPE
+        ) {
             override fun parse(matcher: Matcher, parser: Parser<R, in Node<R>, State>, state: State): ParseSpec<R, Node<R>, State> {
-                return ParseSpec.createTerminal(TextNode(matcher.group(1)), state)
+                return ParseSpec.createTerminal(
+                    TextNode(
+                        matcher.group(1)
+                    ), state)
             }
         }
 
     private fun <R> createItalicsRule() =
-        object : Rule<R, Node<R>, State>(PATTERN_ITALICS) {
+        object : Rule<R, Node<R>, State>(
+            PATTERN_ITALICS
+        ) {
             override fun parse(matcher: Matcher, parser: Parser<R, in Node<R>, State>, state: State): ParseSpec<R, Node<R>, State> {
                 val startIndex: Int
                 val endIndex: Int
@@ -80,15 +97,22 @@ object DiscordMarkdownRules {
                     endIndex = matcher.end(1)
                 }
 
-                return ParseSpec.createNonterminal(Node(), state, startIndex, endIndex)
+                return ParseSpec.createNonterminal(
+                    Node(), state, startIndex, endIndex)
             }
         }
 
     private fun createUserMentionRule() =
-        object : Rule<Unit, Node<Unit>, State>(PATTERN_USER_MENTION) {
+        object : Rule<Unit, Node<Unit>, State>(
+            PATTERN_USER_MENTION
+        ) {
             override fun parse(matcher: Matcher, parser: Parser<Unit, in Node<Unit>, State>, state: State): ParseSpec<Unit, Node<Unit>, State> {
                 return ParseSpec.createTerminal(
-                    TextNode("@${matcher.group(1)}"),
+                    TextNode(
+                        "@${matcher.group(
+                            1
+                        )}"
+                    ),
                     state.also { it.mentionedUsers += matcher.group(1) }
                 )
             }
@@ -97,13 +121,18 @@ object DiscordMarkdownRules {
     private fun createLinkRule(pattern: Pattern) =
         object : Rule<Unit, Node<Unit>, State>(pattern) {
             override fun parse(matcher: Matcher, parser: Parser<Unit, in Node<Unit>, State>, state: State): ParseSpec<Unit, Node<Unit>, State> {
-                return ParseSpec.createTerminal(TextNode(matcher.group(1)), state.also { it.hasLinks = true })
+                return ParseSpec.createTerminal(
+                    TextNode(
+                        matcher.group(1)
+                    ), state.also { it.hasLinks = true })
             }
         }
 
     private fun createBlockQuoteRule() =
 
-        object : Rule<Unit, Node<Unit>, State>(PATTERN_BLOCKQUOTE) {
+        object : Rule<Unit, Node<Unit>, State>(
+            PATTERN_BLOCKQUOTE
+        ) {
             val BLOCK_START_PATTERN = Pattern.compile("^ *>>> ?")
             val LINE_START_PATTERN = Pattern.compile("^ *> ?", Pattern.MULTILINE)
 
@@ -121,34 +150,58 @@ object DiscordMarkdownRules {
                 val internalNodes = parser.parse(text, state) as MutableList<Node<Unit>>
                 state.quote = false
 
-                return ParseSpec.createTerminal(Node<Unit>().also { it.addChildren(internalNodes) }, state)
+                return ParseSpec.createTerminal(
+                    Node<Unit>().also { it.addChildren(internalNodes) }, state)
             }
         }
 
     private val PARSER by threadLocalLazy {
-        Parser<Unit, Node<Unit>, State>().also { parser ->
-            parser.addRules(
-                listOf(
-                    createBlockQuoteRule(),
-                    createTerminalRule(PATTERN_CODE_BLOCK) { it.group(3) },
-                    createNewlineRule(),
-                    createEscapeRule(),
-                    createLinkRule(PATTERN_AUTOLINK),
-                    createLinkRule(PATTERN_URL),
-                    createUserMentionRule(),
-                    createTerminalRule(PATTERN_CHANNEL_MENTION) { "#${it.group(1)}" },
-                    createTerminalRule(PATTERN_ROLE_MENTION) { "@${it.group(1)}" },
-                    createTerminalRule(PATTERN_EMOJI) { ":${it.group(2)}:" },
-                    createNonTerminalRule(PATTERN_BOLD),
-                    createNonTerminalRule(PATTERN_UNDERLINE),
-                    createItalicsRule(),
-                    createNonTerminalRule(PATTERN_STRIKETHRU),
-                    createNonTerminalRule(PATTERN_SPOILER),
-                    createTerminalRule(PATTERN_INLINE_CODE) { it.group(2) },
-                    createTextRule()
+        Parser<Unit, Node<Unit>, State>()
+            .also { parser ->
+                parser.addRules(
+                    listOf(
+                        createBlockQuoteRule(),
+                        createTerminalRule(
+                            PATTERN_CODE_BLOCK
+                        ) { it.group(3) },
+                        createNewlineRule(),
+                        createEscapeRule(),
+                        createLinkRule(
+                            PATTERN_AUTOLINK
+                        ),
+                        createLinkRule(
+                            PATTERN_URL
+                        ),
+                        createUserMentionRule(),
+                        createTerminalRule(
+                            PATTERN_CHANNEL_MENTION
+                        ) { "#${it.group(1)}" },
+                        createTerminalRule(
+                            PATTERN_ROLE_MENTION
+                        ) { "@${it.group(1)}" },
+                        createTerminalRule(
+                            PATTERN_EMOJI
+                        ) { ":${it.group(2)}:" },
+                        createNonTerminalRule(
+                            PATTERN_BOLD
+                        ),
+                        createNonTerminalRule(
+                            PATTERN_UNDERLINE
+                        ),
+                        createItalicsRule(),
+                        createNonTerminalRule(
+                            PATTERN_STRIKETHRU
+                        ),
+                        createNonTerminalRule(
+                            PATTERN_SPOILER
+                        ),
+                        createTerminalRule(
+                            PATTERN_INLINE_CODE
+                        ) { it.group(2) },
+                        createTextRule()
+                    )
                 )
-            )
-        }
+            }
     }
 
     fun parse(content: String) =
@@ -164,7 +217,10 @@ object DiscordMarkdownRules {
     private inline fun <R> createTerminalRule(pattern: Pattern, crossinline nodeFactory: (matcher: Matcher) -> String = { it.group(1) }) =
         object : Rule<R, Node<R>, State>(pattern) {
             override fun parse(matcher: Matcher, parser: Parser<R, in Node<R>, State>, state: State): ParseSpec<R, Node<R>, State> {
-                return ParseSpec.createTerminal(TextNode(nodeFactory(matcher)), state)
+                return ParseSpec.createTerminal(
+                    TextNode(
+                        nodeFactory(matcher)
+                    ), state)
             }
         }
 
@@ -180,4 +236,5 @@ class ThreadLocalLazy<T>(val provider: () -> T) : ReadOnlyProperty<Any?, T> {
         threadLocal.get()
 }
 
-fun <T> threadLocalLazy(provider: () -> T) = ThreadLocalLazy(provider)
+fun <T> threadLocalLazy(provider: () -> T) =
+    ThreadLocalLazy(provider)

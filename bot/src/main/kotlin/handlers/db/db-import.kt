@@ -1,13 +1,8 @@
 @file:JvmName("DBImport")
 
-package com.seventeenthshard.harmony.dbimport
+package com.seventeenthshard.harmony.bot.handlers.db
 
-import com.seventeenthshard.harmony.events.*
-import io.confluent.kafka.serializers.KafkaAvroDeserializer
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import io.confluent.kafka.serializers.subject.RecordNameStrategy
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
+import com.seventeenthshard.harmony.bot.*
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.time.LocalDateTime
@@ -64,8 +59,8 @@ private fun insertEmbeds(messageId: String, embeds: List<Embed>) {
     }
 }
 
-fun runImport() {
-    val events = EventHandler {
+fun buildDbHandlerImpl() =
+    EventHandler {
         listen<ServerInfo> { serverId, event ->
             transaction {
                 Servers.replace {
@@ -261,10 +256,10 @@ fun runImport() {
             transaction {
                 MessageReactions.update({
                     (MessageReactions.message eq messageId) and
-                        (MessageReactions.user eq event.user.id) and
-                        (MessageReactions.type eq event.type) and
-                        (MessageReactions.emoji eq event.emoji) and
-                        (MessageReactions.emojiId eq (event.emojiId ?: "0"))
+                            (MessageReactions.user eq event.user.id) and
+                            (MessageReactions.type eq event.type) and
+                            (MessageReactions.emoji eq event.emoji) and
+                            (MessageReactions.emojiId eq (event.emojiId ?: "0"))
                 }) {
                     it[deletedAt] = LocalDateTime.ofInstant(event.timestamp, ZoneId.of("UTC"))
                 }
@@ -322,23 +317,3 @@ fun runImport() {
             }
         }
     }
-
-    events.consume(
-        mapOf(
-            ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to requireNotNull(System.getenv("BROKER_URLS")) {
-                "BROKER_URLS env variable must be set!"
-            },
-            ConsumerConfig.GROUP_ID_CONFIG to "db-import",
-            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "true",
-            ConsumerConfig.AUTO_COMMIT_INTERVAL_MS_CONFIG to "1000",
-            ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-            ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
-            ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
-            KafkaAvroDeserializerConfig.VALUE_SUBJECT_NAME_STRATEGY to RecordNameStrategy::class.java,
-            KafkaAvroDeserializerConfig.SCHEMA_REGISTRY_URL_CONFIG to requireNotNull(System.getenv("SCHEMA_REGISTRY_URL")) {
-                "SCHEMA_REGISTRY_URL env variable must be set!"
-            }
-        ),
-        "servers", "messages", "channels", "users", "roles"
-    )
-}

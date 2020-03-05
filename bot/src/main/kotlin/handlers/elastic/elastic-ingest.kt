@@ -1,25 +1,10 @@
 @file:JvmName("ElasticIngest")
 
-package com.seventeenthshard.harmony.search
+package com.seventeenthshard.harmony.bot.handlers.elastic
 
-import com.seventeenthshard.harmony.events.Embed
-import com.seventeenthshard.harmony.events.EventHandler
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.MessageEmbedUpdate
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.search.simpleast.core.node.Node
-import io.confluent.kafka.serializers.KafkaAvroDeserializer
-import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import io.confluent.kafka.serializers.subject.RecordNameStrategy
 import org.apache.http.HttpHost
-import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.elasticsearch.action.admin.indices.open.OpenIndexRequest
 import org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest
-import org.elasticsearch.action.get.GetRequest
-import org.elasticsearch.action.index.IndexRequest
-import org.elasticsearch.action.update.UpdateRequest
 import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestClient
 import org.elasticsearch.client.RestHighLevelClient
@@ -29,9 +14,7 @@ import org.elasticsearch.client.indices.GetIndexRequest
 import org.elasticsearch.client.indices.PutMappingRequest
 import org.elasticsearch.common.xcontent.XContentType
 import org.intellij.lang.annotations.Language
-import java.io.IOException
 import java.util.concurrent.TimeUnit
-import kotlin.system.exitProcess
 
 const val INDEX = "messages"
 
@@ -222,8 +205,11 @@ const val INDEX_SETTINGS = """{
     }
 }"""
 
-fun main(args: Array<String>) {
-    val action = args.firstOrNull() ?: "import"
+fun buildElasticHandler() = buildElasticHandlerImpl(buildClient())
+
+fun buildElasticDumper() = buildElasticDumperImpl(buildClient())
+
+private fun buildClient(): RestHighLevelClient {
     val elasticHosts = requireNotNull(System.getenv("ELASTIC_HOST")) {
         "ELASTIC_HOST env variable must be set!"
     }.split(",").map { HttpHost.create(it) }.toTypedArray()
@@ -233,16 +219,12 @@ fun main(args: Array<String>) {
                 it.setKeepAliveStrategy { _, _ -> TimeUnit.MINUTES.toMillis(10) }
             }
     )
-    elasticClient.ensureIndex(INDEX, MESSAGES_MAPPING)
+    elasticClient.ensureIndex(
+        INDEX,
+        MESSAGES_MAPPING
+    )
 
-    when (action) {
-        "import" -> runImport(elasticClient)
-        "dump" -> runDump(elasticClient, args.drop(1))
-        else -> {
-            System.err.println("Unknown action '$action', available options are 'import' and 'dump'")
-            exitProcess(1)
-        }
-    }
+    return elasticClient
 }
 
 private fun RestHighLevelClient.ensureIndex(index: String, mapping: String) {

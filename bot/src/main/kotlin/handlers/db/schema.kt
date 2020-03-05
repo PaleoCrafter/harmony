@@ -1,8 +1,8 @@
-package com.seventeenthshard.harmony.dbimport
+package com.seventeenthshard.harmony.bot.handlers.db
 
-import com.seventeenthshard.harmony.events.ChannelInfo
-import com.seventeenthshard.harmony.events.Embed
-import com.seventeenthshard.harmony.events.NewReaction
+import com.seventeenthshard.harmony.bot.ChannelInfo
+import com.seventeenthshard.harmony.bot.Embed
+import com.seventeenthshard.harmony.bot.NewReaction
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
@@ -29,7 +29,9 @@ class SnowflakeColumnType : ColumnType() {
     }
 }
 
-fun Table.snowflake(name: String): Column<String> = registerColumn(name, SnowflakeColumnType())
+fun Table.snowflake(name: String): Column<String> = registerColumn(name,
+    SnowflakeColumnType()
+)
 
 object Servers : Table() {
     val id = snowflake("id").primaryKey()
@@ -139,7 +141,8 @@ object MessageEmbeds : IntIdTable() {
 }
 
 object MessageEmbedFields : Table() {
-    val embed = reference("embed", MessageEmbeds, onDelete = ReferenceOption.CASCADE).primaryKey(1)
+    val embed = reference("embed",
+        MessageEmbeds, onDelete = ReferenceOption.CASCADE).primaryKey(1)
     val position = integer("position").primaryKey(2)
     val name = varchar("name", 256)
     val value = varchar("value", 1024)

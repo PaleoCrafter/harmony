@@ -2,31 +2,12 @@
 
 package com.seventeenthshard.harmony.bot
 
-import com.seventeenthshard.harmony.events.ChannelDeletion
-import com.seventeenthshard.harmony.events.ChannelInfo
-import com.seventeenthshard.harmony.events.ChannelRemoval
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.MessageEmbedUpdate
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.events.NewReaction
-import com.seventeenthshard.harmony.events.ReactionClear
-import com.seventeenthshard.harmony.events.ReactionRemoval
-import com.seventeenthshard.harmony.events.RoleDeletion
-import com.seventeenthshard.harmony.events.RoleInfo
-import com.seventeenthshard.harmony.events.ServerDeletion
-import com.seventeenthshard.harmony.events.ServerInfo
-import com.seventeenthshard.harmony.events.UserInfo
-import com.seventeenthshard.harmony.events.UserNicknameChange
-import com.seventeenthshard.harmony.events.UserRolesChange
-import com.sksamuel.avro4k.Avro
+import discord4j.core.DiscordClient
 import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.util.Permission
 import discord4j.core.`object`.util.Snowflake
-import discord4j.core.event.EventDispatcher
-import discord4j.core.event.domain.Event
 import discord4j.core.event.domain.channel.CategoryUpdateEvent
 import discord4j.core.event.domain.channel.NewsChannelCreateEvent
 import discord4j.core.event.domain.channel.NewsChannelDeleteEvent
@@ -50,17 +31,6 @@ import discord4j.core.event.domain.message.ReactionRemoveEvent
 import discord4j.core.event.domain.role.RoleCreateEvent
 import discord4j.core.event.domain.role.RoleDeleteEvent
 import discord4j.core.event.domain.role.RoleUpdateEvent
-import io.confluent.kafka.serializers.KafkaAvroSerializer
-import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
-import io.confluent.kafka.serializers.subject.RecordNameStrategy
-import kotlinx.serialization.ImplicitReflectionSerializer
-import kotlinx.serialization.serializer
-import org.apache.avro.generic.GenericRecord
-import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.clients.producer.ProducerConfig
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.errors.SerializationException
-import org.apache.kafka.common.serialization.StringSerializer
 import org.apache.logging.log4j.LogManager
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
@@ -74,121 +44,29 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant
-import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
-import java.util.function.BiFunction
 
-val logger = LogManager.getLogger("bot")
-
-@ImplicitReflectionSerializer
-inline fun <reified T : Any> producerRecord(
-    topic: String,
-    id: Snowflake,
-    value: T
-): ProducerRecord<String, GenericRecord> =
-    ProducerRecord(topic, id.asString(), Avro.default.toRecord(T::class.serializer(), value))
-
-@ImplicitReflectionSerializer
-inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispatcher.map(
-    producer: KafkaProducer<String, GenericRecord>,
-    topic: String,
-    noinline mapper: (DiscordEvent) -> Pair<Snowflake, Mono<EmittedEvent>>
-) {
-    flatMap<DiscordEvent, EmittedEvent>(producer, topic) {
-        val (id, emitted) = mapper(it)
-        Flux.zip(
-            Mono.just(id),
-            emitted,
-            BiFunction { a: Snowflake, b: EmittedEvent -> a to b }
-        )
-    }
-}
-
-@ImplicitReflectionSerializer
-inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> EventDispatcher.flatMap(
-    producer: KafkaProducer<String, GenericRecord>,
-    topic: String,
-    noinline mapper: (DiscordEvent) -> Flux<Pair<Snowflake, EmittedEvent>>
-) {
-    listen<DiscordEvent>(producer) { event ->
-        mapper(event).map {
-            producerRecord(
-                topic,
-                it.first,
-                it.second
-            )
-        }
-    }
-}
-
-@ImplicitReflectionSerializer
-inline fun <reified DiscordEvent : Event> EventDispatcher.listen(
-    producer: KafkaProducer<String, GenericRecord>,
-    noinline emitter: (event: DiscordEvent) -> Flux<ProducerRecord<String, GenericRecord>>
-) {
-    on(DiscordEvent::class.java)
-        .flatMap { emitter(it) }
-        .map { producer.emit(it) }
-        .subscribe()
-}
-
-fun KafkaProducer<String, GenericRecord>.emit(record: ProducerRecord<String, GenericRecord>) {
-    try {
-        send(record)
-        logger.info("Emitted ${record.value().schema.name} for ${record.topic()}#${record.key()}")
-    } catch (e: SerializationException) {
-        e.printStackTrace()
-    } catch (e: InterruptedException) {
-        e.printStackTrace()
-    }
-}
-
-@ImplicitReflectionSerializer
-fun main() {
-    val client = DiscordClientBuilder(
-        requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
-    ).build()
-    val ignoredChannels = ConcurrentHashMap.newKeySet<String>()
-    try {
-        ignoredChannels.addAll(Files.readAllLines(Paths.get("ignoredChannels.txt")).filter { it.isNotBlank() })
-    } catch (exception: IOException) {
-        logger.error("Could not read ignored channels, defaulting to empty")
-    }
-
+fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>) {
     fun saveIgnoredChannels() {
         Files.write(Paths.get("ignoredChannels.txt"), ignoredChannels)
     }
 
-    val props = Properties()
-    props[ProducerConfig.BOOTSTRAP_SERVERS_CONFIG] = requireNotNull(System.getenv("BROKER_URLS")) {
-        "BROKER_URLS env variable must be set!"
-    }
-    props[ProducerConfig.ACKS_CONFIG] = "all"
-    props[ProducerConfig.RETRIES_CONFIG] = 0
-    props[ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG] = StringSerializer::class.java
-    props[ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG] = KafkaAvroSerializer::class.java
-    props[KafkaAvroSerializerConfig.VALUE_SUBJECT_NAME_STRATEGY] = RecordNameStrategy::class.java
-    props[KafkaAvroSerializerConfig.SCHEMA_REGISTRY_URL_CONFIG] = requireNotNull(System.getenv("SCHEMA_REGISTRY_URL")) {
-        "SCHEMA_REGISTRY_URL env variable must be set!"
-    }
-    val producer = KafkaProducer<String, GenericRecord>(props)
-
-    client.eventDispatcher.listen<GuildCreateEvent>(producer) { event ->
+    emitter.listen<GuildCreateEvent, Any> { event ->
         val guild = event.guild
 
         Flux.merge(
-            ServerInfo.of(guild).map { producerRecord("servers", guild.id, it) },
+            ServerInfo.of(guild).map { guild.id to it },
             guild.channels
                 .filter { it is GuildMessageChannel && !ignoredChannels.contains(it.id.asString()) }
                 .flatMap {
                     Mono.just(it.id).zipWith(ChannelInfo.of(it as GuildMessageChannel))
                 }
-                .map { producerRecord("channels", it.t1, it.t2) },
+                .map { it.t1 to it.t2 },
             guild.roles
                 .flatMap {
                     Mono.just(it.id).zipWith(RoleInfo.of(it))
                 }
-                .map { producerRecord("roles", it.t1, it.t2) },
+                .map { it.t1 to it.t2 },
             guild.members
                 .flatMap {
                     Mono.zip(event.client.getUserById(it.id), Mono.just(it.nickname), Mono.just(it.roleIds))
@@ -203,95 +81,59 @@ fun main() {
                 }
                 .flatMap {
                     Flux.just(
-                        producerRecord("users", it.t1, it.t2),
-                        producerRecord("users", it.t1, it.t3),
-                        producerRecord("users", it.t1, it.t4)
+                        it.t1 to it.t2,
+                        it.t1 to it.t3,
+                        it.t1 to it.t4
                     )
                 }
         )
     }
 
-    client.eventDispatcher.map<GuildUpdateEvent, ServerInfo>(
-        producer,
-        "servers"
-    ) {
+    emitter.map<GuildUpdateEvent, ServerInfo> {
         it.current.id to ServerInfo.of(it.current)
     }
 
-    client.eventDispatcher.map<GuildDeleteEvent, ServerDeletion>(
-        producer,
-        "servers"
-    ) {
+    emitter.map<GuildDeleteEvent, ServerDeletion> {
         it.guildId to ServerDeletion.of(Instant.now())
     }
 
-    client.eventDispatcher.map<RoleCreateEvent, RoleInfo>(
-        producer,
-        "roles"
-    ) {
+    emitter.map<RoleCreateEvent, RoleInfo> {
         it.role.id to RoleInfo.of(it.role)
     }
 
-    client.eventDispatcher.map<RoleUpdateEvent, RoleInfo>(
-        producer,
-        "roles"
-    ) {
+    emitter.map<RoleUpdateEvent, RoleInfo> {
         it.current.id to RoleInfo.of(it.current)
     }
 
-    client.eventDispatcher.map<RoleDeleteEvent, RoleDeletion>(
-        producer,
-        "roles"
-    ) {
+    emitter.map<RoleDeleteEvent, RoleDeletion> {
         it.roleId to RoleDeletion.of(Instant.now())
     }
 
-    client.eventDispatcher.map<TextChannelCreateEvent, ChannelInfo>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.map<TextChannelCreateEvent, ChannelInfo> { event ->
         event.channel.id to ChannelInfo.of(event.channel)
     }
 
-    client.eventDispatcher.map<TextChannelUpdateEvent, ChannelInfo>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.map<TextChannelUpdateEvent, ChannelInfo> { event ->
         event.current.id to ChannelInfo.of(event.current).filter { !ignoredChannels.contains(event.current.id.asString()) }
     }
 
-    client.eventDispatcher.map<TextChannelDeleteEvent, ChannelDeletion>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.map<TextChannelDeleteEvent, ChannelDeletion> { event ->
         event.channel.id to ChannelDeletion.of(Instant.now()).filter { !ignoredChannels.contains(event.channel.id.asString()) }
     }
 
-    client.eventDispatcher.map<NewsChannelCreateEvent, ChannelInfo>(
-        producer,
-        "channels"
-    ) {
+    emitter.map<NewsChannelCreateEvent, ChannelInfo> {
         it.channel.id to ChannelInfo.of(it.channel)
     }
 
-    client.eventDispatcher.map<NewsChannelUpdateEvent, ChannelInfo>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.map<NewsChannelUpdateEvent, ChannelInfo> { event ->
         event.current.id to ChannelInfo.of(event.current).filter { !ignoredChannels.contains(event.current.id.asString()) }
     }
 
-    client.eventDispatcher.map<NewsChannelDeleteEvent, ChannelDeletion>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.map<NewsChannelDeleteEvent, ChannelDeletion> { event ->
         event.channel.id to ChannelDeletion.of(Instant.now()).filter { !ignoredChannels.contains(event.channel.id.asString()) }
     }
 
-    client.eventDispatcher.flatMap<CategoryUpdateEvent, ChannelInfo>(
-        producer,
-        "channels"
-    ) { event ->
+    emitter.listen<CategoryUpdateEvent, ChannelInfo> { event ->
         event.current.channels
             .filter { it is GuildMessageChannel }
             .flatMap { Mono.just(it.id).zipWith(ChannelInfo.of(it as GuildMessageChannel)) }
@@ -300,8 +142,8 @@ fun main() {
 
     fun validateMessage(
         message: Mono<Message>,
-        vararg producers: (Message) -> Publisher<ProducerRecord<String, GenericRecord>>
-    ): Flux<Pair<Snowflake, () -> Publisher<ProducerRecord<String, GenericRecord>>>> =
+        vararg producers: (Message) -> Publisher<*>
+    ): Flux<Pair<Snowflake, () -> Publisher<*>>> =
         message.filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
             .flux()
             .flatMap { msg ->
@@ -310,19 +152,18 @@ fun main() {
 
     fun validateMessage(
         message: Message,
-        vararg producers: (Message) -> Publisher<ProducerRecord<String, GenericRecord>>
-    ): Flux<Pair<Snowflake, () -> Publisher<ProducerRecord<String, GenericRecord>>>> =
+        vararg producers: (Message) -> Publisher<*>
+    ): Flux<Pair<Snowflake, () -> Publisher<*>>> =
         validateMessage(Mono.just(message), *producers)
 
     client.eventDispatcher.on(MessageEvent::class.java)
-        .flatMap { event ->
+        .flatMap<Pair<Snowflake, () -> Publisher<*>>> { event ->
             when (event) {
                 is MessageCreateEvent ->
                     validateMessage(
                         event.message,
                         {
                             NewMessage.of(event.message)
-                                .map { producerRecord("messages", event.message.id, it) }
                         }
                     )
                 is MessageUpdateEvent ->
@@ -333,19 +174,17 @@ fun main() {
                                 .flatMap {
                                     MessageEdit.of(it, msg.editedTimestamp.orElse(Instant.now()))
                                 }
-                                .map { producerRecord("messages", event.messageId, it) }
                         },
                         {
                             Mono.justOrEmpty(event.currentEmbeds)
                                 .flatMap { MessageEmbedUpdate.of(it) }
-                                .map { producerRecord("messages", event.messageId, it) }
                         }
                     )
                 is MessageDeleteEvent ->
                     if (!ignoredChannels.contains(event.channelId.asString()))
                         Mono.just(
                             event.messageId to {
-                                MessageDeletion.of(Instant.now()).map { producerRecord("messages", event.messageId, it) }
+                                MessageDeletion.of(Instant.now())
                             }
                         )
                     else
@@ -355,7 +194,6 @@ fun main() {
                         Flux.fromIterable(event.messageIds.map { msg ->
                             msg to {
                                 MessageDeletion.of(Instant.now())
-                                    .map { producerRecord("messages", msg, it) }
                             }
                         })
                     else
@@ -366,7 +204,6 @@ fun main() {
                         {
                             event.user
                                 .flatMap { NewReaction.of(it, event.emoji) }
-                                .map { producerRecord("messages", event.messageId, it) }
                         }
                     )
                 is ReactionRemoveEvent ->
@@ -375,7 +212,6 @@ fun main() {
                         {
                             event.user
                                 .flatMap { ReactionRemoval.of(it, event.emoji) }
-                                .map { producerRecord("messages", event.messageId, it) }
                         }
                     )
                 is ReactionRemoveAllEvent ->
@@ -383,7 +219,6 @@ fun main() {
                         event.message,
                         {
                             ReactionClear.of(Instant.now())
-                                .map { producerRecord("messages", event.messageId, it) }
                         }
                     )
                 else -> Flux.empty()
@@ -392,27 +227,21 @@ fun main() {
         .groupBy { it.first }
         .flatMap { group ->
             group.flatMapSequential { (_, builder) -> builder() }
-                .flatMapSequential { record ->
+                .flatMapSequential { event ->
                     Mono.create<Unit> {
-                        it.success(producer.emit(record))
+                        it.success(emitter.emit(group.key()!!, event))
                     }
                 }
         }
         .subscribe()
 
-    client.eventDispatcher.map<MemberJoinEvent, UserInfo>(
-        producer,
-        "users"
-    ) { event ->
+    emitter.map<MemberJoinEvent, UserInfo> { event ->
         event.member.id to event.client.getUserById(event.member.id)
             .flatMap {
                 UserInfo.of(it)
             }
     }
-    client.eventDispatcher.map<MemberUpdateEvent, UserNicknameChange>(
-        producer,
-        "users"
-    ) { event ->
+    emitter.map<MemberUpdateEvent, UserNicknameChange> { event ->
         event.memberId to Mono.zip(
             event.client.getUserById(event.memberId),
             event.guild,
@@ -421,10 +250,7 @@ fun main() {
             UserNicknameChange.of(it.t1, it.t2, it.t3.orElse(null))
         }
     }
-    client.eventDispatcher.map<MemberUpdateEvent, UserRolesChange>(
-        producer,
-        "users"
-    ) { event ->
+    emitter.map<MemberUpdateEvent, UserRolesChange> { event ->
         event.memberId to Mono.zip(
             event.client.getUserById(event.memberId),
             event.guild
@@ -476,7 +302,7 @@ fun main() {
                         if (clear)
                             Flux.fromIterable(channels)
                                 .flatMap { Mono.zip(Mono.just(it.id), ChannelRemoval.of(Instant.now())) }
-                                .map { producer.emit(producerRecord("channels", it.t1, it.t2)) }
+                                .map { emitter.emit(it.t1, it.t2) }
                                 .collectList()
                         else
                             Mono.just(Unit)
@@ -503,7 +329,7 @@ fun main() {
                     ignoredChannels.removeAll(channels.map { it.id.asString() })
                     Flux.fromIterable(channels)
                         .flatMap { ChannelInfo.of(it) }
-                        .map { producer.emit(producerRecord("channels", Snowflake.of(it.id), it)) }
+                        .map { emitter.emit(Snowflake.of(it.id), it) }
                         .collectList()
                         .flatMap {
                             saveIgnoredChannels()

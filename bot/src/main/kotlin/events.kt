@@ -1,235 +1,397 @@
 package com.seventeenthshard.harmony.bot
 
-import com.seventeenthshard.harmony.events.ChannelDeletion
-import com.seventeenthshard.harmony.events.ChannelInfo
-import com.seventeenthshard.harmony.events.ChannelRemoval
-import com.seventeenthshard.harmony.events.Embed
-import com.seventeenthshard.harmony.events.MessageDeletion
-import com.seventeenthshard.harmony.events.MessageEdit
-import com.seventeenthshard.harmony.events.MessageEmbedUpdate
-import com.seventeenthshard.harmony.events.NewMessage
-import com.seventeenthshard.harmony.events.NewReaction
-import com.seventeenthshard.harmony.events.ReactionClear
-import com.seventeenthshard.harmony.events.ReactionRemoval
-import com.seventeenthshard.harmony.events.RoleDeletion
-import com.seventeenthshard.harmony.events.RoleInfo
-import com.seventeenthshard.harmony.events.ServerDeletion
-import com.seventeenthshard.harmony.events.ServerInfo
-import com.seventeenthshard.harmony.events.UserInfo
-import com.seventeenthshard.harmony.events.UserNicknameChange
-import com.seventeenthshard.harmony.events.UserRolesChange
-import com.seventeenthshard.harmony.events.toHex
+
 import discord4j.core.`object`.PermissionOverwrite
-import discord4j.core.`object`.entity.Channel
-import discord4j.core.`object`.entity.Guild
-import discord4j.core.`object`.entity.GuildMessageChannel
-import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.Role
-import discord4j.core.`object`.entity.User
+import discord4j.core.`object`.entity.*
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Image
 import discord4j.core.`object`.util.Snowflake
 import reactor.core.publisher.Mono
+import java.awt.Color
+import java.time.Instant
+import java.util.*
+import discord4j.core.`object`.Embed as DiscordEmbed
 import reactor.util.function.component1
 import reactor.util.function.component2
-import java.time.Instant
-import java.util.Optional
-import discord4j.core.`object`.Embed as DiscordEmbed
 
-fun ServerInfo.Companion.of(guild: Guild) =
-    Mono.just(
-        ServerInfo(
-            guild.id.asString(),
-            guild.name,
-            guild.getIconUrl(Image.Format.PNG).orElse(null)
-        )
-    )
+fun Color.toHex(): String {
+    val format = "%02x"
 
-fun ServerDeletion.Companion.of(timestamp: Instant) =
-    Mono.just(ServerDeletion(timestamp))
+    return "${format.format(red)}${format.format(green)}${format.format(blue)}"
+}
 
-fun RoleInfo.Companion.of(role: Role) =
-    role.guild
-        .flatMap {
-            Mono.zip(ServerInfo.of(it), role.position)
-        }
-        .map {
-            role.position
-            RoleInfo(role.id.asString(), it.t1, role.name, role.color.toHex(), it.t2, role.permissions.rawValue)
-        }
+data class ServerInfo(val id: String, val name: String, val iconUrl: String?) {
+    companion object {
+        fun of(guild: Guild) =
+            Mono.just(
+                ServerInfo(
+                    guild.id.asString(),
+                    guild.name,
+                    guild.getIconUrl(Image.Format.PNG).orElse(null)
+                )
+            )
+    }
+}
 
-fun RoleDeletion.Companion.of(timestamp: Instant) =
-    Mono.just(RoleDeletion(timestamp))
+data class ServerDeletion(val timestamp: Instant) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(ServerDeletion(timestamp))
+    }
+}
 
-fun ChannelInfo.Companion.of(channel: GuildMessageChannel) =
-    channel.guild
-        .flatMap {
-            Mono.zip(ServerInfo.of(it), channel.category)
-        }
-        .map {
-            ChannelInfo(
-                channel.id.asString(),
-                it.t1,
-                channel.name,
-                it.t2.name,
-                channel.rawPosition,
-                if (channel.type == Channel.Type.GUILD_NEWS)
-                    ChannelInfo.Type.NEWS
-                else
-                    ChannelInfo.Type.TEXT,
-                channel.permissionOverwrites.map { override ->
-                    ChannelInfo.PermissionOverride(
-                        when (override.type) {
-                            PermissionOverwrite.Type.UNKNOWN -> ChannelInfo.PermissionOverride.Type.UNKNOWN
-                            PermissionOverwrite.Type.ROLE -> ChannelInfo.PermissionOverride.Type.ROLE
-                            PermissionOverwrite.Type.MEMBER -> ChannelInfo.PermissionOverride.Type.USER
-                            null -> ChannelInfo.PermissionOverride.Type.UNKNOWN
-                        },
-                        override.targetId.asString(),
-                        override.allowed.rawValue,
-                        override.denied.rawValue
+data class RoleInfo(
+    val id: String,
+    val server: ServerInfo,
+    val name: String,
+    val color: String,
+    val position: Int,
+    val permissions: Long
+) {
+    companion object {
+        fun of(role: Role) =
+            role.guild
+                .flatMap {
+                    Mono.zip(ServerInfo.of(it), role.position)
+                }
+                .map {
+                    role.position
+                    RoleInfo(role.id.asString(), it.t1, role.name, role.color.toHex(), it.t2, role.permissions.rawValue)
+                }
+    }
+}
+
+data class RoleDeletion(val timestamp: Instant) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(RoleDeletion(timestamp))
+    }
+}
+
+data class ChannelInfo(
+    val id: String,
+    val server: ServerInfo,
+    val name: String,
+    val category: String = "Text channels",
+    val position: Int,
+    val type: Type,
+    val permissionOverrides: List<PermissionOverride>
+) {
+    companion object {
+        fun of(channel: GuildMessageChannel) =
+            channel.guild
+                .flatMap {
+                    Mono.zip(ServerInfo.of(it), channel.category)
+                }
+                .map {
+                    ChannelInfo(
+                        channel.id.asString(),
+                        it.t1,
+                        channel.name,
+                        it.t2.name,
+                        channel.rawPosition,
+                        if (channel.type == Channel.Type.GUILD_NEWS)
+                            Type.NEWS
+                        else
+                            Type.TEXT,
+                        channel.permissionOverwrites.map { override ->
+                            PermissionOverride(
+                                when (override.type) {
+                                    PermissionOverwrite.Type.UNKNOWN -> PermissionOverride.Type.UNKNOWN
+                                    PermissionOverwrite.Type.ROLE -> PermissionOverride.Type.ROLE
+                                    PermissionOverwrite.Type.MEMBER -> PermissionOverride.Type.USER
+                                    null -> PermissionOverride.Type.UNKNOWN
+                                },
+                                override.targetId.asString(),
+                                override.allowed.rawValue,
+                                override.denied.rawValue
+                            )
+                        }
                     )
                 }
-            )
+    }
+
+    enum class Type {
+        TEXT, NEWS
+    }
+
+    data class PermissionOverride(val type: Type, val targetId: String, val allowed: Long, val denied: Long) {
+        enum class Type {
+            UNKNOWN, ROLE, USER
         }
+    }
+}
 
-fun ChannelDeletion.Companion.of(timestamp: Instant) =
-    Mono.just(ChannelDeletion(timestamp))
+data class ChannelDeletion(val timestamp: Instant) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(ChannelDeletion(timestamp))
+    }
+}
 
-fun ChannelRemoval.Companion.of(timestamp: Instant) =
-    Mono.just(ChannelRemoval(timestamp))
+data class ChannelRemoval(val timestamp: Instant) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(ChannelRemoval(timestamp))
+    }
+}
 
-fun UserInfo.Companion.of(user: User) =
-    Mono.just(
-        UserInfo(
-            user.id.asString(),
-            user.username,
-            user.discriminator,
-            user.isBot
-        )
-    )
-
-fun UserNicknameChange.Companion.of(user: User, guild: Guild, nickname: String?) =
-    Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
-        .map {
-            UserNicknameChange(
-                it.t1,
-                it.t2,
-                nickname,
-                Instant.now()
+data class UserInfo(
+    val id: String,
+    val username: String,
+    val discriminator: String,
+    val isBot: Boolean
+) {
+    companion object {
+        fun of(user: User) =
+            Mono.just(
+                UserInfo(
+                    user.id.asString(),
+                    user.username,
+                    user.discriminator,
+                    user.isBot
+                )
             )
-        }
+    }
+}
 
-fun UserRolesChange.Companion.of(user: User, guild: Guild, roles: List<Snowflake>) =
-    Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
-        .map {
-            UserRolesChange(
-                it.t1,
-                it.t2,
-                roles.map { role -> role.asString() },
-                Instant.now()
-            )
-        }
-
-fun NewMessage.Companion.of(message: Message) =
-    Mono.zip(
-        message.channel,
-        Mono.justOrEmpty(message.author).flatMap { UserInfo.of(it) }
-            .switchIfEmpty(message.webhook.map { UserInfo(it.id.asString(), it.name.orElse("Webhook"), "HOOK", true) })
-    ).filter { it.t1 is GuildMessageChannel }
-        .flatMap {
-            Mono.zip(
-                ChannelInfo.of(it.t1 as GuildMessageChannel),
-                Mono.just(it.t2)
-            )
-        }
-        .map { (channel, user) ->
-            NewMessage(
-                channel,
-                user,
-                message.content.orElse(""),
-                message.embeds.map(Embed.Companion::of),
-                message.attachments.map {
-                    NewMessage.Attachment(
-                        it.filename,
-                        it.url,
-                        it.proxyUrl,
-                        if (it.width.isPresent) it.width.asInt else null,
-                        if (it.height.isPresent) it.height.asInt else null,
-                        it.isSpoiler
+data class UserNicknameChange(
+    val user: UserInfo,
+    val server: ServerInfo,
+    val nickname: String?,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(user: User, guild: Guild, nickname: String?) =
+            Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
+                .map {
+                    UserNicknameChange(
+                        it.t1,
+                        it.t2,
+                        nickname,
+                        Instant.now()
                     )
-                },
-                message.timestamp
-            )
-        }
+                }
+    }
+}
 
-fun MessageEdit.Companion.of(content: String, timestamp: Instant) =
-    Mono.just(MessageEdit(content, timestamp))
+data class UserRolesChange(
+    val user: UserInfo,
+    val server: ServerInfo,
+    val roles: List<String>,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(user: User, guild: Guild, roles: List<Snowflake>) =
+            Mono.zip(UserInfo.of(user), ServerInfo.of(guild))
+                .map {
+                    UserRolesChange(
+                        it.t1,
+                        it.t2,
+                        roles.map { role -> role.asString() },
+                        Instant.now()
+                    )
+                }
+    }
+}
 
-fun MessageDeletion.Companion.of(timestamp: Instant) =
-    Mono.just(MessageDeletion(timestamp))
+data class NewMessage(
+    val channel: ChannelInfo,
+    val user: UserInfo,
+    val content: String,
+    val embeds: List<Embed>,
+    val attachments: List<Attachment>,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(message: Message) =
+            Mono.zip(
+                message.channel,
+                Mono.justOrEmpty(message.author).flatMap { UserInfo.of(it) }
+                    .switchIfEmpty(message.webhook.map { UserInfo(it.id.asString(), it.name.orElse("Webhook"), "HOOK", true) })
+            ).filter { it.t1 is GuildMessageChannel }
+                .flatMap {
+                    Mono.zip(
+                        ChannelInfo.of(it.t1 as GuildMessageChannel),
+                        Mono.just(it.t2)
+                    )
+                }
+                .map { (channel, user) ->
+                    NewMessage(
+                        channel,
+                        user,
+                        message.content.orElse(""),
+                        message.embeds.map(Embed.Companion::of),
+                        message.attachments.map {
+                            Attachment(
+                                it.filename,
+                                it.url,
+                                it.proxyUrl,
+                                if (it.width.isPresent) it.width.asInt else null,
+                                if (it.height.isPresent) it.height.asInt else null,
+                                it.isSpoiler
+                            )
+                        },
+                        message.timestamp
+                    )
+                }
+    }
 
-fun MessageEmbedUpdate.Companion.of(embeds: Iterable<DiscordEmbed>) =
-    Mono.just(MessageEmbedUpdate(embeds.map(Embed.Companion::of)))
-
-fun Embed.Companion.of(embed: DiscordEmbed) =
-    Embed(
-        Embed.Type.valueOf(embed.type.name),
-        embed.title.orElse(null),
-        embed.description.orElse(null),
-        embed.url.orElse(null),
-        embed.color.orElse(null)?.toHex(),
-        embed.timestamp.orElse(null),
-        embed.footer.orElse(null)?.let {
-            Embed.Footer(it.text, it.iconUrl, it.proxyIconUrl)
-        },
-        embed.image.orElse(null)?.let {
-            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
-        },
-        embed.thumbnail.orElse(null)?.let {
-            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
-        },
-        embed.video.orElse(null)?.let {
-            Embed.Media(it.url, it.proxyUrl, it.width, it.height)
-        },
-        embed.provider.orElse(null)?.let {
-            Embed.Provider(it.name, it.url)
-        },
-        embed.author.orElse(null)?.let {
-            Embed.Author(it.name, it.url, it.iconUrl, it.proxyIconUrl)
-        },
-        embed.fields.map {
-            Embed.Field(it.name, it.value, it.isInline)
-        }
+    data class Attachment(
+        val name: String,
+        val url: String,
+        val proxyUrl: String,
+        val width: Int?,
+        val height: Int?,
+        val spoiler: Boolean
     )
+}
 
-fun NewReaction.Companion.of(user: User, emoji: ReactionEmoji) =
-    UserInfo.of(user)
-        .flatMap { u ->
-            Mono.justOrEmpty(
-                Optional.ofNullable(
-                    emoji.asCustomEmoji().orElse(null)?.let {
-                        NewReaction(u, NewReaction.Type.CUSTOM, it.name, it.id.asString(), it.isAnimated, Instant.now())
-                    } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
-                        NewReaction(u, NewReaction.Type.UNICODE, it.raw, null, false, Instant.now())
-                    }
-                )
+data class MessageEdit(
+    val content: String,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(content: String, timestamp: Instant) =
+            Mono.just(MessageEdit(content, timestamp))
+    }
+}
+
+data class MessageDeletion(
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(MessageDeletion(timestamp))
+    }
+}
+
+data class MessageEmbedUpdate(val embeds: List<Embed>) {
+    companion object {
+        fun of(embeds: Iterable<DiscordEmbed>) =
+            Mono.just(MessageEmbedUpdate(embeds.map(Embed.Companion::of)))
+    }
+}
+
+data class Embed(
+    val type: Type,
+    val title: String?,
+    val description: String?,
+    val url: String?,
+    val color: String?,
+    val timestamp: Instant?,
+    val footer: Footer?,
+    val image: Media?,
+    val thumbnail: Media?,
+    val video: Media?,
+    val provider: Provider?,
+    val author: Author?,
+    val fields: List<Field>
+) {
+    companion object {
+        fun of(embed: DiscordEmbed) =
+            Embed(
+                Type.valueOf(embed.type.name),
+                embed.title.orElse(null),
+                embed.description.orElse(null),
+                embed.url.orElse(null),
+                embed.color.orElse(null)?.toHex(),
+                embed.timestamp.orElse(null),
+                embed.footer.orElse(null)?.let {
+                    Footer(it.text, it.iconUrl, it.proxyIconUrl)
+                },
+                embed.image.orElse(null)?.let {
+                    Media(it.url, it.proxyUrl, it.width, it.height)
+                },
+                embed.thumbnail.orElse(null)?.let {
+                    Media(it.url, it.proxyUrl, it.width, it.height)
+                },
+                embed.video.orElse(null)?.let {
+                    Media(it.url, it.proxyUrl, it.width, it.height)
+                },
+                embed.provider.orElse(null)?.let {
+                    Provider(it.name, it.url)
+                },
+                embed.author.orElse(null)?.let {
+                    Author(it.name, it.url, it.iconUrl, it.proxyIconUrl)
+                },
+                embed.fields.map {
+                    Field(it.name, it.value, it.isInline)
+                }
             )
-        }
+    }
 
-fun ReactionRemoval.Companion.of(user: User, emoji: ReactionEmoji) =
-    UserInfo.of(user)
-        .flatMap { u ->
-            Mono.justOrEmpty(
-                Optional.ofNullable(
-                    emoji.asCustomEmoji().orElse(null)?.let {
-                        ReactionRemoval(u, NewReaction.Type.CUSTOM, it.name, it.id.asString(), Instant.now())
-                    } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
-                        ReactionRemoval(u, NewReaction.Type.UNICODE, it.raw, null, Instant.now())
-                    }
-                )
-            )
-        }
+    enum class Type {
+        UNKNOWN, IMAGE, LINK, RICH, VIDEO
+    }
 
-fun ReactionClear.Companion.of(timestamp: Instant) =
-    Mono.just(ReactionClear(timestamp))
+    data class Footer(val text: String, val iconUrl: String?, val proxyIconUrl: String?)
+
+    data class Media(val url: String?, val proxyUrl: String?, val width: Int?, val height: Int?)
+
+    data class Provider(val name: String?, val url: String?)
+
+    data class Author(val name: String?, val url: String?, val iconUrl: String?, val proxyIconUrl: String?)
+
+    data class Field(val name: String, val value: String, val inline: Boolean)
+}
+
+data class NewReaction(
+    val user: UserInfo,
+    val type: Type,
+    val emoji: String,
+    val emojiId: String?,
+    val emojiAnimated: Boolean,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(user: User, emoji: ReactionEmoji) =
+            UserInfo.of(user)
+                .flatMap { u ->
+                    Mono.justOrEmpty(
+                        Optional.ofNullable(
+                            emoji.asCustomEmoji().orElse(null)?.let {
+                                NewReaction(u, Type.CUSTOM, it.name, it.id.asString(), it.isAnimated, Instant.now())
+                            } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
+                                NewReaction(u, Type.UNICODE, it.raw, null, false, Instant.now())
+                            }
+                        )
+                    )
+                }
+    }
+
+    enum class Type {
+        UNICODE, CUSTOM
+    }
+}
+
+data class ReactionRemoval(
+    val user: UserInfo,
+    val type: NewReaction.Type,
+    val emoji: String,
+    val emojiId: String?,
+    val timestamp: Instant
+) {
+    companion object {
+        fun of(user: User, emoji: ReactionEmoji) =
+            UserInfo.of(user)
+                .flatMap { u ->
+                    Mono.justOrEmpty(
+                        Optional.ofNullable(
+                            emoji.asCustomEmoji().orElse(null)?.let {
+                                ReactionRemoval(u, NewReaction.Type.CUSTOM, it.name, it.id.asString(), Instant.now())
+                            } ?: emoji.asUnicodeEmoji().orElse(null)?.let {
+                                ReactionRemoval(u, NewReaction.Type.UNICODE, it.raw, null, Instant.now())
+                            }
+                        )
+                    )
+                }
+    }
+}
+
+data class ReactionClear(val timestamp: Instant) {
+    companion object {
+        fun of(timestamp: Instant) =
+            Mono.just(ReactionClear(timestamp))
+    }
+}

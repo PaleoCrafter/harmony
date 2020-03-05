@@ -1,0 +1,36 @@
+package com.seventeenthshard.harmony.bot
+
+import discord4j.core.`object`.util.Snowflake
+import discord4j.core.event.EventDispatcher
+import discord4j.core.event.domain.Event
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
+import java.util.function.BiFunction
+
+class EventEmitter(val dispatcher: EventDispatcher, val handlers: List<EventHandler>) {
+    inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> map(
+        noinline mapper: (event: DiscordEvent) -> Pair<Snowflake, Mono<EmittedEvent>>
+    ) {
+        listen<DiscordEvent, EmittedEvent> {
+            val (id, emitted) = mapper(it)
+            Flux.zip(
+                Mono.just(id),
+                emitted,
+                BiFunction { a: Snowflake, b: EmittedEvent -> a to b }
+            )
+        }
+    }
+
+    inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> listen(
+        noinline mapper: (event: DiscordEvent) -> Flux<Pair<Snowflake, EmittedEvent>>
+    ) {
+        dispatcher.on(DiscordEvent::class.java)
+            .flatMap { mapper(it) }
+            .map { emit(it.first, it.second) }
+            .subscribe()
+    }
+
+    fun emit(id: Snowflake, event: Any) {
+        handlers.forEach { handler -> handler.handle(id.asString(), event) }
+    }
+}

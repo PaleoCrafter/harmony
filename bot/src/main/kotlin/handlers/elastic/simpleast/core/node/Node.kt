@@ -1,4 +1,4 @@
-package com.seventeenthshard.harmony.search.simpleast.core.node
+package com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node
 
 /**
  * Represents a single node in an Abstract Syntax Tree. It can (but does not need to) have children.

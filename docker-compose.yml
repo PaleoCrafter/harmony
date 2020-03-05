@@ -51,50 +51,11 @@ services:
     env_file:
       - ./bot/.env
     environment:
-      - BROKER_URLS=broker:29092
-      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
-    depends_on:
-      - broker
-      - schema-registry
-
-  db-import:
-    image: marvinroesch/harmony-db-import:latest
-    container_name: harmony-db-import
-    build:
-      context: .
-      dockerfile: Dockerfile-gradle
-      target: db-import
-    env_file:
-      - ./db-import/.env
-    environment:
       - DB_CONNECTION=jdbc:postgresql://db/harmony
       - DB_DRIVER=org.postgresql.Driver
       - DB_USER=harmony_imports
       - DB_PASSWORD=imp0rt5
-      - BROKER_URLS=broker:29092
-      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
-    depends_on:
-      - db
-      - broker
-      - schema-registry
-
-  elastic-ingest:
-    image: marvinroesch/harmony-elastic-ingest:latest
-    container_name: harmony-elastic-ingest
-    build:
-      context: .
-      dockerfile: Dockerfile-gradle
-      target: elastic-ingest
-    env_file:
-      - ./elastic-ingest/.env
-    environment:
-      - BROKER_URLS=broker:29092
-      - SCHEMA_REGISTRY_URL=http://schema-registry:8081
       - ELASTIC_HOST=http://elasticsearch:9200
-    depends_on:
-      - elasticsearch
-      - broker
-      - schema-registry
 
   db:
     image: postgres:12
@@ -110,50 +71,11 @@ services:
     volumes:
       - ./database-init:/docker-entrypoint-initdb.d
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:5.3.2
-    hostname: zookeeper
-    container_name: harmony-zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-
-  broker:
-    image: confluentinc/cp-kafka:5.3.2
-    hostname: broker
-    container_name: harmony-broker
-    depends_on:
-      - zookeeper
-    environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      CONFLUENT_METRICS_REPORTER_BOOTSTRAP_SERVERS: broker:29092
-      CONFLUENT_METRICS_REPORTER_ZOOKEEPER_CONNECT: zookeeper:2181
-      CONFLUENT_METRICS_REPORTER_TOPIC_REPLICAS: 1
-      CONFLUENT_METRICS_ENABLE: 'true'
-      CONFLUENT_SUPPORT_CUSTOMER_ID: 'anonymous'
-
-  schema-registry:
-    image: confluentinc/cp-schema-registry:5.3.2
-    hostname: schema-registry
-    container_name: harmony-schema-registry
-    depends_on:
-      - zookeeper
-      - broker
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
-      SCHEMA_REGISTRY_AVRO_COMPATIBILITY_LEVEL: forward
-
   elasticsearch:
     image: marvinroesch/harmony-elasticsearch:latest
     container_name: harmony-search
     build:
-      context: ./elastic-ingest
+      context: ./elastic
       dockerfile: Dockerfile-elasticsearch
     volumes:
       - esdata:/usr/share/elasticsearch/data

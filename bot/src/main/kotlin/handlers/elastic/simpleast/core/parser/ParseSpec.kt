@@ -1,6 +1,6 @@
-package com.seventeenthshard.harmony.search.simpleast.core.parser
+package com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser
 
-import com.seventeenthshard.harmony.search.simpleast.core.node.Node
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node.Node
 
 /**
  * Facilitates fast parsing of the source text.
@@ -48,12 +48,20 @@ class ParseSpec<R, T : Node<R>, S> {
   companion object {
     @JvmStatic
     fun <R, T : Node<R>, S> createNonterminal(node: T?, state: S, startIndex: Int, endIndex: Int): ParseSpec<R, T, S> {
-      return ParseSpec(node, state, startIndex, endIndex)
+      return ParseSpec(
+          node,
+          state,
+          startIndex,
+          endIndex
+      )
     }
 
     @JvmStatic
     fun <R, T : Node<R>, S> createTerminal(node: T?, state: S): ParseSpec<R, T, S> {
-      return ParseSpec(node, state)
+      return ParseSpec(
+          node,
+          state
+      )
     }
   }
 }

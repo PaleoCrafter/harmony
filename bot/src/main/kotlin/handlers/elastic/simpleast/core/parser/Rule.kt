@@ -1,6 +1,6 @@
-package com.seventeenthshard.harmony.search.simpleast.core.parser
+package com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser
 
-import com.seventeenthshard.harmony.search.simpleast.core.node.Node
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node.Node
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 

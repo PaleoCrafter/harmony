@@ -1,4 +1,4 @@
-package com.seventeenthshard.harmony.search.simpleast.core.node
+package com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node
 
 /**
  * Node representing simple text.

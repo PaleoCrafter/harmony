@@ -1,6 +1,6 @@
-package com.seventeenthshard.harmony.search.simpleast.core.parser
+package com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.parser
 
-import com.seventeenthshard.harmony.search.simpleast.core.node.Node
+import com.seventeenthshard.harmony.bot.handlers.elastic.simpleast.core.node.Node
 import org.apache.logging.log4j.LogManager
 import java.util.*
 
@@ -42,7 +42,14 @@ open class Parser<R, T : Node<R>, S> @JvmOverloads constructor(private val enabl
     var lastCapture: String? = null
 
     if (source != null && !source.isEmpty()) {
-      remainingParses.add(ParseSpec(null, initialState, 0, source.length))
+      remainingParses.add(
+          ParseSpec(
+              null,
+              initialState,
+              0,
+              source.length
+          )
+      )
     }
 
     while (!remainingParses.isEmpty()) {
@@ -73,7 +80,14 @@ open class Parser<R, T : Node<R>, S> @JvmOverloads constructor(private val enabl
           // In case the last match didn't consume the rest of the source for this subtree,
           // make sure the rest of the source is consumed.
           if (matcherSourceEnd != builder.endIndex) {
-            remainingParses.push(ParseSpec.createNonterminal(parent, builder.state, matcherSourceEnd, builder.endIndex))
+            remainingParses.push(
+                ParseSpec.createNonterminal(
+                    parent,
+                    builder.state,
+                    matcherSourceEnd,
+                    builder.endIndex
+                )
+            )
           }
 
           // We want to speak in terms of indices within the source string,
@@ -87,7 +101,11 @@ open class Parser<R, T : Node<R>, S> @JvmOverloads constructor(private val enabl
           try {
             lastCapture = matcher.group(0)
           } catch (throwable: Throwable) {
-            throw ParseException(message = "matcher found no matches", source = source, cause = throwable)
+            throw ParseException(
+                message = "matcher found no matches",
+                source = source,
+                cause = throwable
+            )
           }
 //          println("source: $inspectionSource -- depth: ${remainingParses.size}")
 
@@ -98,7 +116,10 @@ open class Parser<R, T : Node<R>, S> @JvmOverloads constructor(private val enabl
       }
 
       if (!foundRule) {
-        throw ParseException("failed to find rule to match source", source)
+        throw ParseException(
+            "failed to find rule to match source",
+            source
+        )
       }
     }
 

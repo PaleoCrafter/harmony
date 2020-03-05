@@ -3,11 +3,14 @@ package com.seventeenthshard.harmony.bot
 import discord4j.core.`object`.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
+import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.util.function.BiFunction
 
 class EventEmitter(val dispatcher: EventDispatcher, val handlers: List<EventHandler>) {
+    val logger = LogManager.getLogger("event-emitter")
+
     inline fun <reified DiscordEvent : Event, reified EmittedEvent : Any> map(
         noinline mapper: (event: DiscordEvent) -> Pair<Snowflake, Mono<EmittedEvent>>
     ) {
@@ -31,6 +34,7 @@ class EventEmitter(val dispatcher: EventDispatcher, val handlers: List<EventHand
     }
 
     fun emit(id: Snowflake, event: Any) {
+        logger.info("Emitting event $event for $id")
         handlers.forEach { handler -> handler.handle(id.asString(), event) }
     }
 }

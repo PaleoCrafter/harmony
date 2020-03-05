@@ -3,9 +3,9 @@ package com.seventeenthshard.harmony.bot
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 
-class EventHandler(init: EventHandler.() -> Unit) {
+class EventHandler(name: String, init: EventHandler.() -> Unit) {
     private val handlers = mutableMapOf<Class<*>, Handler<*>>()
-    val logger: Logger = LogManager.getLogger("EventHandler")
+    val logger: Logger = LogManager.getLogger(name)
 
     init {
         this.init()
@@ -25,6 +25,7 @@ class EventHandler(init: EventHandler.() -> Unit) {
     fun handle(id: String, event: Any) {
         (handlers[event.javaClass] as? Handler<Any>)?.let {
             it.run(id, event)
+            logger.info("Handled event of type ${event.javaClass} for $id successfully")
         }
     }
 

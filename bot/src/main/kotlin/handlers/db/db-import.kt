@@ -60,7 +60,7 @@ private fun insertEmbeds(messageId: String, embeds: List<Embed>) {
 }
 
 fun buildDbHandlerImpl() =
-    EventHandler {
+    EventHandler("db-ingest") {
         listen<ServerInfo> { serverId, event ->
             transaction {
                 Servers.replace {

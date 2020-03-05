@@ -11,7 +11,7 @@ import org.elasticsearch.client.RestHighLevelClient
 import java.io.IOException
 
 fun buildElasticHandlerImpl(elasticClient: RestHighLevelClient) =
-    EventHandler {
+    EventHandler("elastic-ingest") {
         listen<NewMessage> { id, event ->
             val (_, state) = DiscordMarkdownRules.parse(
                 event.content

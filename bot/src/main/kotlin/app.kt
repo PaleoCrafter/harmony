@@ -2,6 +2,7 @@
 
 package com.seventeenthshard.harmony.bot
 
+import com.seventeenthshard.harmony.bot.handlers.db.buildDbHandler
 import com.seventeenthshard.harmony.bot.handlers.elastic.buildElasticHandler
 import discord4j.core.DiscordClientBuilder
 import org.apache.logging.log4j.LogManager
@@ -27,7 +28,7 @@ fun main(args: Array<String>) {
     val action = args.firstOrNull() ?: "import"
     when (action) {
         "import" -> {
-            val emitter = EventEmitter(client.eventDispatcher, listOf(buildElasticHandler()))
+            val emitter = EventEmitter(client.eventDispatcher, listOf(buildDbHandler(), buildElasticHandler()))
 
             runBot(client, emitter, ignoredChannels)
         }

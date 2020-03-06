@@ -29,7 +29,11 @@
         <div slot="message">
           We uses cookies for this service's basic functionality.
           If you continue to use this site we will assume that you are happy with it.
-          Review our <nuxt-link to="privacy-policy">privacy policy</nuxt-link> for further information.
+          Review our
+          <nuxt-link to="privacy-policy">
+            privacy policy
+          </nuxt-link>
+          for further information.
         </div>
       </cookie-law>
     </client-only>
@@ -303,6 +307,7 @@ body {
     unicode-bidi: bidi-override;
     direction: ltr;
     word-break: break-word;
+    display: inline-block;
 
     &:hover, &:focus {
       text-decoration: underline;

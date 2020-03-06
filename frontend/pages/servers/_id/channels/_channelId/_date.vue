@@ -276,6 +276,7 @@ export default {
       this.messages = undefined
       this.scrolledToMessage = false
       this.$store.commit('resetHighlightedMessage')
+      this.$apollo.queries.messages.refresh()
     }
   }
 }

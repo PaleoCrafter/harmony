@@ -36,14 +36,14 @@
         <ArrowLeftIcon v-else />
       </button>
     </header>
-    <nuxt-child :date="date" class="channel__child" />
+    <nuxt-child v-if="!loadingLatest" :date="date" class="channel__child" />
     <portal-target name="search-results" class="channel__search-results" />
   </div>
 </template>
 
 <script>
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MenuIcon, SearchIcon } from 'vue-feather-icons'
-import { utcToZonedTime, toDate } from 'date-fns-tz'
+import { toDate, utcToZonedTime } from 'date-fns-tz'
 import { startOfDay } from 'date-fns'
 import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
@@ -53,6 +53,11 @@ import Divider from '@/components/Divider.vue'
 
 export default {
   components: { Divider, ChannelName, MenuIcon, ChevronLeftIcon, ChevronRightIcon, SearchIcon, ArrowLeftIcon },
+  data () {
+    return {
+      loadingLatest: false
+    }
+  },
   computed: {
     ...mapState(['timezone', 'modalSearchActive']),
     date () {
@@ -80,10 +85,14 @@ export default {
     },
     latestMessage: {
       query: latestMessageQuery,
+      fetchPolicy: 'network-only',
       variables () {
         return {
           channel: this.$route.params.channelId
         }
+      },
+      watchLoading (loading) {
+        this.loadingLatest = loading
       }
     }
   },

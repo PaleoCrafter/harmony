@@ -768,10 +768,6 @@ const queryResolver = {
       return null
     }
 
-    if (permissions === undefined || !permissions.has('readMessages')) {
-      return null
-    }
-
     return message.createdAt
   }
 }

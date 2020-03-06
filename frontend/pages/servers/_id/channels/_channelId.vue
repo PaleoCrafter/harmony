@@ -44,8 +44,10 @@
 <script>
 import { ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon, MenuIcon, SearchIcon } from 'vue-feather-icons'
 import { utcToZonedTime, toDate } from 'date-fns-tz'
+import { startOfDay } from 'date-fns'
 import { mapState } from 'vuex'
 import channelQuery from '@/apollo/queries/channel.gql'
+import latestMessageQuery from '@/apollo/queries/latest-channel-message.gql'
 import ChannelName from '@/components/ChannelName.vue'
 import Divider from '@/components/Divider.vue'
 
@@ -55,7 +57,8 @@ export default {
     ...mapState(['timezone', 'modalSearchActive']),
     date () {
       if (this.$route.params.date === undefined) {
-        return utcToZonedTime(Date.now(), this.timezone)
+        const today = utcToZonedTime(Date.now(), this.timezone)
+        return this.latestMessage ? startOfDay(utcToZonedTime(this.latestMessage, this.timezone)) : today
       }
 
       return toDate(this.$route.params.date, { timeZone: this.timezone })
@@ -72,6 +75,14 @@ export default {
       variables () {
         return {
           id: this.$route.params.channelId
+        }
+      }
+    },
+    latestMessage: {
+      query: latestMessageQuery,
+      variables () {
+        return {
+          channel: this.$route.params.channelId
         }
       }
     }

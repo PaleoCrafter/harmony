@@ -727,7 +727,7 @@ const queryResolver = {
   async redirectMessage (parent, { id }, { request }) {
     const message = await Message.findOne({ where: { id } })
 
-    if (!request.user.servers.find(s => s.id === message.server)) {
+    if (!message || !request.user.servers.find(s => s.id === message.server)) {
       return null
     }
 
@@ -738,6 +738,41 @@ const queryResolver = {
     }
 
     return message
+  },
+  async latestMessage (parent, { channel: channelId }, { request }) {
+    const channel = await request.loaders.channels.load(channelId)
+    const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
+
+    if (permissions === undefined || !permissions.has('readMessages')) {
+      return []
+    }
+
+    const message = await Message.findOne({
+      where: {
+        channel: channelId,
+        ...(
+          permissions.has('manageMessages')
+            ? {}
+            : {
+              [Op.or]: {
+                deletedAt: null,
+                user: request.user.id
+              }
+            }
+        )
+      },
+      order: [['createdAt', 'DESC']]
+    })
+
+    if (!message || !request.user.servers.find(s => s.id === message.server)) {
+      return null
+    }
+
+    if (permissions === undefined || !permissions.has('readMessages')) {
+      return null
+    }
+
+    return message.createdAt
   }
 }
 

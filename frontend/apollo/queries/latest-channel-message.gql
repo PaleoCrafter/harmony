@@ -1,0 +1,3 @@
+query LatestChannelMessage($channel: ID!) {
+  latestMessage(channel: $channel)
+}

@@ -18,6 +18,7 @@ type Query {
   searchSuggestions(server: ID!): SearchSuggestions!
 
   redirectMessage(id: ID!): RedirectMessage
+  latestMessage(channel: ID!): Timestamp
 }
 
 input SearchParameters {

@@ -3,7 +3,7 @@ const { Client } = require('@elastic/elasticsearch')
 const INDEX = 'messages'
 const client = new Client({ node: process.env.ELASTIC_HOST })
 
-module.exports = async function search (server, query, sortOrder, readableChannels, manageableChannels, page) {
+module.exports = async function search (server, requestUser, query, sortOrder, readableChannels, manageableChannels, page) {
   const highlightTag = `__HARMONY_SEARCH_${Date.now()}__`
 
   const filter = {
@@ -15,6 +15,7 @@ module.exports = async function search (server, query, sortOrder, readableChanne
       ],
       should: [
         { term: { deletedAt: 0 } },
+        { term: { from: requestUser } },
         { terms: { 'channel.id': manageableChannels } }
       ]
     }

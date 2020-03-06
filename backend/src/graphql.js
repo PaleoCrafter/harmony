@@ -72,7 +72,7 @@ function prepareMessage (message, versions, editedAt, permissions, request) {
     ref: message.id,
     author: request.loaders.users.load({ server: message.server, id: message.user }),
     server: message.server,
-    versions: permissions.has('manageMessages') ? versions : [versions[0]],
+    versions: permissions.has('manageMessages') || message.user === request.user.id ? versions : [versions[0]],
     createdAt: message.createdAt,
     editedAt,
     deletedAt: message.deletedAt,
@@ -500,7 +500,10 @@ const queryResolver = {
           permissions.has('manageMessages')
             ? {}
             : {
-              deletedAt: null
+              [Op.or]: {
+                deletedAt: null,
+                user: request.user.id
+              }
             }
         )
       },
@@ -599,6 +602,7 @@ const queryResolver = {
     try {
       ({ total, totalPages, messages: rawMessages } = await search(
         server,
+        request.user.id,
         parameters.query,
         parameters.sort,
         readableChannels,
@@ -657,7 +661,7 @@ const queryResolver = {
         request
       )
 
-      if (prev) {
+      if (prev && (prev.deletedAt === null || channelPermissions.has('manageMessages') || prev.user === request.user.id)) {
         prev.idSuffix = 'search-result'
         messageResult.previous = prepareMessage(
           prev,
@@ -668,7 +672,7 @@ const queryResolver = {
         )
       }
 
-      if (next) {
+      if (next && (next.deletedAt === null || channelPermissions.has('manageMessages') || next.user === request.user.id)) {
         next.idSuffix = 'search-result'
         messageResult.next = prepareMessage(
           next,

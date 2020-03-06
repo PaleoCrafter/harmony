@@ -11,6 +11,10 @@
     </transition-group>
     <transition name="user-panel__dropdown">
       <div v-if="expanded" class="user-panel__dropdown">
+        <nuxt-link to="/privacy-policy" class="user-panel__dropdown-link">
+          Privacy Policy
+          <ShieldIcon size="1.6x" class="user-panel__dropdown-link-icon" />
+        </nuxt-link>
         <a @click="logout" href="#" class="user-panel__logout">
           Logout
           <LogOutIcon size="1.6x" class="user-panel__logout-icon" />
@@ -21,18 +25,23 @@
 </template>
 
 <script>
-import { ChevronUpIcon, LogOutIcon, UserIcon, XIcon } from 'vue-feather-icons'
+import { ChevronUpIcon, LogOutIcon, ShieldIcon, UserIcon, XIcon } from 'vue-feather-icons'
 import { mapState } from 'vuex'
 
 export default {
   name: 'UserPanel',
-  components: { UserIcon, ChevronUpIcon, XIcon, LogOutIcon },
+  components: { UserIcon, ChevronUpIcon, XIcon, LogOutIcon, ShieldIcon },
   data () {
     return {
       expanded: false
     }
   },
   computed: mapState(['identity']),
+  watch: {
+    $route () {
+      this.expanded = false
+    }
+  },
   mounted () {
     document.addEventListener('click', this.handleOutsideClick)
   },
@@ -136,6 +145,25 @@ export default {
 
     &-enter, &-leave-to {
       transform: scale(0);
+    }
+
+    &-link {
+      display: flex;
+      align-items: center;
+      padding: 0.5rem 0.5rem;
+      margin: 0.125rem 0;
+      border-radius: 2px;
+      color: rgba(213, 236, 255, 0.8);
+      text-decoration: none;
+      font-size: 0.9rem;
+
+      &:hover, &:active, &:focus {
+        background: rgba(79, 84, 92, 0.16);
+      }
+
+      &-icon {
+        margin-left: auto;
+      }
     }
   }
 

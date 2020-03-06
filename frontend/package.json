@@ -26,6 +26,7 @@
     "tiptap": "^1.26.6",
     "twemoji-parser": "^12.1.1",
     "v-calendar": "^1.0.0-beta.23",
+    "vue-cookie-law": "^1.12.0",
     "vue-feather-icons": "^5.0.0",
     "vue-infinite-scroll": "^2.0.2"
   },

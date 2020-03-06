@@ -7,6 +7,11 @@
         Log in now
       </nuxt-link>
     </div>
+    <footer>
+      <nuxt-link to="/privacy-policy">
+        Privacy Policy
+      </nuxt-link>
+    </footer>
   </div>
 </template>
 
@@ -59,6 +64,26 @@ export default {
 
     &:hover, &:active, &:focus {
       background-color: #677bc4;
+    }
+  }
+
+  footer {
+    display: flex;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+
+    a {
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+
+      &:hover, &:active, &:focus {
+        text-decoration: underline;
+      }
     }
   }
 }

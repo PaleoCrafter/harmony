@@ -3,7 +3,6 @@
 package com.seventeenthshard.harmony.bot
 
 import discord4j.core.DiscordClient
-import discord4j.core.DiscordClientBuilder
 import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.util.Permission
@@ -31,7 +30,6 @@ import discord4j.core.event.domain.message.ReactionRemoveEvent
 import discord4j.core.event.domain.role.RoleCreateEvent
 import discord4j.core.event.domain.role.RoleDeleteEvent
 import discord4j.core.event.domain.role.RoleUpdateEvent
-import org.apache.logging.log4j.LogManager
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -40,7 +38,6 @@ import reactor.util.function.component1
 import reactor.util.function.component2
 import reactor.util.function.component3
 import reactor.util.function.component4
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Instant

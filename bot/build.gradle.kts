@@ -9,7 +9,7 @@ version = "1.0-SNAPSHOT"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
-    implementation("com.discord4j:discord4j-core:3.0.11")
+    implementation("com.discord4j:discord4j-core:3.0.14")
     implementation("org.apache.logging.log4j:log4j-slf4j-impl:2.13.0")
     implementation("org.jetbrains.exposed:exposed-core:0.19.3")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.19.3")

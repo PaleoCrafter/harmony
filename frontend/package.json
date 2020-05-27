@@ -13,14 +13,13 @@
   },
   "dependencies": {
     "@nuxtjs/apollo": "^4.0.0-rc19",
-    "@nuxtjs/auth": "^4.8.5",
-    "@nuxtjs/axios": "^5.3.6",
+    "@nuxtjs/auth": "^4.9.1",
     "@popperjs/core": "^2.0.0-rc.3",
     "apollo-link-batch-http": "^1.2.13",
     "date-fns": "^2.8.1",
     "date-fns-tz": "^1.0.10",
     "highlight.js": "^9.17.1",
-    "nuxt": "^2.0.0",
+    "nuxt": "^2.12.2",
     "portal-vue": "^2.1.7",
     "simple-markdown": "^0.7.2",
     "tiptap": "^1.26.6",
@@ -33,12 +32,18 @@
   "devDependencies": {
     "@babel/plugin-proposal-nullish-coalescing-operator": "^7.7.4",
     "@babel/plugin-proposal-optional-chaining": "^7.7.5",
-    "@nuxtjs/eslint-config": "^1.0.1",
+    "@nuxtjs/eslint-config": "^3.0.0",
     "@nuxtjs/eslint-module": "^1.0.0",
     "babel-eslint": "^10.0.1",
     "eslint": "^6.1.0",
     "eslint-plugin-nuxt": ">=0.4.2",
-    "node-sass": "^4.13.0",
+    "node-sass": "^4.14.1",
     "sass-loader": "^8.0.0"
+  },
+  "resolutions": {
+    "acorn": "^7.1.1",
+    "kind-of": "^6.0.3",
+    "http-proxy": "^1.18.1",
+    "minimist": "^1.2.5"
   }
 }

@@ -1,5 +1,6 @@
 const passport = require('passport')
 const session = require('express-session')
+const unsign = require('cookie-signature').unsign
 const Strategy = require('passport-discord').Strategy
 const Eris = require('eris')
 const Permission = Eris.Permission
@@ -112,19 +113,21 @@ module.exports = {
       })
     }))
 
+    const secret = process.env.APPLICATION_SECRET || 'rust and ruin'
+
     app.use((req, res, next) => {
       const authHeader = req.header('authorization')
       if (authHeader && authHeader.startsWith('Session ')) {
-        req.signedCookies['connect.sid'] = authHeader.substring(8)
+        req.signedCookies['connect.sid'] = unsign(authHeader.substring(10), secret)
       }
       next()
     })
     app.use(session({
-      secret: process.env.APPLICATION_SECRET || 'rust and ruin',
+      secret,
       resave: false,
       saveUninitialized: false,
       rolling: true,
-      store: new FileStore({}),
+      store: new FileStore({ secret }),
       cookie: {
         secure: app.get('env') === 'production',
         maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days

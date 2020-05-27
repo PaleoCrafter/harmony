@@ -11,8 +11,9 @@
       <ul class="search-results__orders">
         <li
           v-for="entry in sortOptions"
-          @click="sortOrder = entry.order"
+          :key="entry.order"
           :class="['search-results__order', { 'search-results__order--active': sortOrder === entry.order }]"
+          @click="sortOrder = entry.order"
         >
           {{ entry.label }}
         </li>
@@ -23,13 +24,13 @@
     </div>
     <ul ref="items" class="search-results__items">
       <template v-for="group in groupedEntries">
-        <li class="search-results__item-header">
+        <li :key="`${group.channel.id}-${group.entries[0].id}`" class="search-results__item-header">
           <nuxt-link :to="`/servers/${$route.params.id}/channels/${group.channel.id}`">
             {{ `#${group.channel.name}` }}
           </nuxt-link>
           <hr>
         </li>
-        <li v-for="entry in group.entries" class="search-results__item">
+        <li v-for="entry in group.entries" :key="entry.id" class="search-results__item">
           <MessageGroup
             v-if="entry.previous"
             :group="entry.previous"
@@ -51,15 +52,15 @@
       </template>
     </ul>
     <nav v-if="result" class="search-results__pagination">
-      <button @click="changePage(-1)" :disabled="page === 0" class="search-results__pagination-button" aria-label="Previous page">
+      <button :disabled="page === 0" class="search-results__pagination-button" aria-label="Previous page" @click="changePage(-1)">
         <ChevronLeftIcon size="1x" stroke-width="3" />
       </button>
       Page {{ page + 1 }} of {{ result.totalPages }}
       <button
-        @click="changePage(1)"
         :disabled="page === result.totalPages - 1"
         class="search-results__pagination-button"
         aria-label="Next page"
+        @click="changePage(1)"
       >
         <ChevronRightIcon size="1x" stroke-width="3" />
       </button>

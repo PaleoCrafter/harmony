@@ -3,9 +3,9 @@
     <li v-for="server in servers" :key="server.id">
       <a
         v-if="isServerActive(server.id)"
-        @click.prevent="switchTab"
         href="#"
         class="server-list__item server-list__item--active"
+        @click.prevent="switchTab"
       >
         <img :src="server.iconUrl" :alt="server.name" class="server-list__icon">
         {{ server.name }}

@@ -1,6 +1,6 @@
 <template>
   <span :class="['user-name', { 'user-name--info-visible': infoVisible }]">
-    <span @click.self="toggleInfoBox" :style="userStyle">{{ prefix }}{{ userName }}</span>
+    <span :style="userStyle" @click.self="toggleInfoBox">{{ prefix }}{{ userName }}</span>
 
     <UserInfo
       ref="aligned"

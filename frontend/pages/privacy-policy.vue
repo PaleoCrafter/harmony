@@ -1,7 +1,7 @@
 <template>
   <div class="privacy-policy">
     <header class="privacy-policy__header">
-      <a v-if="$store.state.loggedIn" @click.prevent="$store.commit('openSidebar')" href="#" class="privacy-policy__header-menu-toggle">
+      <a v-if="$store.state.loggedIn" href="#" class="privacy-policy__header-menu-toggle" @click.prevent="$store.commit('openSidebar')">
         <MenuIcon />
       </a>
       <h2>Privacy Policy</h2>
@@ -240,12 +240,12 @@ export default {
   layout ({ store }) {
     return store.state.loggedIn ? 'servers' : 'default'
   },
+  components: { MenuIcon },
   head () {
     return {
       title: 'Privacy Policy - Harmony'
     }
-  },
-  components: { MenuIcon }
+  }
 }
 </script>
 

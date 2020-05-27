@@ -1,7 +1,7 @@
 <template>
   <div :class="['channel', { 'channel--search': modalSearchActive }]">
     <header v-if="channel" class="channel__header">
-      <button @click.prevent="$store.commit('openSidebar')" class="channel__header-menu-toggle" aria-label="Toggle menu">
+      <button class="channel__header-menu-toggle" aria-label="Toggle menu" @click.prevent="$store.commit('openSidebar')">
         <MenuIcon />
       </button>
       <h3>
@@ -10,11 +10,10 @@
       <Divider />
       <client-only>
         <div class="channel__date-selection">
-          <button @click="prevDay" class="channel__date-button" aria-label="Previous day">
+          <button class="channel__date-button" aria-label="Previous day" @click="prevDay">
             <ChevronLeftIcon />
           </button>
           <DatePicker
-            @input="updateDate"
             :value="date"
             :max-date="new Date()"
             :update-on-input="false"
@@ -24,14 +23,15 @@
             is-dark
             is-required
             class="channel__date"
+            @input="updateDate"
           />
-          <button @click="nextDay" :disabled="nextDayDisabled" class="channel__date-button" aria-label="Next day">
+          <button :disabled="nextDayDisabled" class="channel__date-button" aria-label="Next day" @click="nextDay">
             <ChevronRightIcon />
           </button>
         </div>
       </client-only>
       <portal-target name="search-box" class="channel__search-box" />
-      <button @click.prevent="toggleModalSearch" class="channel__search-toggle" aria-label="Toggle search">
+      <button class="channel__search-toggle" aria-label="Toggle search" @click.prevent="toggleModalSearch">
         <SearchIcon v-if="!modalSearchActive" />
         <ArrowLeftIcon v-else />
       </button>

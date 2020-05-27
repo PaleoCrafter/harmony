@@ -1,7 +1,7 @@
 <template>
   <div class="site">
     <transition name="site__sidebar">
-      <div v-if="sidebarOpen" @click.self="$store.commit('closeSidebar')" class="site__sidebar">
+      <div v-if="sidebarOpen" class="site__sidebar" @click.self="$store.commit('closeSidebar')">
         <div class="site__sidebar-container">
           <portal-target name="sidebar" multiple class="site__sidebar-entries" />
           <UserPanel />
@@ -12,8 +12,8 @@
     <transition :duration="300" name="modal">
       <div
         v-if="modalOpen"
-        @click.self="$store.commit('closeModal')"
         class="modal__container"
+        @click.self="$store.commit('closeModal')"
       >
         <div :class="['modal', `modal--${modal.type || 'dialog'}`]">
           <div v-if="modal.title" class="modal__header">

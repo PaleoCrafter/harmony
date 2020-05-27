@@ -1,13 +1,13 @@
 <template>
   <div ref="container" class="lazy-image">
     <img
-      ref="image"
       v-show="!loading && !error"
-      @click="openOverlay"
+      ref="image"
       :src="visible ? src : undefined"
       :alt="alt"
       v-bind="attributes"
       class="lazy-image__content"
+      @click="openOverlay"
     >
     <LoadingSpinner v-if="loading" class="lazy-image__loading" />
     <img

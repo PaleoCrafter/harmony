@@ -18,7 +18,7 @@ export function expandUnicodeEmojis (node) {
     case 'spoiler':
     case 'blockQuote':
       return { ...node, content: node.content.flatMap(child => expandUnicodeEmojis(child)) }
-    case 'text':
+    case 'text': {
       const emojis = parse(node.content)
       return emojis.reduce(
         ({ nodes, offset }, emoji) => {
@@ -36,6 +36,7 @@ export function expandUnicodeEmojis (node) {
         },
         { nodes: [node], offset: 0 }
       ).nodes
+    }
   }
 
   return [node]
@@ -104,7 +105,7 @@ export default function renderNode (node, h, message, emojisOnly) {
   }
 
   // eslint-disable-next-line no-console
-  console.error(`Could not map Discord message element`, node)
+  console.error('Could not map Discord message element', node)
 
   return h('span')
 }

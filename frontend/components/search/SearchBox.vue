@@ -1,8 +1,8 @@
 <template>
-  <div @mousedown.capture="acquireFocus" :class="['search-box', { 'search-box--focus': popupActive, 'search-box--empty': editorEmpty }]">
+  <div :class="['search-box', { 'search-box--focus': popupActive, 'search-box--empty': editorEmpty }]" @mousedown.capture="acquireFocus">
     <EditorContent ref="editor" :editor="editor" class="search-box__container" />
     <SearchIcon v-if="editorEmpty" class="search-box__icon" size="1x" stroke-width="3" />
-    <XIcon v-else @click="clear" class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" />
+    <XIcon v-else class="search-box__icon search-box__icon--clear" size="1x" stroke-width="3" @click="clear" />
     <div v-if="popupActive" class="search-box__popup">
       <SuggestionPopup
         ref="suggestions"

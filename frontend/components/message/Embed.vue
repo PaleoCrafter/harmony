@@ -56,6 +56,7 @@
     >
       <div
         v-for="image in embed.images"
+        :key="image.url"
         :style="{ width: calculateImageStyle(image).width }"
         class="embed__image-container"
       >
@@ -94,8 +95,8 @@
             />
           </template>
           <video
-            ref="video"
             v-else
+            ref="video"
             :src="embed.video.proxyUrl"
             :poster="thumbnailUrl"
             :controls="playingVideo"
@@ -105,7 +106,7 @@
             playsinline
           />
           <div v-if="!playingVideo" class="embed__video-actions">
-            <a @click.prevent="playVideo" :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video">
+            <a :href="embed.video.url" target="_blank" rel="noopener" aria-label="Play video" @click.prevent="playVideo">
               <PlayIcon fill="currentColor" stroke="none" />
             </a>
             <a :href="embed.url" target="_blank" rel="noopener" aria-label="Open video">

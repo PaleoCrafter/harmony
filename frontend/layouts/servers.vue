@@ -8,7 +8,7 @@
       <portal :order="2" to="sidebar">
         <div :class="['servers__sidebar', 'servers__sidebar--mobile', { 'servers__sidebar--active': sidebarTab === 'servers' }]">
           <div class="servers__sidebar-header">
-            <XIcon @click="$store.commit('closeSidebar')" class="servers__sidebar-close" />
+            <XIcon class="servers__sidebar-close" @click="$store.commit('closeSidebar')" />
           </div>
           <ServerList :servers="servers" :index="isChannelIndex" />
         </div>

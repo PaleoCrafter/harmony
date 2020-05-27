@@ -2,7 +2,7 @@
   <div :class="['server', { 'server--index': isIndex }]">
     <div v-if="server" class="server__sidebar server__sidebar--desktop">
       <header class="server__header">
-        <a @click.prevent="$store.commit('openSidebar')" href="#" class="server__header-menu-toggle">
+        <a href="#" class="server__header-menu-toggle" @click.prevent="$store.commit('openSidebar')">
           <MenuIcon />
         </a>
         <h2>{{ server.name }}</h2>
@@ -12,7 +12,7 @@
     <portal v-if="server && !isIndex" :order="1" to="sidebar">
       <div :class="['server__sidebar', 'server__sidebar--mobile', { 'server__sidebar--active': sidebarTab === 'channels' }]">
         <header class="server__header">
-          <a @click.prevent="$store.commit('setSidebarTab', 'servers')" href="#" class="server__header-menu-toggle">
+          <a href="#" class="server__header-menu-toggle" @click.prevent="$store.commit('setSidebarTab', 'servers')">
             <ArrowLeftIcon />
           </a>
           {{ server.name }}
@@ -69,6 +69,11 @@ export default {
       }
     }
   },
+  methods: {
+    updateQuery (query) {
+      this.$store.commit('search', query)
+    }
+  },
   head () {
     const serverName = this.server?.name
     const defaultTitle = serverName ? `${serverName} - Harmony` : 'Harmony'
@@ -77,11 +82,6 @@ export default {
     return {
       title: null,
       titleTemplate: titleChunk => titleChunk ? `${titleChunk}${channelSuffix} - Harmony` : defaultTitle
-    }
-  },
-  methods: {
-    updateQuery (query) {
-      this.$store.commit('search', query)
     }
   }
 }

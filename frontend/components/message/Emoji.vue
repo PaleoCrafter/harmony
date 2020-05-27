@@ -1,13 +1,13 @@
 <template>
-  <span @mouseover="startAlignment" @mouseleave="stopAlignment" :class="['emoji', { 'emoji--large': large }]">
+  <span :class="['emoji', { 'emoji--large': large }]" @mouseover="startAlignment" @mouseleave="stopAlignment">
     <span class="emoji__content">
       <img :src="url" :alt="name" class="emoji__image">
       <slot />
     </span>
 
     <span
-      ref="aligned"
       v-if="name.startsWith(':')"
+      ref="aligned"
       class="emoji__name"
     >
       <span>{{ name }}</span>

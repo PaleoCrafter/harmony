@@ -8,8 +8,8 @@
     </div>
     <Message
       v-for="message in group.messages"
-      :message="message"
       :key="message.id"
+      :message="message"
     />
   </section>
 </template>

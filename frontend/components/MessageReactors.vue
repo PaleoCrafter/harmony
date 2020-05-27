@@ -3,14 +3,18 @@
     <div class="message-reactors__reactions">
       <Reaction
         v-for="(reaction, index) in reactions"
-        @click="selectReaction"
         :key="index"
         :reaction="reaction"
         :class="[{ 'message-reactors__reactions--active': reaction === selectedReaction }]"
+        @click="selectReaction"
       />
     </div>
     <ul class="message-reactors__list">
-      <li v-for="reactor in (reactors || [])" :class="reactor.deletedAt !== null ? 'message-reactors__list--deleted' : undefined">
+      <li
+        v-for="reactor in (reactors || [])"
+        :key="reactor.id"
+        :class="reactor.deletedAt !== null ? 'message-reactors__list--deleted' : undefined"
+      >
         <span v-if="reactor.user.nickname !== null" class="message-reactors__user-nickname">
           {{ reactor.user.nickname }}
         </span>

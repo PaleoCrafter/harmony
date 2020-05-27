@@ -1,9 +1,9 @@
 <template>
   <Emoji
-    @click.native="$emit('click', reaction)"
     :url="emoji.url"
     :name="emoji.name"
     :class="['reaction', { 'reaction--deleted': reaction.count === 0 }]"
+    @click.native="$emit('click', reaction)"
   >
     <span class="reaction__count">{{ reaction.count }}</span>
   </Emoji>

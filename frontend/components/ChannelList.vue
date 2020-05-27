@@ -6,7 +6,7 @@
         :key="category.name"
         :class="['channel-list__category', { 'channel-list__category--collapsed': category.collapsed }]"
       >
-        <span @click="toggleCategory(type, category.name)" class="channel-list__category-header">
+        <span class="channel-list__category-header" @click="toggleCategory(type, category.name)">
           <ChevronRightIcon v-if="category.collapsed" size="1x" class="channel-list__category-chevron" />
           <ChevronDownIcon v-else size="1x" class="channel-list__category-chevron" />
           {{ category.name }}
@@ -15,9 +15,9 @@
           <li v-for="channel in category.channels" :key="channel.id">
             <a
               v-if="isChannelActive(channel.id)"
-              @click.prevent="$store.commit('closeSidebar')"
               href="#"
               class="channel-list__item channel-list__item--active"
+              @click.prevent="$store.commit('closeSidebar')"
             >
               <ChannelName :channel="channel" />
             </a>

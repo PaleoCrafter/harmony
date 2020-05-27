@@ -17,7 +17,7 @@ export default class FieldValue extends Node {
       toDOM: node => [
         'span',
         {
-          class: `search-box__field-value`
+          class: 'search-box__field-value'
         },
         node.attrs.label
       ]

@@ -11,7 +11,7 @@
       <div v-if="fetchingMoreBackward" class="channel__loading">
         <LoadingSpinner />
       </div>
-      <MessageList ref="messages" v-if="fetchingMoreBackward || fetchingMore || !loading" :messages="messages || []" />
+      <MessageList v-if="fetchingMoreBackward || fetchingMore || !loading" ref="messages" :messages="messages || []" />
       <div
         v-if="(loading && !fetchingMoreBackward) || messages === undefined"
         :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
@@ -26,7 +26,7 @@
           There are currently no messages in this channel for the selected date.
         </div>
         <div v-if="(endReached || messages !== undefined && messages.length === 0) && isToday" class="channel__more">
-          <button @click="loadMoreForward" :disabled="autoRefresh" class="channel__button">
+          <button :disabled="autoRefresh" class="channel__button" @click="loadMoreForward">
             Refresh
           </button>
           <Divider />

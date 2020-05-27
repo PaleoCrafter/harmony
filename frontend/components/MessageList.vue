@@ -1,6 +1,6 @@
 <template>
   <div class="message-list">
-    <MessageGroup v-for="(group, index) in groupedMessages" :group="group" :key="group.firstTimestamp.toISOString() + index" />
+    <MessageGroup v-for="(group, index) in groupedMessages" :key="group.firstTimestamp.toISOString() + index" :group="group" />
   </div>
 </template>
 

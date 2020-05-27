@@ -40,7 +40,7 @@
                 preload="metadata"
                 playsinline
               />
-              <button v-if="!playingVideo" @click.prevent="playVideo" aria-label="Play video" class="attachment__button attachment__play">
+              <button v-if="!playingVideo" aria-label="Play video" class="attachment__button attachment__play" @click.prevent="playVideo">
                 <PlayIcon fill="currentColor" stroke="none" />
               </button>
             </template>
@@ -49,7 +49,7 @@
         </div>
       </div>
     </div>
-    <div v-if="attachment.spoiler && !spoilerRevealed" @click.capture.stop="spoilerRevealed = true" class="attachment__spoiler-warning">
+    <div v-if="attachment.spoiler && !spoilerRevealed" class="attachment__spoiler-warning" @click.capture.stop="spoilerRevealed = true">
       <span>Spoiler</span>
     </div>
   </div>

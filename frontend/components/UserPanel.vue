@@ -1,13 +1,13 @@
 <template>
-  <div @click.self="expanded = !expanded" :class="['user-panel', { 'user-panel--expanded': expanded }]">
+  <div :class="['user-panel', { 'user-panel--expanded': expanded }]" @click.self="expanded = !expanded">
     <UserIcon size="2x" class="user-panel__icon" />
     <div v-if="identity !== null" class="user-panel__info">
       <span class="user-panel__name">{{ identity.name }}</span>
       <span class="user-panel__discriminator">#{{ identity.discriminator }}</span>
     </div>
     <transition-group class="user-panel__icon" name="user-panel__icon">
-      <ChevronUpIcon key="expand" v-if="!expanded" class="user-panel__icon--expand" size="1.5x" />
-      <XIcon key="close" v-else size="1.5x" class="user-panel__icon--close" />
+      <ChevronUpIcon v-if="!expanded" key="expand" class="user-panel__icon--expand" size="1.5x" />
+      <XIcon v-else key="close" size="1.5x" class="user-panel__icon--close" />
     </transition-group>
     <transition name="user-panel__dropdown">
       <div v-if="expanded" class="user-panel__dropdown">
@@ -15,7 +15,7 @@
           Privacy Policy
           <ShieldIcon size="1.6x" class="user-panel__dropdown-link-icon" />
         </nuxt-link>
-        <a @click="logout" href="#" class="user-panel__logout">
+        <a href="#" class="user-panel__logout" @click="logout">
           Logout
           <LogOutIcon size="1.6x" class="user-panel__logout-icon" />
         </a>

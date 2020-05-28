@@ -16,7 +16,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 
 fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessageChannel): Flux<Message> =
@@ -50,6 +50,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
             )
         }
         .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
+        .filter { (_, channel) -> arguments.size <= 2 || channel.id.toString() in arguments.drop(2) }
         .flatMapSequential { (guild, channel) ->
             readOldMessages(startDate, endDate, channel)
                 .flatMap { msg ->

@@ -27,7 +27,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
     val logger = LogManager.getLogger("Dump")
     val startDate = arguments.firstOrNull()?.let { LocalDate.parse(it) }
         ?: throw IllegalArgumentException("Dump start date must be provided via YYYY-MM-DD argument")
-    val client = DiscordClientBuilder(
+    val client = DiscordClientBuilder.create(
         requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
 
@@ -58,6 +58,9 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
                             .flatMap { reaction -> msg.getReactors(reaction.emoji).map { reaction.emoji to it.id } }
                             .collectList()
                     )
+                }
+                .onErrorContinue { e, t ->
+                    logger.error("Failed to import message $e", t)
                 }
                 .window(1000)
                 .flatMap { group ->

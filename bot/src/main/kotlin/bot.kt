@@ -230,6 +230,9 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
                     }
                 }
         }
+        .onErrorContinue { t, e ->
+            emitter.logger.error("Failed to handle message event, event: $e", t)
+        }
         .subscribe()
 
     emitter.map<MemberJoinEvent, UserInfo> { event ->
@@ -291,7 +294,7 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
             )
         }
         .flatMap { (channel, action, clear, channels) ->
-            val channelList = channels.map { " - ${it.mention}" }.joinToString("\n")
+            val channelList = channels.joinToString("\n") { " - ${it.mention}" }
             when (action) {
                 "add" -> {
                     ignoredChannels.addAll(channels.map { it.id.asString() })
@@ -350,6 +353,9 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
                     channel.createMessage("Currently the following channels are ignored:\n$channelList")
                 }
             }
+        }
+        .onErrorContinue { t, e ->
+            emitter.logger.error("Failed to handle command, event: $e", t)
         }
         .subscribe()
 

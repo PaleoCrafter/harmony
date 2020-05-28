@@ -28,8 +28,16 @@ class EventEmitter(val dispatcher: EventDispatcher, val handlers: List<EventHand
         noinline mapper: (event: DiscordEvent) -> Flux<Pair<Snowflake, EmittedEvent>>
     ) {
         dispatcher.on(DiscordEvent::class.java)
-            .flatMap { mapper(it) }
+            .flatMap { event ->
+                mapper(event).onErrorResume {
+                    logger.error("Failed to handle event $event", it)
+                    Mono.empty()
+                }
+            }
             .map { emit(it.first, it.second) }
+            .onErrorContinue { t, e ->
+                logger.error("Failed to emit event, event: $e", t)
+            }
             .subscribe()
     }
 

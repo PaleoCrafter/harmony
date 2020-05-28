@@ -21,12 +21,11 @@ fun main(args: Array<String>) {
     } catch (exception: IOException) {
         logger.error("Could not read ignored channels, defaulting to empty")
     }
-    val client = DiscordClientBuilder(
+    val client = DiscordClientBuilder.create(
         requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
 
-    val action = args.firstOrNull() ?: "import"
-    when (action) {
+    when (val action = args.firstOrNull() ?: "import") {
         "import" -> {
             val emitter = EventEmitter(client.eventDispatcher, listOf(buildDbHandler(), buildElasticHandler()))
 

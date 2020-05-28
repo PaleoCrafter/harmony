@@ -37,6 +37,13 @@
         </div>
       </div>
     </div>
+
+    <transition name="channel__jump">
+      <button v-if="!endReached" class="channel__button channel__jump">
+        <ArrowDownIcon />
+        Jump to end
+      </button>
+    </transition>
   </div>
 </template>
 
@@ -46,6 +53,7 @@ import addDays from 'date-fns/addDays'
 import startOfDay from 'date-fns/startOfDay'
 import endOfDay from 'date-fns/endOfDay'
 import { mapState } from 'vuex'
+import { ArrowDownIcon } from 'vue-feather-icons'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
 import MessageList from '@/components/MessageList.vue'
@@ -53,7 +61,7 @@ import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Divider from '@/components/Divider.vue'
 
 export default {
-  components: { Divider, LoadingSpinner, MessageList },
+  components: { Divider, LoadingSpinner, MessageList, ArrowDownIcon },
   validate ({ params: { date } }) {
     if (date === undefined) {
       return true
@@ -396,6 +404,19 @@ export default {
 
     input {
       margin-right: 0.5rem;
+    }
+  }
+
+  &__jump {
+    position: absolute;
+    align-self: center;
+    bottom: 1rem;
+    border-radius: 2rem;
+    display: flex;
+    align-items: center;
+
+    .feather {
+      font-size: 0.5em;
     }
   }
 }

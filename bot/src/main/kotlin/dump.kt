@@ -47,7 +47,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
             )
         }
         .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
-        .flatMap { (guild, channel) ->
+        .flatMapSequential { (guild, channel) ->
             readOldMessages(startDate, channel)
                 .flatMap { msg ->
                     Mono.zip(
@@ -63,7 +63,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
                     logger.error("Failed to import message $e", t)
                 }
                 .window(1000)
-                .flatMap { group ->
+                .flatMapSequential { group ->
                     group.collectList().map { messages ->
                         dbDumper(guild, channel, messages)
                         elasticDumper(guild, channel, messages)

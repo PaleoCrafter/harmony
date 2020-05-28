@@ -333,6 +333,11 @@ export default {
     font-weight: bold;
     grid-column: 1;
     grid-row: 3;
+
+    &:only-child {
+      white-space: nowrap;
+      word-break: normal;
+    }
   }
 
   &__description {

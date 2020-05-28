@@ -10,19 +10,54 @@ import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.core.`object`.util.Snowflake
+import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.Logger
+import org.elasticsearch.action.bulk.BackoffPolicy
+import org.elasticsearch.action.bulk.BulkProcessor
+import org.elasticsearch.action.bulk.BulkRequest
+import org.elasticsearch.action.bulk.BulkResponse
 import org.elasticsearch.action.index.IndexRequest
 import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestHighLevelClient
+import org.elasticsearch.common.unit.TimeValue
 import reactor.util.function.Tuple3
 import reactor.util.function.component1
 import reactor.util.function.component2
+
+private object BulkListener : BulkProcessor.Listener {
+    private val logger: Logger = LogManager.getLogger("elastic-bulk")
+
+    override fun beforeBulk(executionId: Long, request: BulkRequest) {
+        logger.info("About to perform bulk request [${executionId}] with ${request.numberOfActions()} actions")
+    }
+
+    override fun afterBulk(executionId: Long, request: BulkRequest, response: BulkResponse) {
+        if (response.hasFailures()) {
+            logger.warn("Bulk [${executionId}] executed with failures")
+        } else {
+            logger.info("Bulk [${executionId}}] completed in ${response.took.millis} milliseconds")
+        }
+    }
+
+    override fun afterBulk(executionId: Long, request: BulkRequest, failure: Throwable) {
+        logger.error("Failed to execute bulk [${executionId}]", failure)
+    }
+}
 
 fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
     guild: Guild,
     channel: GuildMessageChannel,
     messages: List<Tuple3<Message, UserInfo, List<Pair<ReactionEmoji, Snowflake>>>>
-) -> Unit =
-    { guild, channel, messages ->
+) -> Unit {
+    val bulkProcessor = BulkProcessor.builder(
+        { request, bulkListener -> elasticClient.bulkAsync(request, RequestOptions.DEFAULT, bulkListener) },
+        BulkListener
+    ).run {
+        setFlushInterval(TimeValue.timeValueSeconds(10L))
+        setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(50L), Int.MAX_VALUE))
+    }.build()
+
+    return { guild, channel, messages ->
         messages.forEach { (message, author) ->
             val (_, state) = DiscordMarkdownRules.parse(
                 message.content.orElse("")
@@ -44,7 +79,7 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
             messageProperties += message.attachments.map { it.type }
             messageProperties += message.embeds.flatMap { it.mediaTypes }
 
-            elasticClient.index(
+            bulkProcessor.add(
                 IndexRequest(INDEX).id(message.id.asString()).source(
                     mapOf(
                         "tie_breaker_id" to message.id.asString(),
@@ -61,11 +96,13 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
                         "attachments" to message.attachments.isNotEmpty(),
                         "timestamp" to message.timestamp.toEpochMilli()
                     )
-                ),
-                RequestOptions.DEFAULT
+                )
             )
         }
+
+        bulkProcessor.flush()
     }
+}
 
 private val Attachment.type: String
     get() = when (this.filename.substring(this.filename.lastIndexOf('.') + 1).toLowerCase()) {

@@ -68,7 +68,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
                         dbDumper(guild, channel, messages)
                         elasticDumper(guild, channel, messages)
 
-                        logger.info("Successfully imported ${messages.size} messages into #${channel.name} on '${guild.name}'")
+                        logger.info("Successfully imported ${messages.size} messages into #${channel.name} on '${guild.name}' last was from ${messages.last().t1.timestamp}")
                     }
                 }
         }

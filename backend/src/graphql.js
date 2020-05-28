@@ -236,7 +236,7 @@ function initLoaders (user) {
             discriminator: user.discriminator,
             bot: user.bot,
             color: () => userRoles.load({ server, id: user.id })
-              .then(roles => roles.filter(({ color: { r, g, b } }) => r !== 0 && b !== 0 && g !== 0).map(role => role.color)[0] || null),
+              .then(roles => roles.filter(({ color: { r, g, b } }) => r !== 0 || b !== 0 || g !== 0).map(role => role.color)[0] || null),
             nickname: () => userNicknames.load({ server, id: user.id }).then(nicks => nicks.map(nick => nick.name)[0] || null)
           }
         }

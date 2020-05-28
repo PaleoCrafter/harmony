@@ -23,7 +23,7 @@
         :key="category.name"
         :class="['channel-list__category', { 'channel-list__category--collapsed': category.collapsed }]"
       >
-        <span class="channel-list__category-header" @click="toggleCategory(type, category.name)">
+        <span class="channel-list__category-header" @click="toggleCategory(typeName, category.name)">
           <ChevronRightIcon v-if="category.collapsed" size="1x" class="channel-list__category-chevron" />
           <ChevronDownIcon v-else size="1x" class="channel-list__category-chevron" />
           {{ category.name }}

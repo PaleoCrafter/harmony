@@ -14,19 +14,22 @@ import reactor.util.function.component1
 import reactor.util.function.component2
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
-fun readOldMessages(lastDate: LocalDate, channel: GuildMessageChannel): Flux<Message> =
-    channel.getMessagesBefore(Snowflake.of(Instant.now()))
+fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessageChannel): Flux<Message> =
+    channel.getMessagesBefore(Snowflake.of(endDate))
         .filter { it.type == Message.Type.DEFAULT }
-        .takeUntil { it.timestamp < lastDate.atTime(0, 0).toInstant(ZoneOffset.UTC) }
+        .takeUntil { it.timestamp < startDate.atTime(0, 0).toInstant(ZoneOffset.UTC) }
 
 fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, arguments: List<String>) {
     val logger = LogManager.getLogger("Dump")
-    val startDate = arguments.firstOrNull()?.let { LocalDate.parse(it) }
+    val startDate = arguments.getOrNull(0)?.let { LocalDate.parse(it) }
         ?: throw IllegalArgumentException("Dump start date must be provided via YYYY-MM-DD argument")
+    val endDate = arguments.getOrNull(1)?.let { LocalDate.parse(it).atTime(0, 0).toInstant(ZoneOffset.UTC) }
+        ?: Instant.now()
     val client = DiscordClientBuilder.create(
         requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
@@ -34,7 +37,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
     val dbDumper = buildDbDumper()
     val elasticDumper = buildElasticDumper()
 
-    logger.info("Starting dump up until $startDate")
+    logger.info("Starting dump from $startDate until ${endDate.atZone(ZoneId.systemDefault())}")
 
     client.eventDispatcher.on(GuildCreateEvent::class.java)
         .flatMap {
@@ -48,7 +51,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
         }
         .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
         .flatMapSequential { (guild, channel) ->
-            readOldMessages(startDate, channel)
+            readOldMessages(startDate, endDate, channel)
                 .flatMap { msg ->
                     Mono.zip(
                         Mono.just(msg),

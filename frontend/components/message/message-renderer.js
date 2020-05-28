@@ -51,6 +51,7 @@ export default function renderNode (node, h, message, emojisOnly) {
       return h(node.type, node.content.map(child => renderNode(child, h, message, false)))
     case 'link':
     case 'url':
+    case 'autolink':
       return h(
         'a',
         {

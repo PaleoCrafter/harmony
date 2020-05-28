@@ -36,7 +36,7 @@
         <ArrowLeftIcon v-else />
       </button>
     </header>
-    <nuxt-child v-if="!loadingLatest" :date="date" class="channel__child" />
+    <nuxt-child v-if="!loadingLatest" :date="date" :may-load="!loadingLatest" class="channel__child" />
     <portal-target name="search-results" class="channel__search-results" />
   </div>
 </template>

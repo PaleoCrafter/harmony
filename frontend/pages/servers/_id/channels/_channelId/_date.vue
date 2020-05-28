@@ -65,6 +65,9 @@ export default {
     date: {
       type: null,
       required: true
+    },
+    mayLoad: {
+      type: Boolean
     }
   },
   data () {
@@ -118,6 +121,13 @@ export default {
       } else if (refresh) {
         this.refreshHandle = setTimeout(this.performAutoRefresh, 30000)
       }
+    },
+    mayLoad (may) {
+      if (may) {
+        const { startDate, endDate } = this.getInitialDates(this.$store.state.timezone)
+        this.startDate = startDate
+        this.endDate = endDate
+      }
     }
   },
   apollo: {
@@ -163,6 +173,9 @@ export default {
             })
           }
         })
+      },
+      skip () {
+        return !this.mayLoad
       }
     }
   },
@@ -275,6 +288,9 @@ export default {
     reset () {
       this.messages = undefined
       this.scrolledToMessage = false
+      const { startDate, endDate } = this.getInitialDates(this.$store.state.timezone)
+      this.startDate = startDate
+      this.endDate = endDate
       this.$store.commit('resetHighlightedMessage')
       this.$apollo.queries.messages.refresh()
     }

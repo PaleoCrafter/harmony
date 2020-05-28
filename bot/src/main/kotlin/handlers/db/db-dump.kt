@@ -17,6 +17,7 @@ import reactor.util.function.Tuple3
 import reactor.util.function.component1
 import reactor.util.function.component2
 import reactor.util.function.component3
+import java.sql.Connection
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -27,7 +28,7 @@ fun buildDbDumperImpl(): (
     messages: List<Tuple3<Message, UserInfo, List<Pair<ReactionEmoji, Snowflake>>>>
 ) -> Unit =
     { guild, _, messages ->
-        transaction {
+        transaction(Connection.TRANSACTION_READ_COMMITTED, 2) {
             val messageIds = messages.map { (msg) -> msg.id.asString() }
             val existing = Messages.select { Messages.id inList messageIds }
                 .map { it[Messages.id] }

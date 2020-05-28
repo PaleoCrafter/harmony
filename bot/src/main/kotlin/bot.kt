@@ -284,7 +284,7 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
                 Mono.just(action),
                 Mono.just("--clear" in words),
                 Flux.fromIterable(channelIds)
-                    .flatMap { client.getChannelById(Snowflake.of(it)) }
+                    .flatMap { client.getChannelById(Snowflake.of(it)).onErrorResume { Mono.empty() } }
                     .filter { it is GuildMessageChannel && it.guildId == guildId }
                     .map { it as GuildMessageChannel }
                     .collectList()

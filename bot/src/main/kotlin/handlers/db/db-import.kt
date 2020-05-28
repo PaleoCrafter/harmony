@@ -106,6 +106,7 @@ fun buildDbHandlerImpl() =
                     it[server] = event.server.id
                     it[name] = event.name
                     it[category] = event.category
+                    it[categoryPosition] = event.categoryPosition
                     it[position] = event.position
                     it[type] = event.type
                 }

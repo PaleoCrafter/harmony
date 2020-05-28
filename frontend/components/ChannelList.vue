@@ -1,8 +1,25 @@
 <template>
   <div class="channel-list">
-    <ul v-for="type in Object.keys(categories)" :key="type" :class="['channel-list__categories', `channel-list__categories--${type}`]">
+    <ul
+      v-for="(type, typeName) in categories"
+      :key="typeName"
+      :class="['channel-list__categories', `channel-list__categories--${typeName}`]"
+    >
+      <li v-for="channel in type.uncategorized" :key="channel.id" class="channel-list__root-channel">
+        <a
+          v-if="isChannelActive(channel.id)"
+          href="#"
+          class="channel-list__item channel-list__item--active"
+          @click.prevent="$store.commit('closeSidebar')"
+        >
+          <ChannelName :channel="channel" />
+        </a>
+        <nuxt-link v-else :to="`/servers/${server}/channels/${channel.id}`" class="channel-list__item">
+          <ChannelName :channel="channel" />
+        </nuxt-link>
+      </li>
       <li
-        v-for="category in categories[type]"
+        v-for="category in type.categories"
         :key="category.name"
         :class="['channel-list__category', { 'channel-list__category--collapsed': category.collapsed }]"
       >
@@ -53,14 +70,20 @@ export default {
     ...mapState(['collapsedCategories']),
     categories () {
       const categories = { active: {}, deleted: {} }
-      const result = { active: [], deleted: [] }
+      const result = { active: { uncategorized: [], categories: [] }, deleted: { uncategorized: [], categories: [] } }
 
       this.channels.forEach((channel) => {
         const type = channel.deletedAt !== null ? 'deleted' : 'active'
+
+        if (channel.category === null) {
+          result[type].uncategorized.push(channel)
+          return
+        }
+
         let category = categories[type][channel.category]
         if (category === undefined) {
           category = { name: channel.category, collapsed: this.isCollapsed(type, channel.category), channels: [] }
-          result[type].push(category)
+          result[type].categories.push(category)
           categories[type][channel.category] = category
         }
         category.channels.push(channel)
@@ -158,6 +181,10 @@ export default {
         }
       }
     }
+  }
+
+  &__root-channel {
+    padding: 0.0625rem 0.5rem;
   }
 
   &__channels {

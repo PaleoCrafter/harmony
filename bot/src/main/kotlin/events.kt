@@ -72,7 +72,8 @@ data class ChannelInfo(
     val id: String,
     val server: ServerInfo,
     val name: String,
-    val category: String = "Text channels",
+    val category: String?,
+    val categoryPosition: Int,
     val position: Int,
     val type: Type,
     val permissionOverrides: List<PermissionOverride>
@@ -81,14 +82,17 @@ data class ChannelInfo(
         fun of(channel: GuildMessageChannel) =
             channel.guild
                 .flatMap {
-                    Mono.zip(ServerInfo.of(it), channel.category)
+                    Mono.zip(ServerInfo.of(it), channel.category.map { c -> Optional.of(c) }.defaultIfEmpty(Optional.empty()))
                 }
                 .map {
+                    val category = it.t2.orElse(null)
+
                     ChannelInfo(
                         channel.id.asString(),
                         it.t1,
                         channel.name,
-                        it.t2.name,
+                        category?.name,
+                        category?.rawPosition ?: -1,
                         channel.rawPosition,
                         if (channel.type == Channel.Type.GUILD_NEWS)
                             Type.NEWS

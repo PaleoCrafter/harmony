@@ -71,6 +71,14 @@ const Channel = db.define('channel', {
   },
   category: {
     type: Sequelize.STRING,
+    allowNull: true
+  },
+  categoryPosition: {
+    type: Sequelize.INTEGER,
+    allowNull: false
+  },
+  position: {
+    type: Sequelize.INTEGER,
     allowNull: false
   },
   type: {

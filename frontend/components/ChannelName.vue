@@ -40,6 +40,7 @@ export default {
   &__text {
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>

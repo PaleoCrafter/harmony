@@ -50,7 +50,7 @@ fun runDump(ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>, argu
             )
         }
         .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
-        .filter { (_, channel) -> arguments.size <= 2 || channel.id.toString() in arguments.drop(2) }
+        .filter { (_, channel) -> arguments.size <= 2 || channel.id.asString() in arguments.drop(2) }
         .flatMapSequential { (guild, channel) ->
             logger.info("Starting dump for #${channel.name} on '${guild.name}'")
             readOldMessages(startDate, endDate, channel)

@@ -35,7 +35,7 @@ private object BulkListener : BulkProcessor.Listener {
         if (response.hasFailures()) {
             logger.warn("Bulk [${executionId}] executed with failures")
         } else {
-            logger.info("Bulk [${executionId}}] completed in ${response.took.millis} milliseconds")
+            logger.info("Bulk [${executionId}] completed in ${response.took.millis} milliseconds")
         }
     }
 

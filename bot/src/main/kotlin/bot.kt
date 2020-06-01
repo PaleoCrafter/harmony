@@ -154,6 +154,7 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         validateMessage(Mono.just(message), *producers)
 
     client.eventDispatcher.on(MessageEvent::class.java)
+        .map { it.also { emitter.logger.info("Message event received: ${it.javaClass}") } }
         .flatMap<Pair<Snowflake, () -> Publisher<*>>> { event ->
             when (event) {
                 is MessageCreateEvent ->

@@ -144,6 +144,7 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         message.filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
             .flux()
             .flatMap { msg ->
+                emitter.logger.info("Message event received: ${msg}")
                 Flux.fromIterable(producers.map { msg.id to { it(msg) } })
             }
 
@@ -154,7 +155,6 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         validateMessage(Mono.just(message), *producers)
 
     client.eventDispatcher.on(MessageEvent::class.java)
-        .map { it.also { emitter.logger.info("Message event received: ${it.javaClass}") } }
         .flatMap<Pair<Snowflake, () -> Publisher<*>>> { event ->
             when (event) {
                 is MessageCreateEvent ->
@@ -222,8 +222,9 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
                 else -> Flux.empty()
             }
         }
-        .groupBy { it.first }
+        .groupBy { it.first.also { id -> emitter.logger.info("Grouped message event for $id") } }
         .flatMap { group ->
+            emitter.logger.info("Handling message group ${group.key()}")
             group.flatMapSequential { (_, builder) -> builder() }
                 .flatMapSequential { event ->
                     Mono.create<Unit> {

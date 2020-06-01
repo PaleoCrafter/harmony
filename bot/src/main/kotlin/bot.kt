@@ -33,6 +33,7 @@ import discord4j.core.event.domain.role.RoleUpdateEvent
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.util.concurrent.Queues
 import reactor.util.function.Tuple4
 import reactor.util.function.component1
 import reactor.util.function.component2
@@ -40,6 +41,7 @@ import reactor.util.function.component3
 import reactor.util.function.component4
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -225,8 +227,8 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         .groupBy { it.first.also { id -> emitter.logger.info("Grouped message event for $id") } }
         .flatMap { group ->
             emitter.logger.info("Handling message group ${group.key()}")
-            group.flatMapSequential { (_, builder) -> builder() }
-                .flatMapSequential { event ->
+            group.take(Duration.ofMillis(1000)).concatMap { (_, builder) -> builder() }
+                .concatMap { event ->
                     Mono.create<Unit> {
                         it.success(emitter.emit(group.key()!!, event))
                     }

@@ -41,7 +41,7 @@
     </div>
 
     <transition name="channel__jump">
-      <button v-if="!endReached || !scrollEndReached" class="channel__button channel__jump" @click="jumpToEnd">
+      <button v-if="!loading && (!endReached || !scrollEndReached)" class="channel__button channel__jump" @click="jumpToEnd">
         <ArrowDownIcon />
         Jump to end
       </button>
@@ -92,7 +92,7 @@ export default {
       fetchingMoreBackward: false,
       fetchingMore: false,
       scrolledToMessage: false,
-      scrollEndReached: false
+      scrollEndReached: true
     }
   },
   computed: {
@@ -190,11 +190,8 @@ export default {
     }
   },
   mounted () {
-    if (this.$refs.messages) {
-      this.scrollToMessage()
-    } else {
-      this.scrollToMessage()
-    }
+    this.scrollToMessage()
+    this.onContainerScroll({ target: this.$refs.scrollContainer })
   },
   methods: {
     scrollToMessage () {
@@ -308,6 +305,7 @@ export default {
       this.$apollo.queries.messages.refresh()
       this.startReached = false
       this.endReached = false
+      this.scrollEndReached = true
     },
     onContainerScroll ({ target }) {
       const viewportBottom = target.scrollTop + target.clientHeight

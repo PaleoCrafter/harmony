@@ -745,7 +745,7 @@ const queryResolver = {
 
     return message
   },
-  async latestMessage (parent, { channel: channelId }, { request }) {
+  async latestMessage (parent, { channel: channelId, before }, { request }) {
     const channel = await request.loaders.channels.load(channelId)
     const permissions = (await getPermissions(request.user, channel.server)).channels[channel.id]
 
@@ -765,6 +765,15 @@ const queryResolver = {
                 user: request.user.id
               }
             }
+        ),
+        ...(
+          before === null
+            ? {}
+            : {
+              createdAt: {
+                [Op.lt]: before
+              }
+            }
         )
       },
       order: [['createdAt', 'DESC']]
@@ -774,7 +783,7 @@ const queryResolver = {
       return null
     }
 
-    return message.createdAt
+    return { id: message.id, createdAt: message.createdAt }
   }
 }
 

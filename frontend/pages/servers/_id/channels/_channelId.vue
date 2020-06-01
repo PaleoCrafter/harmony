@@ -63,7 +63,7 @@ export default {
     date () {
       if (this.$route.params.date === undefined) {
         const today = utcToZonedTime(Date.now(), this.timezone)
-        return this.latestMessage ? startOfDay(utcToZonedTime(this.latestMessage, this.timezone)) : today
+        return this.latestMessage ? startOfDay(utcToZonedTime(Number.parseInt(this.latestMessage.createdAt, 10), this.timezone)) : today
       }
 
       return toDate(this.$route.params.date, { timeZone: this.timezone })
@@ -88,7 +88,8 @@ export default {
       fetchPolicy: 'network-only',
       variables () {
         return {
-          channel: this.$route.params.channelId
+          channel: this.$route.params.channelId,
+          before: null
         }
       },
       watchLoading (loading) {

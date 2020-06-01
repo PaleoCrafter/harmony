@@ -30,6 +30,7 @@ export default {
   },
   apollo: {
     details: {
+      fetchPolicy: 'cache-and-network',
       query: detailsQuery,
       skip () {
         return !this.message.hasEmbeds && !this.message.hasAttachments && !this.message.hasReactions

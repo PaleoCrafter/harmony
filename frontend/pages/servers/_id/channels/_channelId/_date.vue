@@ -1,17 +1,19 @@
 <template>
   <div class="channel__messages">
     <div
+      ref="scrollContainer"
       v-infinite-scroll="loadMoreForward"
       infinite-scroll-disabled="mayNotLoadForward"
       infinite-scroll-backward="loadMoreBackward"
       infinite-scroll-backward-disabled="mayNotLoadBackward"
       infinite-scroll-distance="100"
       class="channel__messages-container"
+      @scroll="onContainerScroll"
     >
       <div v-if="fetchingMoreBackward" class="channel__loading">
         <LoadingSpinner />
       </div>
-      <MessageList v-if="fetchingMoreBackward || fetchingMore || !loading" ref="messages" :messages="messages || []" />
+      <MessageList ref="messages" :messages="messages || []" />
       <div
         v-if="(loading && !fetchingMoreBackward) || messages === undefined"
         :class="['channel__loading', { 'channel__loading--empty': messages === undefined || messages.length === 0 || !fetchingMore }]"
@@ -39,7 +41,7 @@
     </div>
 
     <transition name="channel__jump">
-      <button v-if="!endReached" class="channel__button channel__jump">
+      <button v-if="!endReached || !scrollEndReached" class="channel__button channel__jump" @click="jumpToEnd">
         <ArrowDownIcon />
         Jump to end
       </button>
@@ -56,6 +58,7 @@ import { mapState } from 'vuex'
 import { ArrowDownIcon } from 'vue-feather-icons'
 import channelQuery from '@/apollo/queries/channel.gql'
 import messagesQuery from '@/apollo/queries/channel-messages.gql'
+import latestMessageQuery from '@/apollo/queries/latest-channel-message.gql'
 import MessageList from '@/components/MessageList.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import Divider from '@/components/Divider.vue'
@@ -88,16 +91,17 @@ export default {
       refreshHandle: null,
       fetchingMoreBackward: false,
       fetchingMore: false,
-      scrolledToMessage: false
+      scrolledToMessage: false,
+      scrollEndReached: false
     }
   },
   computed: {
     ...mapState(['timezone']),
     mayNotLoadBackward () {
-      return this.startReached || this.mayNotLoadCommon
+      return this.startReached || this.mayNotLoadCommon || this.fetchingMoreBackward
     },
     mayNotLoadForward () {
-      return this.endReached || this.mayNotLoadCommon
+      return this.endReached || this.mayNotLoadCommon || this.fetchingMore
     },
     mayNotLoadCommon () {
       return this.$apollo.loading || this.messages === undefined || this.messages?.length === 0 ||
@@ -176,9 +180,7 @@ export default {
           this.loading = loading
 
           if (process.client) {
-            this.$nextTick(() => {
-              this.scrollToMessage()
-            })
+            this.scrollToMessage()
           }
         })
       },
@@ -191,20 +193,22 @@ export default {
     if (this.$refs.messages) {
       this.scrollToMessage()
     } else {
-      this.nextTick(() => {
-        this.scrollToMessage()
-      })
+      this.scrollToMessage()
     }
   },
   methods: {
     scrollToMessage () {
-      const { message } = this.$route.query
-      if (!this.scrolledToMessage && !this.loading && message) {
-        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${message}"]`)
-        messageElement.scrollIntoView()
-        this.scrolledToMessage = true
-        this.$store.commit('setHighlightedMessage', message)
-      }
+      setTimeout(() => {
+        const { message } = this.$route.query
+        if (!this.scrolledToMessage && !this.loading && message) {
+          const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${message}"]`)
+          if (messageElement !== null) {
+            messageElement.scrollIntoView()
+          }
+          this.scrolledToMessage = true
+          this.$store.commit('setHighlightedMessage', message)
+        }
+      }, 100)
     },
     getInitialDates (timezone) {
       const usedTimezone = this.timezone || timezone
@@ -250,6 +254,8 @@ export default {
       this.fetchingMore = false
     },
     async loadMoreBackward () {
+      const oldHeight = this.$refs.scrollContainer.scrollHeight
+      const scrollPosition = this.$refs.scrollContainer.scrollTop
       const firstMessage = this.messages[0]
       // Fetch more data and transform the original result
       try {
@@ -284,8 +290,7 @@ export default {
         console.error(error)
       }
       this.$nextTick(() => {
-        const messageElement = this.$refs.messages.$el.querySelector(`[data-message-id="${firstMessage.ref}"]`)
-        messageElement.scrollIntoView()
+        this.$refs.scrollContainer.scrollTop = scrollPosition + this.$refs.scrollContainer.scrollHeight - oldHeight
         this.fetchingMoreBackward = false
       })
     },
@@ -301,6 +306,29 @@ export default {
       this.endDate = endDate
       this.$store.commit('resetHighlightedMessage')
       this.$apollo.queries.messages.refresh()
+      this.startReached = false
+      this.endReached = false
+    },
+    onContainerScroll ({ target }) {
+      const viewportBottom = target.scrollTop + target.clientHeight
+
+      this.scrollEndReached = target.scrollHeight - viewportBottom <= 100
+    },
+    async jumpToEnd () {
+      if (this.endReached) {
+        this.$refs.scrollContainer.scrollTop = this.$refs.scrollContainer.scrollHeight - this.$refs.scrollContainer.clientHeight
+        return
+      }
+
+      const { data: { latestMessage: { id } } } = await this.$apollo.provider.defaultClient.query({
+        query: latestMessageQuery,
+        variables: {
+          channel: this.$route.params.channelId,
+          before: this.endDate.toISOString()
+        }
+      })
+
+      this.$router.replace({ ...this.$route, query: { message: id } })
     }
   }
 }
@@ -417,6 +445,15 @@ export default {
 
     .feather {
       font-size: 0.5em;
+    }
+
+    &-enter-active, &-leave-active {
+      transition: transform .2s ease-in-out, opacity .2s ease-in-out;
+    }
+
+    &-enter, &-leave-to {
+      transform: translateY(150%);
+      opacity: 0;
     }
   }
 }

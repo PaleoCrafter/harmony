@@ -8,7 +8,8 @@ const users = (title) => {
       variables: {
         server,
         query
-      }
+      },
+      fetchPolicy: 'network-only'
     })
 
     return [
@@ -53,7 +54,8 @@ export default {
       query: channelsQuery,
       variables: {
         id: server
-      }
+      },
+      fetchPolicy: 'network-only'
     })
 
     const adjustedQuery = query.startsWith('#') ? query.slice(1) : query

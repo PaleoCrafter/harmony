@@ -323,7 +323,8 @@ export default {
         variables: {
           channel: this.$route.params.channelId,
           before: this.endDate.toISOString()
-        }
+        },
+        fetchPolicy: 'network-only'
       })
 
       this.$router.replace({ ...this.$route, query: { message: id } })

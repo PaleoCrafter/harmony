@@ -63,7 +63,7 @@ export default {
     return [
       {
         title: 'In Channel',
-        items: channels.filter(channel => channel.name.includes(adjustedQuery)),
+        items: channels.filter(channel => channel.name.includes(adjustedQuery)).slice(0, 10),
         action ({ id, name }, { insertValue }) {
           insertValue(id, name)
         },

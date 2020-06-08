@@ -716,11 +716,19 @@ const queryResolver = {
                 WHERE "usernicknames"."server" = $server AND "usernicknames"."user" = "users"."id"
                 ORDER BY "usernicknames"."timestamp" DESC
                 LIMIT 1
-              ) AS "nickname"
+              ) AS "nickname",
+              (
+                SELECT COUNT(*)
+                FROM "messages"
+                WHERE "messages"."server" = $server AND "messages"."user" = "users"."id"
+              ) AS "messageCount"
             FROM "users"
-            LIMIT 10
           ) AS "users"
-          WHERE "nickname" ILIKE $query OR CONCAT("name", '#', "discriminator") ILIKE $query AND "discriminator" != 'HOOK'
+          WHERE
+            "nickname" ILIKE $query OR CONCAT("name", '#', "discriminator") ILIKE $query
+                AND "discriminator" != 'HOOK'
+                AND "messageCount" > 0
+          LIMIT 10
           `,
           {
             bind: { server, query: `%${query}%` },

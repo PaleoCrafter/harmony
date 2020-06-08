@@ -226,7 +226,7 @@
           data protection rights, please do not hesitate to contact us.
         </p>
 
-        Email us at:
+        Email us at: <a href="mailto:marvin@17thshard.com">marvin@17thshard.com</a>
       </section>
     </article>
   </div>

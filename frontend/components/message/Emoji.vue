@@ -73,7 +73,6 @@ export default {
   &__name {
     display: none;
     position: absolute;
-    margin-bottom: 0.5rem;
     background: #0b0b0d;
     padding: 0.4rem 0.75rem;
     border-radius: 0.25rem;

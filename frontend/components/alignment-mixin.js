@@ -17,6 +17,7 @@ export default {
       const element = this.$refs.aligned.$el ?? this.$refs.aligned
       this.popper = createPopper(this.$el, element, {
         placement: this.alignment,
+        strategy: 'fixed',
         modifiers: [
           {
             name: 'offset',

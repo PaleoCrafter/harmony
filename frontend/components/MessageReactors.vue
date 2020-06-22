@@ -1,6 +1,11 @@
 <template>
   <section class="message-reactors">
-    <div class="message-reactors__reactions">
+    <div
+      ref="reactions"
+      class="message-reactors__reactions"
+      @mousewheel="scrollHorizontally"
+      @DOMMouseScroll="scrollHorizontally"
+    >
       <Reaction
         v-for="(reaction, index) in reactions"
         :key="index"
@@ -100,6 +105,12 @@ export default {
         minute: 'numeric'
       })
       return format.format(Date.parse(this.chooseTimestamp(reactor)))
+    },
+    scrollHorizontally (event) {
+      const e = window.event || event
+      const delta = Math.max(-1, Math.min(1, e.wheelDelta || -e.detail))
+      this.$refs.reactions.scrollLeft -= delta * 40
+      e.preventDefault()
     }
   }
 }
@@ -114,7 +125,7 @@ export default {
 
   &__reactions {
     display: flex;
-    overflow-y: visible;
+    overflow-x: auto;
 
     .reaction {
       background: none;
@@ -142,6 +153,7 @@ export default {
       align-items: baseline;
       padding: 0.5rem 0.5rem;
       border-top: 1px solid rgba(255, 255, 255, 0.05);
+      flex-wrap: wrap;
 
       &:first-child {
         border-top: none;
@@ -152,6 +164,9 @@ export default {
   &__user-nickname {
     font-weight: 600;
     margin-right: 0.5rem;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 
     & + .message-reactors__user {
       opacity: 0.5;
@@ -162,6 +177,9 @@ export default {
     display: flex;
     font-weight: 600;
     align-items: baseline;
+    white-space: nowrap;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 
     &-discriminator {
       font-weight: normal;

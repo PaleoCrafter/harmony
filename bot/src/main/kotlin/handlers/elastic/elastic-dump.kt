@@ -3,13 +3,13 @@
 package com.seventeenthshard.harmony.bot.handlers.elastic
 
 import com.seventeenthshard.harmony.bot.UserInfo
+import discord4j.common.util.Snowflake
 import discord4j.core.`object`.Embed
 import discord4j.core.`object`.entity.Attachment
 import discord4j.core.`object`.entity.Guild
-import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.`object`.reaction.ReactionEmoji
-import discord4j.core.`object`.util.Snowflake
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.elasticsearch.action.bulk.BackoffPolicy
@@ -21,8 +21,8 @@ import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.common.unit.TimeValue
 import reactor.util.function.Tuple3
-import reactor.util.function.component1
-import reactor.util.function.component2
+import reactor.kotlin.core.util.function.component1
+import reactor.kotlin.core.util.function.component2
 
 private object BulkListener : BulkProcessor.Listener {
     private val logger: Logger = LogManager.getLogger("elastic-bulk")
@@ -59,9 +59,7 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
 
     return { guild, channel, messages ->
         messages.forEach { (message, author) ->
-            val (_, state) = DiscordMarkdownRules.parse(
-                message.content.orElse("")
-            )
+            val (_, state) = DiscordMarkdownRules.parse(message.content)
             val messageProperties = mutableSetOf<String>()
 
             if (state.hasLinks) {
@@ -90,7 +88,7 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
                             "name" to author.username,
                             "discriminator" to author.discriminator
                         ),
-                        "content" to message.content.orElse(""),
+                        "content" to message.content,
                         "has" to messageProperties,
                         "mentions" to state.mentionedUsers,
                         "attachments" to message.attachments.isNotEmpty(),

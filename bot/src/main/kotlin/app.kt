@@ -25,13 +25,15 @@ fun main(args: Array<String>) {
         requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
 
+    val gatewayClient = requireNotNull(client.login().block()) { "Received null Gateway client unexpectedly" }
+
     when (val action = args.firstOrNull() ?: "import") {
         "import" -> {
-            val emitter = EventEmitter(client.eventDispatcher, listOf(buildDbHandler(), buildElasticHandler()))
+            val emitter = EventEmitter(gatewayClient.eventDispatcher, listOf(buildDbHandler(), buildElasticHandler()))
 
-            runBot(client, emitter, ignoredChannels)
+            runBot(gatewayClient, emitter, ignoredChannels)
         }
-        "dump" -> runDump(ignoredChannels, args.drop(1))
+        "dump" -> runDump(gatewayClient, ignoredChannels, args.drop(1))
         else -> {
             System.err.println("Unknown action '$action', available options are 'import' and 'dump'")
             exitProcess(1)

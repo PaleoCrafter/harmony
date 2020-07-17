@@ -6,17 +6,17 @@ import com.seventeenthshard.harmony.bot.Embed
 import com.seventeenthshard.harmony.bot.NewReaction
 import com.seventeenthshard.harmony.bot.UserInfo
 import com.seventeenthshard.harmony.bot.toHex
+import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Guild
-import discord4j.core.`object`.entity.GuildMessageChannel
 import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.`object`.reaction.ReactionEmoji
-import discord4j.core.`object`.util.Snowflake
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import reactor.util.function.Tuple3
-import reactor.util.function.component1
-import reactor.util.function.component2
-import reactor.util.function.component3
+import reactor.kotlin.core.util.function.component1
+import reactor.kotlin.core.util.function.component2
+import reactor.kotlin.core.util.function.component3
 import java.sql.Connection
 import java.time.Instant
 import java.time.LocalDateTime
@@ -59,18 +59,18 @@ fun buildDbDumperImpl(): (
                     val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
                     MessageVersions.insert {
                         it[message] = msg.id.asString()
-                        it[content] = msg.content.orElse("")
+                        it[content] = msg.content
                         it[timestamp] = creationTimestamp
                     }
 
                     msg.editedTimestamp.isPresent
-                } else lastVersion[MessageVersions.content] != msg.content.orElse("")
+                } else lastVersion[MessageVersions.content] != msg.content
 
                 if (requiresEdit && msg.editedTimestamp.isPresent) {
                     val editTimestamp = LocalDateTime.ofInstant(msg.editedTimestamp.get(), ZoneId.of("UTC"))
                     MessageVersions.insert {
                         it[message] = msg.id.asString()
-                        it[content] = msg.content.orElse("")
+                        it[content] = msg.content
                         it[timestamp] = editTimestamp
                     }
                 }
@@ -80,7 +80,7 @@ fun buildDbDumperImpl(): (
                 val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
                 MessageVersions.replace {
                     it[message] = msg.id.asString()
-                    it[content] = msg.content.orElse("")
+                    it[content] = msg.content
                     it[timestamp] = creationTimestamp
                 }
                 val editTimestamp = msg.editedTimestamp.orElse(null)?.let {
@@ -90,7 +90,7 @@ fun buildDbDumperImpl(): (
                 if (editTimestamp != null) {
                     MessageVersions.replace {
                         it[message] = msg.id.asString()
-                        it[content] = msg.content.orElse("")
+                        it[content] = msg.content
                         it[timestamp] = editTimestamp
                     }
                 }
@@ -134,12 +134,12 @@ fun buildDbDumperImpl(): (
                     it[thumbnailHeight] = embed.thumbnail.orElse(null)?.height
 
                     it[videoUrl] = embed.video.orElse(null)?.url
-                    it[videoProxyUrl] = embed.video.orElse(null)?.proxyUrl
+                    it[videoProxyUrl] = embed.video.orElse(null)?.url
                     it[videoWidth] = embed.video.orElse(null)?.width
                     it[videoHeight] = embed.video.orElse(null)?.height
 
                     it[providerName] = embed.provider.orElse(null)?.name
-                    it[providerUrl] = embed.provider.orElse(null)?.url
+                    it[providerUrl] = embed.provider.orElse(null)?.url?.orElse(null)
 
                     it[authorName] = embed.author.orElse(null)?.name
                     it[authorUrl] = embed.author.orElse(null)?.url

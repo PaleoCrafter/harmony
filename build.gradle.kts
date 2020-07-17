@@ -17,8 +17,8 @@ subprojects {
         jcenter()
 
         maven {
-            name = "Confluent"
-            url = uri("https://packages.confluent.io/maven/")
+            name = "Spring Milestone"
+            url = uri("https://repo.spring.io/milestone")
         }
     }
 

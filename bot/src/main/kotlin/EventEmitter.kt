@@ -1,6 +1,6 @@
 package com.seventeenthshard.harmony.bot
 
-import discord4j.core.`object`.util.Snowflake
+import discord4j.common.util.Snowflake
 import discord4j.core.event.EventDispatcher
 import discord4j.core.event.domain.Event
 import org.apache.logging.log4j.LogManager

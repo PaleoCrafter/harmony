@@ -2,50 +2,36 @@
 
 package com.seventeenthshard.harmony.bot
 
-import discord4j.core.DiscordClient
-import discord4j.core.`object`.entity.GuildMessageChannel
+import discord4j.common.util.Snowflake
+import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.util.Permission
-import discord4j.core.`object`.util.Snowflake
-import discord4j.core.event.domain.channel.CategoryUpdateEvent
-import discord4j.core.event.domain.channel.NewsChannelCreateEvent
-import discord4j.core.event.domain.channel.NewsChannelDeleteEvent
-import discord4j.core.event.domain.channel.NewsChannelUpdateEvent
-import discord4j.core.event.domain.channel.TextChannelCreateEvent
-import discord4j.core.event.domain.channel.TextChannelDeleteEvent
-import discord4j.core.event.domain.channel.TextChannelUpdateEvent
-import discord4j.core.event.domain.guild.GuildCreateEvent
-import discord4j.core.event.domain.guild.GuildDeleteEvent
-import discord4j.core.event.domain.guild.GuildUpdateEvent
-import discord4j.core.event.domain.guild.MemberJoinEvent
-import discord4j.core.event.domain.guild.MemberUpdateEvent
-import discord4j.core.event.domain.message.MessageBulkDeleteEvent
-import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.event.domain.message.MessageDeleteEvent
-import discord4j.core.event.domain.message.MessageEvent
-import discord4j.core.event.domain.message.MessageUpdateEvent
-import discord4j.core.event.domain.message.ReactionAddEvent
-import discord4j.core.event.domain.message.ReactionRemoveAllEvent
-import discord4j.core.event.domain.message.ReactionRemoveEvent
+import discord4j.core.`object`.entity.channel.GuildMessageChannel
+import discord4j.core.event.domain.channel.*
+import discord4j.core.event.domain.guild.*
+import discord4j.core.event.domain.message.*
 import discord4j.core.event.domain.role.RoleCreateEvent
 import discord4j.core.event.domain.role.RoleDeleteEvent
 import discord4j.core.event.domain.role.RoleUpdateEvent
+import discord4j.rest.util.Permission
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.util.concurrent.Queues
 import reactor.util.function.Tuple4
-import reactor.util.function.component1
-import reactor.util.function.component2
-import reactor.util.function.component3
-import reactor.util.function.component4
+import reactor.kotlin.core.util.function.component1
+import reactor.kotlin.core.util.function.component2
+import reactor.kotlin.core.util.function.component3
+import reactor.kotlin.core.util.function.component4
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
-fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>) {
+fun runBot(
+    client: GatewayDiscordClient,
+    emitter: EventEmitter,
+    ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>
+) {
     fun saveIgnoredChannels() {
         Files.write(Paths.get("ignoredChannels.txt"), ignoredChannels)
     }
@@ -113,11 +99,13 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
     }
 
     emitter.map<TextChannelUpdateEvent, ChannelInfo> { event ->
-        event.current.id to ChannelInfo.of(event.current).filter { !ignoredChannels.contains(event.current.id.asString()) }
+        event.current.id to ChannelInfo.of(event.current)
+            .filter { !ignoredChannels.contains(event.current.id.asString()) }
     }
 
     emitter.map<TextChannelDeleteEvent, ChannelDeletion> { event ->
-        event.channel.id to ChannelDeletion.of(Instant.now()).filter { !ignoredChannels.contains(event.channel.id.asString()) }
+        event.channel.id to ChannelDeletion.of(Instant.now())
+            .filter { !ignoredChannels.contains(event.channel.id.asString()) }
     }
 
     emitter.map<NewsChannelCreateEvent, ChannelInfo> {
@@ -125,11 +113,13 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
     }
 
     emitter.map<NewsChannelUpdateEvent, ChannelInfo> { event ->
-        event.current.id to ChannelInfo.of(event.current).filter { !ignoredChannels.contains(event.current.id.asString()) }
+        event.current.id to ChannelInfo.of(event.current)
+            .filter { !ignoredChannels.contains(event.current.id.asString()) }
     }
 
     emitter.map<NewsChannelDeleteEvent, ChannelDeletion> { event ->
-        event.channel.id to ChannelDeletion.of(Instant.now()).filter { !ignoredChannels.contains(event.channel.id.asString()) }
+        event.channel.id to ChannelDeletion.of(Instant.now())
+            .filter { !ignoredChannels.contains(event.channel.id.asString()) }
     }
 
     emitter.listen<CategoryUpdateEvent, ChannelInfo> { event ->
@@ -146,7 +136,7 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         message.filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
             .flux()
             .flatMap { msg ->
-                emitter.logger.info("Message event received: ${msg}")
+                emitter.logger.info("Message event received: $msg")
                 Flux.fromIterable(producers.map { msg.id to { it(msg) } })
             }
 
@@ -274,8 +264,8 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
             )
         }
         .filter { it.t4.contains(Permission.MANAGE_CHANNELS) }
-        .filterWhen { event -> event.t3.userMentions.any { u -> u.isBot && u.id == client.selfId.orElse(null) } }
-        .map { (it.t1 to it.t2) to it.t3.content.orElse("").split(" ") }
+        .filterWhen { event -> event.t3.userMentions.any { u -> u.isBot && u.id == client.selfId } }
+        .map { (it.t1 to it.t2) to it.t3.content.split(" ") }
         .filter { (_, words) -> "ignored-channels" in words }
         .flatMap { (params, words) ->
             val (channel, guildId) = params
@@ -363,5 +353,5 @@ fun runBot(client: DiscordClient, emitter: EventEmitter, ignoredChannels: Concur
         }
         .subscribe()
 
-    client.login().block()
+    client.onDisconnect().block()
 }

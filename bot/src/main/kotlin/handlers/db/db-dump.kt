@@ -2,10 +2,7 @@
 
 package com.seventeenthshard.harmony.bot.handlers.db
 
-import com.seventeenthshard.harmony.bot.Embed
-import com.seventeenthshard.harmony.bot.NewReaction
-import com.seventeenthshard.harmony.bot.UserInfo
-import com.seventeenthshard.harmony.bot.toHex
+import com.seventeenthshard.harmony.bot.*
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Message
@@ -116,35 +113,36 @@ fun buildDbDumperImpl(): (
                     it[description] = embed.description.orElse(null)
                     it[url] = embed.url.orElse(null)
                     it[color] = embed.color.orElse(null)?.toHex()
-                    it[timestamp] =
-                        embed.timestamp.orElse(null)?.let { ts -> LocalDateTime.ofInstant(ts, ZoneId.of("UTC")) }
+                    it[timestamp] = embed.timestamp.orElse(null)?.let {
+                            ts -> LocalDateTime.ofInstant(ts, ZoneId.of("UTC"))
+                    }
 
                     it[footerText] = embed.footer.orElse(null)?.text
-                    it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl
-                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.proxyIconUrl
+                    it[footerIconUrl] = embed.footer.orElse(null)?.getFromPossibleOrNull { iconUrl }
+                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.getFromPossibleOrNull { proxyIconUrl }
 
-                    it[imageUrl] = embed.image.orElse(null)?.url
-                    it[imageProxyUrl] = embed.image.orElse(null)?.proxyUrl
+                    it[imageUrl] = embed.image.orElse(null)?.getFromPossibleOrNull { url }
+                    it[imageProxyUrl] = embed.image.orElse(null)?.getFromPossibleOrNull { proxyUrl }
                     it[imageWidth] = embed.image.orElse(null)?.width
                     it[imageHeight] = embed.image.orElse(null)?.height
 
-                    it[thumbnailUrl] = embed.thumbnail.orElse(null)?.url
-                    it[thumbnailProxyUrl] = embed.thumbnail.orElse(null)?.proxyUrl
+                    it[thumbnailUrl] = embed.thumbnail.orElse(null)?.getFromPossibleOrNull { url }
+                    it[thumbnailProxyUrl] = embed.thumbnail.orElse(null)?.getFromPossibleOrNull { proxyUrl }
                     it[thumbnailWidth] = embed.thumbnail.orElse(null)?.width
                     it[thumbnailHeight] = embed.thumbnail.orElse(null)?.height
 
-                    it[videoUrl] = embed.video.orElse(null)?.url
-                    it[videoProxyUrl] = embed.video.orElse(null)?.url
+                    it[videoUrl] = embed.video.orElse(null)?.getFromPossibleOrNull { url }
+                    it[videoProxyUrl] = embed.video.orElse(null)?.getFromPossibleOrNull { url }
                     it[videoWidth] = embed.video.orElse(null)?.width
                     it[videoHeight] = embed.video.orElse(null)?.height
 
-                    it[providerName] = embed.provider.orElse(null)?.name
+                    it[providerName] = embed.provider.orElse(null)?.getFromPossibleOrNull { name }
                     it[providerUrl] = embed.provider.orElse(null)?.url?.orElse(null)
 
-                    it[authorName] = embed.author.orElse(null)?.name
-                    it[authorUrl] = embed.author.orElse(null)?.url
-                    it[authorIconUrl] = embed.author.orElse(null)?.iconUrl
-                    it[authorIconProxyUrl] = embed.author.orElse(null)?.proxyIconUrl
+                    it[authorName] = embed.author.orElse(null)?.getFromPossibleOrNull { name }
+                    it[authorUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { url }
+                    it[authorIconUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { iconUrl }
+                    it[authorIconProxyUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { proxyIconUrl }
                 }
 
                 MessageEmbedFields.batchInsert(embed.fields.withIndex()) { (index, field) ->
@@ -152,7 +150,7 @@ fun buildDbDumperImpl(): (
                     this[MessageEmbedFields.position] = index
                     this[MessageEmbedFields.name] = field.name
                     this[MessageEmbedFields.value] = field.value
-                    this[MessageEmbedFields.inline] = field.isInline
+                    this[MessageEmbedFields.inline] = field.getFromPossibleOrNull { isInline } ?: false
                 }
             }
 

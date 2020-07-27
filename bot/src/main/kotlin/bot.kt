@@ -355,3 +355,10 @@ fun runBot(
 
     client.onDisconnect().block()
 }
+
+inline fun <T : Any, R> T.getFromPossibleOrNull(body: T.() -> R?) =
+    try {
+        this.body()
+    } catch (_: NoSuchElementException) {
+        null
+    }

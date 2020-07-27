@@ -3,18 +3,21 @@ package com.seventeenthshard.harmony.bot
 
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.PermissionOverwrite
-import discord4j.core.`object`.entity.*
+import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.Role
+import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.Channel
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.rest.util.Color
 import discord4j.rest.util.Image
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.util.function.component1
+import reactor.kotlin.core.util.function.component2
 import java.time.Instant
 import java.util.*
 import discord4j.core.`object`.Embed as DiscordEmbed
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
 
 fun Color.toHex(): String {
     val format = "%02x"
@@ -307,22 +310,22 @@ data class Embed(
                     Footer(it.text, it.iconUrl, it.proxyIconUrl)
                 },
                 embed.image.orElse(null)?.let {
-                    Media(it.url, it.proxyUrl, it.width, it.height)
+                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { proxyUrl }, it.width, it.height)
                 },
                 embed.thumbnail.orElse(null)?.let {
-                    Media(it.url, it.proxyUrl, it.width, it.height)
+                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { proxyUrl }, it.width, it.height)
                 },
                 embed.video.orElse(null)?.let {
-                    Media(it.url, it.url, it.width, it.height)
+                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { url }, it.width, it.height)
                 },
                 embed.provider.orElse(null)?.let {
-                    Provider(it.name, it.url.orElse(null))
+                    Provider(it.getFromPossibleOrNull { name }, it.url.orElse(null))
                 },
                 embed.author.orElse(null)?.let {
-                    Author(it.name, it.url, it.iconUrl, it.proxyIconUrl)
+                    Author(it.getFromPossibleOrNull { name }, it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { iconUrl }, it.getFromPossibleOrNull { proxyIconUrl })
                 },
                 embed.fields.map {
-                    Field(it.name, it.value, it.isInline)
+                    Field(it.name, it.value, it.getFromPossibleOrNull { isInline } ?: false)
                 }
             )
     }

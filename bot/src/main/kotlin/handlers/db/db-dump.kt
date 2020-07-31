@@ -118,31 +118,31 @@ fun buildDbDumperImpl(): (
                     }
 
                     it[footerText] = embed.footer.orElse(null)?.text
-                    it[footerIconUrl] = embed.footer.orElse(null)?.getFromPossibleOrNull { iconUrl }
-                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.getFromPossibleOrNull { proxyIconUrl }
+                    it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl?.orElse(null)
+                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.proxyIconUrl?.orElse(null)
 
-                    it[imageUrl] = embed.image.orElse(null)?.getFromPossibleOrNull { url }
-                    it[imageProxyUrl] = embed.image.orElse(null)?.getFromPossibleOrNull { proxyUrl }
+                    it[imageUrl] = embed.image.orElse(null)?.url
+                    it[imageProxyUrl] = embed.image.orElse(null)?.proxyUrl
                     it[imageWidth] = embed.image.orElse(null)?.width
                     it[imageHeight] = embed.image.orElse(null)?.height
 
-                    it[thumbnailUrl] = embed.thumbnail.orElse(null)?.getFromPossibleOrNull { url }
-                    it[thumbnailProxyUrl] = embed.thumbnail.orElse(null)?.getFromPossibleOrNull { proxyUrl }
+                    it[thumbnailUrl] = embed.thumbnail.orElse(null)?.url
+                    it[thumbnailProxyUrl] = embed.thumbnail.orElse(null)?.proxyUrl
                     it[thumbnailWidth] = embed.thumbnail.orElse(null)?.width
                     it[thumbnailHeight] = embed.thumbnail.orElse(null)?.height
 
-                    it[videoUrl] = embed.video.orElse(null)?.getFromPossibleOrNull { url }
-                    it[videoProxyUrl] = embed.video.orElse(null)?.getFromPossibleOrNull { url }
+                    it[videoUrl] = embed.video.orElse(null)?.url
+                    it[videoProxyUrl] = embed.video.orElse(null)?.url
                     it[videoWidth] = embed.video.orElse(null)?.width
                     it[videoHeight] = embed.video.orElse(null)?.height
 
-                    it[providerName] = embed.provider.orElse(null)?.getFromPossibleOrNull { name }
+                    it[providerName] = embed.provider.orElse(null)?.name?.orElse(null)
                     it[providerUrl] = embed.provider.orElse(null)?.url?.orElse(null)
 
-                    it[authorName] = embed.author.orElse(null)?.getFromPossibleOrNull { name }
-                    it[authorUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { url }
-                    it[authorIconUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { iconUrl }
-                    it[authorIconProxyUrl] = embed.author.orElse(null)?.getFromPossibleOrNull { proxyIconUrl }
+                    it[authorName] = embed.author.orElse(null)?.name?.orElse(null)
+                    it[authorUrl] = embed.author.orElse(null)?.url?.orElse(null)
+                    it[authorIconUrl] = embed.author.orElse(null)?.iconUrl?.orElse(null)
+                    it[authorIconProxyUrl] = embed.author.orElse(null)?.proxyIconUrl?.orElse(null)
                 }
 
                 MessageEmbedFields.batchInsert(embed.fields.withIndex()) { (index, field) ->
@@ -150,7 +150,7 @@ fun buildDbDumperImpl(): (
                     this[MessageEmbedFields.position] = index
                     this[MessageEmbedFields.name] = field.name
                     this[MessageEmbedFields.value] = field.value
-                    this[MessageEmbedFields.inline] = field.getFromPossibleOrNull { isInline } ?: false
+                    this[MessageEmbedFields.inline] = field.isInline
                 }
             }
 

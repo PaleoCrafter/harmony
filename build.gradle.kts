@@ -20,6 +20,11 @@ subprojects {
             name = "Spring Milestone"
             url = uri("https://repo.spring.io/milestone")
         }
+
+        maven {
+            name = "Sonatype Snapshots"
+            url = uri("https://oss.sonatype.org/content/repositories/snapshots")
+        }
     }
 
     tasks.withType<KotlinCompile>().configureEach {

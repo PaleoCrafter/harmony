@@ -87,7 +87,10 @@ data class ChannelInfo(
         fun of(channel: GuildMessageChannel) =
             channel.guild
                 .flatMap {
-                    Mono.zip(ServerInfo.of(it), channel.category.map { c -> Optional.of(c) }.defaultIfEmpty(Optional.empty()))
+                    Mono.zip(
+                        ServerInfo.of(it),
+                        channel.category.map { c -> Optional.of(c) }.defaultIfEmpty(Optional.empty())
+                    )
                 }
                 .map {
                     val category = it.t2.orElse(null)
@@ -217,7 +220,14 @@ data class NewMessage(
             Mono.zip(
                 message.channel,
                 Mono.justOrEmpty(message.author).flatMap { UserInfo.of(it) }
-                    .switchIfEmpty(message.webhook.map { UserInfo(it.id.asString(), it.name.orElse("Webhook"), "HOOK", true) })
+                    .switchIfEmpty(message.webhook.map {
+                        UserInfo(
+                            it.id.asString(),
+                            it.name.orElse("Webhook"),
+                            "HOOK",
+                            true
+                        )
+                    })
             ).filter { it.t1 is GuildMessageChannel }
                 .flatMap {
                     Mono.zip(
@@ -307,25 +317,30 @@ data class Embed(
                 embed.color.orElse(null)?.toHex(),
                 embed.timestamp.orElse(null),
                 embed.footer.orElse(null)?.let {
-                    Footer(it.text, it.iconUrl, it.proxyIconUrl)
+                    Footer(it.text, it.iconUrl.orElse(null), it.proxyIconUrl.orElse(null))
                 },
                 embed.image.orElse(null)?.let {
-                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { proxyUrl }, it.width, it.height)
+                    Media(it.url, it.proxyUrl, it.width, it.height)
                 },
                 embed.thumbnail.orElse(null)?.let {
-                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { proxyUrl }, it.width, it.height)
+                    Media(it.url, it.proxyUrl, it.width, it.height)
                 },
                 embed.video.orElse(null)?.let {
-                    Media(it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { url }, it.width, it.height)
+                    Media(it.url, it.url, it.width, it.height)
                 },
                 embed.provider.orElse(null)?.let {
-                    Provider(it.getFromPossibleOrNull { name }, it.url.orElse(null))
+                    Provider(it.name.orElse(null), it.url.orElse(null))
                 },
                 embed.author.orElse(null)?.let {
-                    Author(it.getFromPossibleOrNull { name }, it.getFromPossibleOrNull { url }, it.getFromPossibleOrNull { iconUrl }, it.getFromPossibleOrNull { proxyIconUrl })
+                    Author(
+                        it.name.orElse(null),
+                        it.url.orElse(null),
+                        it.iconUrl.orElse(null),
+                        it.proxyIconUrl.orElse(null)
+                    )
                 },
                 embed.fields.map {
-                    Field(it.name, it.value, it.getFromPossibleOrNull { isInline } ?: false)
+                    Field(it.name, it.value, it.isInline)
                 }
             )
     }

@@ -21,8 +21,8 @@ import org.elasticsearch.client.RequestOptions
 import org.elasticsearch.client.RestHighLevelClient
 import org.elasticsearch.common.unit.TimeValue
 import reactor.util.function.Tuple3
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
+import reactor.util.function.component1
+import reactor.util.function.component2
 
 private object BulkListener : BulkProcessor.Listener {
     private val logger: Logger = LogManager.getLogger("elastic-bulk")

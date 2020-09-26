@@ -10,14 +10,12 @@ import discord4j.core.event.domain.guild.GuildCreateEvent
 import org.apache.logging.log4j.LogManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.ZoneOffset
+import reactor.util.function.component1
+import reactor.util.function.component2
+import java.time.*
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.system.exitProcess
 
 fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessageChannel): Flux<Message> =
     channel.getMessagesBefore(Snowflake.of(endDate))
@@ -41,6 +39,7 @@ fun runDump(
     logger.info("Starting dump from $startDate until ${endDate.atZone(ZoneId.systemDefault())}")
 
     client.on(GuildCreateEvent::class.java)
+        .take(Duration.ofSeconds(30))
         .flatMap {
             it.guild.channels
         }
@@ -86,7 +85,12 @@ fun runDump(
                     }
                 }
         }
+        .doOnComplete { client.logout().subscribe() }
         .subscribe()
 
     client.onDisconnect().block()
+
+    logger.info("Finished dumping all messages!")
+
+    exitProcess(0)
 }

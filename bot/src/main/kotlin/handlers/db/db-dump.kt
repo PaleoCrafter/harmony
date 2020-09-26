@@ -11,9 +11,9 @@ import discord4j.core.`object`.reaction.ReactionEmoji
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import reactor.util.function.Tuple3
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
-import reactor.kotlin.core.util.function.component3
+import reactor.util.function.component1
+import reactor.util.function.component2
+import reactor.util.function.component3
 import java.sql.Connection
 import java.time.Instant
 import java.time.LocalDateTime
@@ -118,8 +118,8 @@ fun buildDbDumperImpl(): (
                     }
 
                     it[footerText] = embed.footer.orElse(null)?.text
-                    it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl?.orElse(null)
-                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.proxyIconUrl?.orElse(null)
+                    it[footerIconUrl] = embed.footer.orElse(null)?.iconUrl
+                    it[footerIconProxyUrl] = embed.footer.orElse(null)?.proxyIconUrl
 
                     it[imageUrl] = embed.image.orElse(null)?.url
                     it[imageProxyUrl] = embed.image.orElse(null)?.proxyUrl
@@ -136,13 +136,13 @@ fun buildDbDumperImpl(): (
                     it[videoWidth] = embed.video.orElse(null)?.width
                     it[videoHeight] = embed.video.orElse(null)?.height
 
-                    it[providerName] = embed.provider.orElse(null)?.name?.orElse(null)
+                    it[providerName] = embed.provider.orElse(null)?.name
                     it[providerUrl] = embed.provider.orElse(null)?.url?.orElse(null)
 
-                    it[authorName] = embed.author.orElse(null)?.name?.orElse(null)
-                    it[authorUrl] = embed.author.orElse(null)?.url?.orElse(null)
-                    it[authorIconUrl] = embed.author.orElse(null)?.iconUrl?.orElse(null)
-                    it[authorIconProxyUrl] = embed.author.orElse(null)?.proxyIconUrl?.orElse(null)
+                    it[authorName] = embed.author.orElse(null)?.name
+                    it[authorUrl] = embed.author.orElse(null)?.url
+                    it[authorIconUrl] = embed.author.orElse(null)?.iconUrl
+                    it[authorIconProxyUrl] = embed.author.orElse(null)?.proxyIconUrl
                 }
 
                 MessageEmbedFields.batchInsert(embed.fields.withIndex()) { (index, field) ->

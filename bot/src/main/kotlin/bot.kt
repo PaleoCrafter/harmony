@@ -17,15 +17,16 @@ import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.util.function.Tuple4
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
-import reactor.kotlin.core.util.function.component3
-import reactor.kotlin.core.util.function.component4
+import reactor.util.function.component1
+import reactor.util.function.component2
+import reactor.util.function.component3
+import reactor.util.function.component4
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.system.exitProcess
 
 fun runBot(
     client: GatewayDiscordClient,
@@ -354,4 +355,6 @@ fun runBot(
         .subscribe()
 
     client.onDisconnect().block()
+
+    emitter.logger.info("Disconnected from Gateway!")
 }

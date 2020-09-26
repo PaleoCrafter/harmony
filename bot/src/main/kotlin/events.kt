@@ -13,8 +13,8 @@ import discord4j.core.`object`.reaction.ReactionEmoji
 import discord4j.rest.util.Color
 import discord4j.rest.util.Image
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.util.function.component1
-import reactor.kotlin.core.util.function.component2
+import reactor.util.function.component1
+import reactor.util.function.component2
 import java.time.Instant
 import java.util.*
 import discord4j.core.`object`.Embed as DiscordEmbed
@@ -317,7 +317,7 @@ data class Embed(
                 embed.color.orElse(null)?.toHex(),
                 embed.timestamp.orElse(null),
                 embed.footer.orElse(null)?.let {
-                    Footer(it.text, it.iconUrl.orElse(null), it.proxyIconUrl.orElse(null))
+                    Footer(it.text, it.iconUrl, it.proxyIconUrl)
                 },
                 embed.image.orElse(null)?.let {
                     Media(it.url, it.proxyUrl, it.width, it.height)
@@ -329,14 +329,14 @@ data class Embed(
                     Media(it.url, it.url, it.width, it.height)
                 },
                 embed.provider.orElse(null)?.let {
-                    Provider(it.name.orElse(null), it.url.orElse(null))
+                    Provider(it.name, it.url.orElse(null))
                 },
                 embed.author.orElse(null)?.let {
                     Author(
-                        it.name.orElse(null),
-                        it.url.orElse(null),
-                        it.iconUrl.orElse(null),
-                        it.proxyIconUrl.orElse(null)
+                        it.name,
+                        it.url,
+                        it.iconUrl,
+                        it.proxyIconUrl
                     )
                 },
                 embed.fields.map {

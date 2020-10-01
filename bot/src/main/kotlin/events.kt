@@ -152,7 +152,8 @@ data class UserInfo(
     val id: String,
     val username: String,
     val discriminator: String,
-    val isBot: Boolean
+    val isBot: Boolean,
+    val webhookName: String? = null
 ) {
     companion object {
         fun of(user: User) =
@@ -164,6 +165,23 @@ data class UserInfo(
                     user.isBot
                 )
             )
+
+        fun from(message: Message) =
+            message.webhookId.map { id ->
+                message.webhook
+                    .onErrorResume { Mono.empty() }
+                    .flatMap { Mono.justOrEmpty(it.name) }
+                    .switchIfEmpty(Mono.just("Webhook #${id.asString()}"))
+                    .map {
+                        UserInfo(
+                            id.asString(),
+                            it,
+                            "HOOK",
+                            true,
+                            message.userData.username()
+                        )
+                    }
+            }.orElse(Mono.justOrEmpty(message.author).flatMap(::of))
     }
 }
 
@@ -219,15 +237,7 @@ data class NewMessage(
         fun of(message: Message) =
             Mono.zip(
                 message.channel,
-                Mono.justOrEmpty(message.author).flatMap { UserInfo.of(it) }
-                    .switchIfEmpty(message.webhook.map {
-                        UserInfo(
-                            it.id.asString(),
-                            it.name.orElse("Webhook"),
-                            "HOOK",
-                            true
-                        )
-                    })
+                UserInfo.from(message)
             ).filter { it.t1 is GuildMessageChannel }
                 .flatMap {
                     Mono.zip(

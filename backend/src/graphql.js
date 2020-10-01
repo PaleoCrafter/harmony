@@ -70,7 +70,7 @@ function prepareMessage (message, versions, editedAt, permissions, request) {
   return {
     id: message.idSuffix ? `${message.id}-${message.idSuffix}` : message.id,
     ref: message.id,
-    author: request.loaders.users.load({ server: message.server, id: message.user }),
+    author: request.loaders.users.load({ server: message.server, id: message.user }).then(user => ({ ...user, webhookName: message.webhookName })),
     server: message.server,
     versions: permissions.has('manageMessages') || message.user === request.user.id ? versions : [versions[0]],
     createdAt: message.createdAt,

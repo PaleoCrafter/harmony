@@ -3,6 +3,7 @@ package com.seventeenthshard.harmony.bot.handlers.db
 import com.seventeenthshard.harmony.bot.ChannelInfo
 import com.seventeenthshard.harmony.bot.Embed
 import com.seventeenthshard.harmony.bot.NewReaction
+import com.seventeenthshard.harmony.bot.handlers.db.UserNicknames.nullable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
@@ -94,6 +95,7 @@ object Messages : Table() {
     val server = snowflake("server").index()
     val channel = snowflake("channel").index()
     val user = snowflake("user")
+    val webhookName = varchar("webhookName", 255).nullable()
     val createdAt = datetime("createdAt").nullable()
     val deletedAt = datetime("deletedAt").nullable()
 }

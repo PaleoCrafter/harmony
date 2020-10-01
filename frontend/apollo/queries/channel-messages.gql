@@ -14,6 +14,7 @@ query ChannelMessages($channel: ID!, $paginationMode: PaginationMode!,  $paginat
         g
         b
       }
+      webhookName
     }
 
     server

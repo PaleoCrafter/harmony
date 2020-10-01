@@ -57,16 +57,7 @@ fun runDump(
                 .flatMap { msg ->
                     Mono.zip(
                         Mono.just(msg),
-                        Mono.justOrEmpty(msg.author)
-                            .map { UserInfo(it.id.asString(), it.username, it.discriminator, it.isBot) }
-                            .switchIfEmpty(msg.webhook.map {
-                                UserInfo(
-                                    it.id.asString(),
-                                    it.name.orElse("Webhook"),
-                                    "HOOK",
-                                    true
-                                )
-                            }),
+                        UserInfo.from(msg),
                         Flux.fromIterable(msg.reactions)
                             .flatMap { reaction -> msg.getReactors(reaction.emoji).map { reaction.emoji to it.id } }
                             .collectList()

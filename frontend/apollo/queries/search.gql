@@ -25,6 +25,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
             g
             b
           }
+          webhookName
         }
 
         server
@@ -57,6 +58,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
             g
             b
           }
+          webhookName
         }
 
         server
@@ -89,6 +91,7 @@ query Search($server: ID!, $parameters: SearchParameters!) {
             g
             b
           }
+          webhookName
         }
 
         server

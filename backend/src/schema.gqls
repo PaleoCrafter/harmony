@@ -61,6 +61,7 @@ type User {
   bot: Boolean!
   nickname: String
   color: Color
+  webhookName: String
 }
 
 type Role {

@@ -47,7 +47,7 @@ export default {
   },
   computed: {
     userName () {
-      return this.user?.nickname ?? this.user.name
+      return this.user?.webhookName ?? this.user?.nickname ?? this.user.name
     },
     userStyle () {
       if (!this.useRoleColor) {

@@ -189,6 +189,7 @@ fun buildDbHandlerImpl() =
                     it[server] = event.channel.server.id
                     it[channel] = event.channel.id
                     it[user] = event.user.id
+                    it[webhookName] = event.user.webhookName
                     it[createdAt] = creationTimestamp
                 }
 

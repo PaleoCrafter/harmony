@@ -185,6 +185,10 @@ const Message = db.define('message', {
     type: Sequelize.BIGINT,
     allowNull: false
   },
+  webhookName: {
+    type: Sequelize.STRING,
+    allowNull: true
+  },
   createdAt: {
     type: Sequelize.DATE
   },

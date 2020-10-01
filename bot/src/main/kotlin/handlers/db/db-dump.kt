@@ -44,6 +44,7 @@ fun buildDbDumperImpl(): (
                 this[Messages.server] = guild.id.asString()
                 this[Messages.channel] = msg.channelId.asString()
                 this[Messages.user] = author.id
+                this[Messages.webhookName] = author.webhookName
                 this[Messages.createdAt] = creationTimestamp
             }
 

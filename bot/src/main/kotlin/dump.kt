@@ -1,5 +1,6 @@
 package com.seventeenthshard.harmony.bot
 
+import com.seventeenthshard.harmony.bot.commands.IgnoredChannelsCommand
 import com.seventeenthshard.harmony.bot.handlers.db.buildDbDumper
 import com.seventeenthshard.harmony.bot.handlers.elastic.buildElasticDumper
 import discord4j.common.util.Snowflake
@@ -14,7 +15,6 @@ import reactor.util.function.component1
 import reactor.util.function.component2
 import java.time.*
 import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 
 fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessageChannel): Flux<Message> =
@@ -24,7 +24,7 @@ fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessag
 
 fun runDump(
     client: GatewayDiscordClient,
-    ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>,
+    ignoredChannels: IgnoredChannelsCommand,
     arguments: List<String>
 ) {
     val logger = LogManager.getLogger("Dump")
@@ -49,7 +49,7 @@ fun runDump(
                 Mono.justOrEmpty(Optional.ofNullable(it as? GuildMessageChannel))
             )
         }
-        .filter { (_, channel) -> channel.id.asString() !in ignoredChannels }
+        .filter { (_, channel) -> channel.id !in ignoredChannels }
         .filter { (_, channel) -> arguments.size <= 2 || channel.id.asString() in arguments.drop(2) }
         .flatMapSequential { (guild, channel) ->
             logger.info("Starting dump for #${channel.name} on '${guild.name}'")

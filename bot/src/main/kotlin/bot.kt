@@ -2,6 +2,8 @@
 
 package com.seventeenthshard.harmony.bot
 
+import com.seventeenthshard.harmony.bot.commands.AutoPublishCommand
+import com.seventeenthshard.harmony.bot.commands.IgnoredChannelsCommand
 import discord4j.common.util.Snowflake
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.Message
@@ -16,34 +18,25 @@ import discord4j.rest.util.Permission
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.util.function.Tuple4
 import reactor.util.function.component1
 import reactor.util.function.component2
 import reactor.util.function.component3
-import reactor.util.function.component4
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Duration
 import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.system.exitProcess
 
 fun runBot(
     client: GatewayDiscordClient,
     emitter: EventEmitter,
-    ignoredChannels: ConcurrentHashMap.KeySetView<String, Boolean>
+    ignoredChannels: IgnoredChannelsCommand,
+    autoPublish: AutoPublishCommand
 ) {
-    fun saveIgnoredChannels() {
-        Files.write(Paths.get("ignoredChannels.txt"), ignoredChannels)
-    }
-
     emitter.listen<GuildCreateEvent, Any> { event ->
         val guild = event.guild
 
         Flux.merge(
             ServerInfo.of(guild).map { guild.id to it },
             guild.channels
-                .filter { it is GuildMessageChannel && !ignoredChannels.contains(it.id.asString()) }
+                .filter { it is GuildMessageChannel && it.id !in ignoredChannels }
                 .flatMap {
                     Mono.just(it.id).zipWith(ChannelInfo.of(it as GuildMessageChannel))
                 }
@@ -101,12 +94,12 @@ fun runBot(
 
     emitter.map<TextChannelUpdateEvent, ChannelInfo> { event ->
         event.current.id to ChannelInfo.of(event.current)
-            .filter { !ignoredChannels.contains(event.current.id.asString()) }
+            .filter { event.current.id !in ignoredChannels }
     }
 
     emitter.map<TextChannelDeleteEvent, ChannelDeletion> { event ->
         event.channel.id to ChannelDeletion.of(Instant.now())
-            .filter { !ignoredChannels.contains(event.channel.id.asString()) }
+            .filter { event.channel.id !in ignoredChannels }
     }
 
     emitter.map<NewsChannelCreateEvent, ChannelInfo> {
@@ -115,12 +108,12 @@ fun runBot(
 
     emitter.map<NewsChannelUpdateEvent, ChannelInfo> { event ->
         event.current.id to ChannelInfo.of(event.current)
-            .filter { !ignoredChannels.contains(event.current.id.asString()) }
+            .filter { event.current.id !in ignoredChannels }
     }
 
     emitter.map<NewsChannelDeleteEvent, ChannelDeletion> { event ->
         event.channel.id to ChannelDeletion.of(Instant.now())
-            .filter { !ignoredChannels.contains(event.channel.id.asString()) }
+            .filter { event.channel.id !in ignoredChannels }
     }
 
     emitter.listen<CategoryUpdateEvent, ChannelInfo> { event ->
@@ -134,7 +127,7 @@ fun runBot(
         message: Mono<Message>,
         vararg producers: (Message) -> Publisher<*>
     ): Flux<Pair<Snowflake, () -> Publisher<*>>> =
-        message.filter { it.type == Message.Type.DEFAULT && !ignoredChannels.contains(it.channelId.asString()) }
+        message.filter { it.type == Message.Type.DEFAULT && it.channelId !in ignoredChannels }
             .flux()
             .flatMap { msg ->
                 emitter.logger.info("Message event received: $msg")
@@ -172,7 +165,7 @@ fun runBot(
                         }
                     )
                 is MessageDeleteEvent ->
-                    if (!ignoredChannels.contains(event.channelId.asString()))
+                    if (event.channelId !in ignoredChannels)
                         Mono.just(
                             event.messageId to {
                                 MessageDeletion.of(Instant.now())
@@ -181,7 +174,7 @@ fun runBot(
                     else
                         Mono.empty()
                 is MessageBulkDeleteEvent ->
-                    if (!ignoredChannels.contains(event.channelId.asString()))
+                    if (event.channelId !in ignoredChannels)
                         Flux.fromIterable(event.messageIds.map { msg ->
                             msg to {
                                 MessageDeletion.of(Instant.now())
@@ -254,105 +247,31 @@ fun runBot(
         }
     }
 
-    val channelMentionRegex = Regex("^<#(\\d+)>$")
     client.eventDispatcher.on(MessageCreateEvent::class.java)
         .flatMap { event ->
             Mono.zip(
-                event.message.channel.flatMap { if (it is GuildMessageChannel) Mono.just(it) else Mono.empty() },
                 Mono.justOrEmpty(event.guildId),
+                event.message.channel.flatMap { if (it is GuildMessageChannel) Mono.just(it) else Mono.empty() },
                 Mono.just(event.message),
                 event.member.map { it.basePermissions }.orElse(Mono.empty())
             )
         }
         .filter { it.t4.contains(Permission.MANAGE_CHANNELS) }
         .filterWhen { event -> event.t3.userMentions.any { u -> u.isBot && u.id == client.selfId } }
-        .map { (it.t1 to it.t2) to it.t3.content.split(" ") }
-        .filter { (_, words) -> "ignored-channels" in words }
-        .flatMap { (params, words) ->
-            val (channel, guildId) = params
-            val mentionedChannels = words.mapNotNull { word -> channelMentionRegex.find(word)?.groupValues?.get(1) }
-            val (action, channelIds) = when {
-                "add" in words -> "add" to mentionedChannels
-                "remove" in words -> "remove" to mentionedChannels
-                "list" in words -> "list" to ignoredChannels.toList()
-                else -> return@flatMap Mono.empty<Tuple4<GuildMessageChannel, String, Boolean, List<GuildMessageChannel>>>()
-            }
-            Mono.zip(
-                Mono.just(channel),
-                Mono.just(action),
-                Mono.just("--clear" in words),
-                Flux.fromIterable(channelIds)
-                    .flatMap { client.getChannelById(Snowflake.of(it)).onErrorResume { Mono.empty() } }
-                    .filter { it is GuildMessageChannel && it.guildId == guildId }
-                    .map { it as GuildMessageChannel }
-                    .collectList()
-            )
-        }
-        .flatMap { (channel, action, clear, channels) ->
-            val channelList = channels.joinToString("\n") { " - ${it.mention}" }
-            when (action) {
-                "add" -> {
-                    ignoredChannels.addAll(channels.map { it.id.asString() })
-                    val sideEffect =
-                        if (clear)
-                            Flux.fromIterable(channels)
-                                .flatMap { Mono.zip(Mono.just(it.id), ChannelRemoval.of(Instant.now())) }
-                                .map { emitter.emit(it.t1, it.t2) }
-                                .collectList()
-                        else
-                            Mono.just(Unit)
-                    sideEffect
-                        .flatMap {
-                            saveIgnoredChannels()
-                            channel.createMessage("Successfully started ignoring the following channels:\n$channelList")
-                        }
-                        .onErrorResume {
-                            channel.createMessage(
-                                """
-                                Failed to ignore the following channels:
-                                $channelList
-                                
-                                Error Message:
-                                ```
-                                ${it.message}
-                                ```
-                                """.trimIndent()
-                            )
-                        }
-                }
-                "remove" -> {
-                    ignoredChannels.removeAll(channels.map { it.id.asString() })
-                    Flux.fromIterable(channels)
-                        .flatMap { ChannelInfo.of(it) }
-                        .map { emitter.emit(Snowflake.of(it.id), it) }
-                        .collectList()
-                        .flatMap {
-                            saveIgnoredChannels()
-                            channel.createMessage("Successfully stopped ignoring the following channels:\n$channelList")
-                        }
-                        .onErrorResume {
-                            channel.createMessage(
-                                """
-                                Failed to stop ignoring the following channels:
-                                $channelList
-                                
-                                Error Message:
-                                ```
-                                ${it.message}
-                                ```
-                                """.trimIndent()
-                            )
-                        }
-                }
-                else -> {
-                    channel.createMessage("Currently the following channels are ignored:\n$channelList")
-                }
+        .map { Triple(it.t1, it.t2, it.t3.content.split(" ")) }
+        .flatMap { (guildId, channel, words) ->
+            when {
+                "ignored-channels" in words -> ignoredChannels.handle(guildId, channel, words, emitter)
+                "auto-publish" in words -> autoPublish.handle(guildId, channel, words)
+                else -> channel.createMessage("Could not determine option")
             }
         }
         .onErrorContinue { t, e ->
             emitter.logger.error("Failed to handle command, event: $e", t)
         }
         .subscribe()
+
+    autoPublish.listen()
 
     client.onDisconnect().block()
 

@@ -155,12 +155,14 @@ fun runBot(
                         event.message,
                         { msg ->
                             Mono.justOrEmpty(event.currentContent)
+                                .filter { event.isContentChanged }
                                 .flatMap {
                                     MessageEdit.of(it, msg.editedTimestamp.orElse(Instant.now()))
                                 }
                         },
                         {
                             Mono.justOrEmpty(event.currentEmbeds)
+                                .filter { event.isEmbedsChanged }
                                 .flatMap { MessageEmbedUpdate.of(it) }
                         }
                     )

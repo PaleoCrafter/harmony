@@ -39,12 +39,13 @@ class AutoPublishCommand(private val logger: Logger, private val client: Gateway
                 )
             }
             .flatMap { (server, channel, message) ->
-                message.publish().also {
-                    logger.info("Auto-published a message from '${message.userData.username()}' in #${channel.name} on '${server.name}'")
-                }
+                message.publish()
+                    .map {
+                        logger.info("Auto-published a message from '${message.userData.username()}' in #${channel.name} on '${server.name}'")
+                    }
             }
-            .onErrorContinue { t, e ->
-                logger.error("Failed to auto-publish message, event: $e", t)
+            .onErrorContinue { throwable, obj ->
+                logger.error("Failed to auto-publish message, event: $obj", throwable)
             }
             .subscribe()
     }

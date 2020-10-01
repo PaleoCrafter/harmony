@@ -168,19 +168,24 @@ data class UserInfo(
 
         fun from(message: Message) =
             message.webhookId.map { id ->
-                message.webhook
-                    .onErrorResume { Mono.empty() }
-                    .flatMap { Mono.justOrEmpty(it.name) }
-                    .switchIfEmpty(Mono.just("Webhook #${id.asString()}"))
-                    .map {
-                        UserInfo(
-                            id.asString(),
-                            it,
-                            "HOOK",
-                            true,
-                            message.userData.username()
-                        )
-                    }
+                Mono.create<UserInfo> { sink ->
+                    message.webhook
+                        .flatMap { Mono.justOrEmpty(it.name) }
+                        .onErrorResume { Mono.empty() }
+                        .switchIfEmpty(Mono.just("Webhook #${id.asString()}"))
+                        .map {
+                            UserInfo(
+                                id.asString(),
+                                it,
+                                "HOOK",
+                                true,
+                                message.userData.username()
+                            )
+                        }
+                        .subscribe {
+                            sink.success(it)
+                        }
+                }
             }.orElse(Mono.justOrEmpty(message.author).flatMap(::of))
     }
 }

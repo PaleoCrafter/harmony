@@ -51,7 +51,7 @@ fun runDump(
         }
         .filter { (_, channel) -> channel.id !in ignoredChannels }
         .filter { (_, channel) -> arguments.size <= 2 || channel.id.asString() in arguments.drop(2) }
-        .flatMapSequential { (guild, channel) ->
+        .flatMap { (guild, channel) ->
             logger.info("Starting dump for #${channel.name} on '${guild.name}'")
             readOldMessages(startDate, endDate, channel)
                 .flatMap { msg ->
@@ -63,8 +63,8 @@ fun runDump(
                             .collectList()
                     )
                 }
-                .onErrorContinue { e, t ->
-                    logger.error("Failed to import message $e", t)
+                .onErrorContinue { t, o ->
+                    logger.error("Failed to import message $o", t)
                 }
                 .window(1000)
                 .flatMapSequential { group ->

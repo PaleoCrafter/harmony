@@ -32,6 +32,8 @@ class AutoPublishCommand(private val logger: Logger, private val client: Gateway
         client.eventDispatcher.on(MessageCreateEvent::class.java)
             .filter { it.message.channelId.asString() in channels }
             .flatMap { event ->
+                logger.info("Received message from '${event.message.userData.username()}' for auto-publication")
+
                 Mono.zip(
                     event.guild,
                     event.message.channel.flatMap { if (it is GuildMessageChannel) Mono.just(it) else Mono.empty() },
@@ -39,6 +41,8 @@ class AutoPublishCommand(private val logger: Logger, private val client: Gateway
                 )
             }
             .flatMap { (server, channel, message) ->
+                logger.info("Auto-publishing a message from '${message.userData.username()}' in #${channel.name} on '${server.name}'...")
+
                 message.publish()
                     .map {
                         logger.info("Auto-published a message from '${message.userData.username()}' in #${channel.name} on '${server.name}'")

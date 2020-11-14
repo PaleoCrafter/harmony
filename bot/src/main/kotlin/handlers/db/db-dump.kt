@@ -40,6 +40,7 @@ fun buildDbDumperImpl(): (
                 it[categoryPosition] = channel.categoryPosition
                 it[position] = channel.position
                 it[type] = channel.type
+                it[dumpedAt] = LocalDateTime.now()
             }
 
             PermissionOverrides.deleteWhere { PermissionOverrides.channel eq channel.id }

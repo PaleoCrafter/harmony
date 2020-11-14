@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.`java-time`.datetime
 import org.jetbrains.exposed.sql.vendors.currentDialect
+import java.time.LocalDateTime
 
 class SnowflakeColumnType : ColumnType() {
     override fun sqlType(): String = currentDialect.dataTypeProvider.longType()
@@ -47,6 +48,7 @@ object Channels : Table() {
     val position = integer("position").default(0)
     val type = enumerationByName("type", 16, ChannelInfo.Type::class).default(ChannelInfo.Type.TEXT)
     val deletedAt = datetime("deletedAt").nullable()
+    val dumpedAt = datetime("dumpedAt").default(LocalDateTime.now())
 }
 
 object Users : Table() {

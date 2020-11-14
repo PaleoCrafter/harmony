@@ -16,6 +16,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-java-time:0.19.3")
     implementation("org.postgresql:postgresql:42.2.5")
     implementation("org.elasticsearch.client:elasticsearch-rest-high-level-client:7.5.1")
+    implementation("commons-cli:commons-cli:1.4")
 }
 
 application {

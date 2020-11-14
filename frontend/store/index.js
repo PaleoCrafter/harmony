@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import identityQuery from '@/apollo/queries/identity.gql'
 
 export const state = () => ({
@@ -7,7 +6,6 @@ export const state = () => ({
   timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   sidebarOpen: false,
   sidebarTab: 'channels',
-  collapsedCategories: {},
   modal: null,
   searchQuery: null,
   highlightedMessage: null,
@@ -37,17 +35,6 @@ export const mutations = {
   },
   setSidebarTab (state, tab) {
     state.sidebarTab = tab
-  },
-  populateCategories (state) {
-    state.collapsedCategories = JSON.parse(window.localStorage.getItem('collapsedCategories') ?? '{}')
-  },
-  toggleCategory ({ collapsedCategories }, { server, type, category }) {
-    const serverTypes = collapsedCategories[server] ?? (Vue.set(collapsedCategories, server, {}))
-    const categories = serverTypes[type] ?? (Vue.set(serverTypes, type, {}))
-    Vue.set(categories, category, !(categories[category] ?? false))
-    if (process.browser) {
-      window.localStorage.setItem('collapsedCategories', JSON.stringify(collapsedCategories))
-    }
   },
   openModal (state, modal) {
     state.modal = modal

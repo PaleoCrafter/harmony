@@ -60,7 +60,6 @@ export default {
     }
   },
   mounted () {
-    this.$store.commit('populateCategories')
     document.addEventListener('keyup', (event) => {
       if (this.modalOpen && (event.key === 'Escape' || event.keyCode === 27)) {
         this.$store.commit('closeModal')

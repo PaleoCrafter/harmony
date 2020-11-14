@@ -98,11 +98,7 @@ function initLoaders (user) {
       const ids = Object.keys(permissions).filter(id => permissions[id].has('readMessages'))
 
       return (await channelLoader.loadMany(ids)).filter(channel => channel !== null)
-        .sort(
-          (a, b) => a.categoryPosition === b.categoryPosition
-            ? a.position - b.position
-            : a.categoryPosition - b.categoryPosition
-        )
+        .sort((a, b) => b.dumpedAt - a.dumpedAt)
     }
 
     return server

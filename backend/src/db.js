@@ -69,14 +69,6 @@ const Channel = db.define('channel', {
     type: Sequelize.STRING,
     allowNull: false
   },
-  category: {
-    type: Sequelize.STRING,
-    allowNull: true
-  },
-  categoryPosition: {
-    type: Sequelize.INTEGER,
-    allowNull: false
-  },
   position: {
     type: Sequelize.INTEGER,
     allowNull: false
@@ -86,6 +78,9 @@ const Channel = db.define('channel', {
     allowNull: false
   },
   deletedAt: {
+    type: Sequelize.DATE
+  },
+  dumpedAt: {
     type: Sequelize.DATE
   }
 }, {

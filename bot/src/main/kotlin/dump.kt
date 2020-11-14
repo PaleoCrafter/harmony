@@ -1,6 +1,5 @@
 package com.seventeenthshard.harmony.bot
 
-import com.seventeenthshard.harmony.bot.commands.IgnoredChannelsCommand
 import com.seventeenthshard.harmony.bot.handlers.db.buildDbDumper
 import com.seventeenthshard.harmony.bot.handlers.elastic.buildElasticDumper
 import discord4j.common.util.Snowflake
@@ -22,11 +21,7 @@ fun readOldMessages(startDate: LocalDate, endDate: Instant, channel: GuildMessag
         .filter { it.type == Message.Type.DEFAULT }
         .takeUntil { it.timestamp < startDate.atTime(0, 0).toInstant(ZoneOffset.UTC) }
 
-fun runDump(
-    client: GatewayDiscordClient,
-    ignoredChannels: IgnoredChannelsCommand,
-    arguments: List<String>
-) {
+fun runDump(client: GatewayDiscordClient, arguments: List<String>) {
     val logger = LogManager.getLogger("Dump")
     val startDate = arguments.getOrNull(0)?.let { LocalDate.parse(it) }
         ?: throw IllegalArgumentException("Dump start date must be provided via YYYY-MM-DD argument")
@@ -43,16 +38,11 @@ fun runDump(
         .flatMap {
             it.guild.channels
         }
-        .flatMap {
-            Mono.zip(
-                it.guild,
-                Mono.justOrEmpty(Optional.ofNullable(it as? GuildMessageChannel))
-            )
-        }
-        .filter { (_, channel) -> channel.id !in ignoredChannels }
-        .filter { (_, channel) -> arguments.size <= 2 || channel.id.asString() in arguments.drop(2) }
-        .flatMap { (guild, channel) ->
-            logger.info("Starting dump for #${channel.name} on '${guild.name}'")
+        .flatMap { Mono.justOrEmpty(Optional.ofNullable(it as? GuildMessageChannel)) }
+        .flatMap { Mono.zip(ChannelInfo.of(it), Mono.just(it)) }
+        .filter { (channelInfo, _) -> arguments.size <= 2 || channelInfo.id in arguments.drop(2) }
+        .flatMap { (channelInfo, channel)  ->
+            logger.info("Starting dump for #${channel.name} on '${channelInfo.server.name}'")
             readOldMessages(startDate, endDate, channel)
                 .flatMap { msg ->
                     Mono.zip(
@@ -69,10 +59,10 @@ fun runDump(
                 .window(1000)
                 .flatMapSequential { group ->
                     group.collectList().map { messages ->
-                        dbDumper(guild, channel, messages)
-                        elasticDumper(guild, channel, messages)
+                        dbDumper(channelInfo, messages)
+                        elasticDumper(channelInfo, messages)
 
-                        logger.info("Successfully imported ${messages.size} messages into #${channel.name} on '${guild.name}' last was from ${messages.last().t1.timestamp}")
+                        logger.info("Successfully imported ${messages.size} messages into #${channel.name} on '${channelInfo.server.name}' last was from ${messages.last().t1.timestamp}")
                     }
                 }
         }

@@ -2,11 +2,11 @@
 
 package com.seventeenthshard.harmony.bot.handlers.db
 
-import com.seventeenthshard.harmony.bot.*
+import com.seventeenthshard.harmony.bot.ChannelInfo
+import com.seventeenthshard.harmony.bot.UserInfo
+import com.seventeenthshard.harmony.bot.toHex
 import discord4j.common.util.Snowflake
-import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.`object`.reaction.ReactionEmoji
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -20,12 +20,38 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 
 fun buildDbDumperImpl(): (
-    guild: Guild,
-    channel: GuildMessageChannel,
+    channel: ChannelInfo,
     messages: List<Tuple3<Message, UserInfo, List<Pair<ReactionEmoji, Snowflake>>>>
 ) -> Unit =
-    { guild, _, messages ->
+    { channel, messages ->
         transaction(Connection.TRANSACTION_READ_COMMITTED, 2) {
+            Servers.replace {
+                it[id] = channel.server.id
+                it[name] = channel.server.name
+                it[iconUrl] = channel.server.iconUrl
+                it[active] = true
+            }
+
+            Channels.replace {
+                it[id] = channel.id
+                it[server] = channel.server.id
+                it[name] = channel.name
+                it[category] = channel.category
+                it[categoryPosition] = channel.categoryPosition
+                it[position] = channel.position
+                it[type] = channel.type
+            }
+
+            PermissionOverrides.deleteWhere { PermissionOverrides.channel eq channel.id }
+
+            PermissionOverrides.batchInsert(channel.permissionOverrides) {
+                this[PermissionOverrides.channel] = channel.id
+                this[PermissionOverrides.type] = it.type
+                this[PermissionOverrides.target] = it.targetId
+                this[PermissionOverrides.allowed] = it.allowed
+                this[PermissionOverrides.denied] = it.denied
+            }
+
             val messageIds = messages.map { (msg) -> msg.id.asString() }
             val existing = Messages.select { Messages.id inList messageIds }
                 .map { it[Messages.id] }
@@ -41,7 +67,7 @@ fun buildDbDumperImpl(): (
                 val creationTimestamp = LocalDateTime.ofInstant(msg.timestamp, ZoneId.of("UTC"))
 
                 this[Messages.id] = msg.id.asString()
-                this[Messages.server] = guild.id.asString()
+                this[Messages.server] = channel.server.id
                 this[Messages.channel] = msg.channelId.asString()
                 this[Messages.user] = author.id
                 this[Messages.webhookName] = author.webhookName
@@ -109,7 +135,7 @@ fun buildDbDumperImpl(): (
             messages.flatMap { (msg) -> msg.embeds.map { msg.id.asString() to it } }.forEach { (msg, embed) ->
                 val embedId = MessageEmbeds.insertAndGetId {
                     it[message] = msg
-                    it[type] = Embed.Type.valueOf(embed.type.name)
+                    it[type] = embed.type?.name?.let { t -> MessageEmbeds.Type.valueOf(t) } ?: MessageEmbeds.Type.UNKNOWN
                     it[title] = embed.title.orElse(null)
                     it[description] = embed.description.orElse(null)
                     it[url] = embed.url.orElse(null)
@@ -165,14 +191,14 @@ fun buildDbDumperImpl(): (
 
                 emoji.asUnicodeEmoji().ifPresent {
                     this[MessageReactions.emoji] = it.raw
-                    this[MessageReactions.type] = NewReaction.Type.UNICODE
+                    this[MessageReactions.type] = MessageReactions.Type.UNICODE
                     this[MessageReactions.emojiId] = "0"
                     this[MessageReactions.emojiAnimated] = false
                 }
 
                 emoji.asCustomEmoji().ifPresent {
                     this[MessageReactions.emoji] = it.name
-                    this[MessageReactions.type] = NewReaction.Type.CUSTOM
+                    this[MessageReactions.type] = MessageReactions.Type.CUSTOM
                     this[MessageReactions.emojiId] = it.id.asString()
                     this[MessageReactions.emojiAnimated] = it.isAnimated
                 }

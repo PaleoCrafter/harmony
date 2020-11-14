@@ -2,8 +2,6 @@ package com.seventeenthshard.harmony.bot.handlers.db
 
 import com.seventeenthshard.harmony.bot.ChannelInfo
 import com.seventeenthshard.harmony.bot.Embed
-import com.seventeenthshard.harmony.bot.NewReaction
-import com.seventeenthshard.harmony.bot.handlers.db.UserNicknames.nullable
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType
@@ -108,7 +106,7 @@ object MessageVersions : Table() {
 
 object MessageEmbeds : IntIdTable() {
     val message = snowflake("message").index()
-    val type = enumerationByName("type", 16, Embed.Type::class)
+    val type = enumerationByName("type", 16, Type::class)
     val title = varchar("title", 256).nullable()
     val description = varchar("description", 2048).nullable()
     val url = varchar("url", 2048).nullable()
@@ -141,6 +139,10 @@ object MessageEmbeds : IntIdTable() {
     val authorUrl = varchar("authorUrl", 2048).nullable()
     val authorIconUrl = varchar("authorIconUrl", 2048).nullable()
     val authorIconProxyUrl = varchar("authorIconProxyUrl", 2048).nullable()
+
+    enum class Type {
+        UNKNOWN, IMAGE, LINK, RICH, VIDEO
+    }
 }
 
 object MessageEmbedFields : Table() {
@@ -165,10 +167,14 @@ object MessageAttachments : Table() {
 object MessageReactions : Table() {
     val message = snowflake("message").primaryKey(0)
     val user = snowflake("user").primaryKey(1)
-    val type = enumerationByName("type", 16, NewReaction.Type::class).primaryKey(2)
+    val type = enumerationByName("type", 16, Type::class).primaryKey(2)
     val emoji = varchar("emoji", 32).primaryKey(3)
     val emojiId = snowflake("emojiId").primaryKey(4).default("0")
     val emojiAnimated = bool("emojiAnimated")
     val createdAt = datetime("createdAt")
     val deletedAt = datetime("deletedAt").nullable()
+
+    enum class Type {
+        UNICODE, CUSTOM
+    }
 }

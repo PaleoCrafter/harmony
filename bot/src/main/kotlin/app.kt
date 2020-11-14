@@ -3,9 +3,7 @@
 package com.seventeenthshard.harmony.bot
 
 import com.seventeenthshard.harmony.bot.commands.AutoPublishCommand
-import com.seventeenthshard.harmony.bot.commands.IgnoredChannelsCommand
 import com.seventeenthshard.harmony.bot.handlers.db.buildDbHandler
-import com.seventeenthshard.harmony.bot.handlers.elastic.buildElasticHandler
 import discord4j.core.DiscordClientBuilder
 import org.apache.logging.log4j.LogManager
 import kotlin.system.exitProcess
@@ -21,16 +19,15 @@ fun main(args: Array<String>) {
 
     val gatewayClient = requireNotNull(client.login().block()) { "Received null Gateway client unexpectedly" }
 
-    val ignoredChannels = IgnoredChannelsCommand(logger, gatewayClient)
     val autoPublish = AutoPublishCommand(logger, gatewayClient)
 
     when (val action = args.firstOrNull() ?: "import") {
         "import" -> {
-            val emitter = EventEmitter(gatewayClient.eventDispatcher, listOf(buildDbHandler(), buildElasticHandler()))
+            val emitter = EventEmitter(gatewayClient.eventDispatcher, listOf(buildDbHandler()))
 
-            runBot(gatewayClient, emitter, ignoredChannels, autoPublish)
+            runBot(gatewayClient, emitter, autoPublish)
         }
-        "dump" -> runDump(gatewayClient, ignoredChannels, args.drop(1))
+        "dump" -> runDump(gatewayClient, args.drop(1))
         else -> {
             System.err.println("Unknown action '$action', available options are 'import' and 'dump'")
             exitProcess(1)

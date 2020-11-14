@@ -2,13 +2,12 @@
 
 package com.seventeenthshard.harmony.bot.handlers.elastic
 
+import com.seventeenthshard.harmony.bot.ChannelInfo
 import com.seventeenthshard.harmony.bot.UserInfo
 import discord4j.common.util.Snowflake
 import discord4j.core.`object`.Embed
 import discord4j.core.`object`.entity.Attachment
-import discord4j.core.`object`.entity.Guild
 import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.channel.GuildMessageChannel
 import discord4j.core.`object`.reaction.ReactionEmoji
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -45,8 +44,7 @@ private object BulkListener : BulkProcessor.Listener {
 }
 
 fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
-    guild: Guild,
-    channel: GuildMessageChannel,
+    channel: ChannelInfo,
     messages: List<Tuple3<Message, UserInfo, List<Pair<ReactionEmoji, Snowflake>>>>
 ) -> Unit {
     val bulkProcessor = BulkProcessor.builder(
@@ -57,7 +55,7 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
         setBackoffPolicy(BackoffPolicy.exponentialBackoff(TimeValue.timeValueMillis(50L), Int.MAX_VALUE))
     }.build()
 
-    return { guild, channel, messages ->
+    return { channel, messages ->
         messages.forEach { (message, author) ->
             val (_, state) = DiscordMarkdownRules.parse(message.content)
             val messageProperties = mutableSetOf<String>()
@@ -81,8 +79,8 @@ fun buildElasticDumperImpl(elasticClient: RestHighLevelClient): (
                 IndexRequest(INDEX).id(message.id.asString()).source(
                     mapOf(
                         "tie_breaker_id" to message.id.asString(),
-                        "server" to guild.id.asString(),
-                        "channel" to mapOf("id" to channel.id.asString(), "name" to channel.name),
+                        "server" to channel.server.id,
+                        "channel" to mapOf("id" to channel.id, "name" to channel.name),
                         "author" to mapOf(
                             "id" to author.id,
                             "name" to author.username,

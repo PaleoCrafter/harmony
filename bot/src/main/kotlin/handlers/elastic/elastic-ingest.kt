@@ -205,8 +205,6 @@ const val INDEX_SETTINGS = """{
     }
 }"""
 
-fun buildElasticHandler() = buildElasticHandlerImpl(buildClient())
-
 fun buildElasticDumper() = buildElasticDumperImpl(buildClient())
 
 private fun buildClient(): RestHighLevelClient {

@@ -1,7 +1,6 @@
 package com.seventeenthshard.harmony.bot.handlers.db
 
 import com.seventeenthshard.harmony.bot.ChannelInfo
-import com.seventeenthshard.harmony.bot.Embed
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.ColumnType

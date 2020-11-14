@@ -5,6 +5,8 @@ package com.seventeenthshard.harmony.bot
 import com.seventeenthshard.harmony.bot.commands.AutoPublishCommand
 import discord4j.core.GatewayDiscordClient
 import discord4j.core.`object`.entity.channel.GuildMessageChannel
+import discord4j.core.`object`.presence.Activity
+import discord4j.core.`object`.presence.Presence
 import discord4j.core.event.domain.guild.*
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.event.domain.role.RoleCreateEvent
@@ -20,6 +22,11 @@ fun runBot(
     emitter: EventEmitter,
     autoPublish: AutoPublishCommand
 ) {
+    val publicUrl = System.getenv("PUBLIC_URL")
+    if (publicUrl != null) {
+        client.updatePresence(Presence.online(Activity.watching(publicUrl))).block()
+    }
+
     emitter.listen<GuildCreateEvent, Any> { event ->
         val guild = event.guild
 

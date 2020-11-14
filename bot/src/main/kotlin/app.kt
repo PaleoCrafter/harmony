@@ -5,6 +5,8 @@ package com.seventeenthshard.harmony.bot
 import com.seventeenthshard.harmony.bot.commands.AutoPublishCommand
 import com.seventeenthshard.harmony.bot.handlers.db.buildDbHandler
 import discord4j.core.DiscordClientBuilder
+import discord4j.gateway.intent.Intent
+import discord4j.gateway.intent.IntentSet
 import org.apache.logging.log4j.LogManager
 import kotlin.system.exitProcess
 
@@ -17,7 +19,18 @@ fun main(args: Array<String>) {
         requireNotNull(System.getenv("BOT_TOKEN")) { "Bot token must be provided via BOT_TOKEN environment variable" }
     ).build()
 
-    val gatewayClient = requireNotNull(client.login().block()) { "Received null Gateway client unexpectedly" }
+    val gatewayClient = requireNotNull(
+        client.gateway()
+            .setEnabledIntents(
+                IntentSet.of(
+                    Intent.GUILDS,
+                    Intent.GUILD_MEMBERS,
+                    Intent.GUILD_MESSAGES
+                )
+            )
+            .login()
+            .block()
+    ) { "Received null Gateway client unexpectedly" }
 
     val autoPublish = AutoPublishCommand(logger, gatewayClient)
 

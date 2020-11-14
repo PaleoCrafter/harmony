@@ -1,5 +1,7 @@
 FROM node:alpine AS modules
 
+RUN apk add g++ make python
+
 ADD ./package.json /app/package.json
 ADD ./yarn.lock /app/yarn.lock
 

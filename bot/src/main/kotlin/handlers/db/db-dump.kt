@@ -72,6 +72,10 @@ fun buildDbDumperImpl(): (
                 this[Messages.channel] = msg.channelId.asString()
                 this[Messages.user] = author.id
                 this[Messages.webhookName] = author.webhookName
+                val ref = msg.messageReference.orElse(null)
+                this[Messages.referencedServer] = ref?.guildId?.orElse(null)?.asString()
+                this[Messages.referencedChannel] = ref?.channelId?.asString()
+                this[Messages.referencedMessage] = ref?.messageId?.orElse(null)?.asString()
                 this[Messages.createdAt] = creationTimestamp
             }
 

@@ -95,6 +95,9 @@ object Messages : Table() {
     val channel = snowflake("channel").index()
     val user = snowflake("user")
     val webhookName = varchar("webhookName", 255).nullable()
+    val referencedServer = snowflake("referencedServer").nullable()
+    val referencedChannel = snowflake("referencedChannel").nullable()
+    val referencedMessage = snowflake("referencedMessage").nullable()
     val createdAt = datetime("createdAt").nullable()
     val deletedAt = datetime("deletedAt").nullable()
 }

@@ -184,6 +184,21 @@ const Message = db.define('message', {
     type: Sequelize.STRING,
     allowNull: true
   },
+  referencedServer: {
+    type: Sequelize.BIGINT,
+    allowNull: true
+  },
+  referencedChannel: {
+    type: Sequelize.BIGINT,
+    allowNull: true
+  },
+  referencedMessage: {
+    type: Sequelize.BIGINT,
+    allowNull: true
+  },
+  crosspost: {
+    type: Sequelize.BOOLEAN
+  },
   createdAt: {
     type: Sequelize.DATE
   },

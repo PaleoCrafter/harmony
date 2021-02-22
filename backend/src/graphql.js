@@ -73,12 +73,14 @@ function prepareMessage (message, versions, editedAt, permissions, request) {
     author: request.loaders.users.load({ server: message.server, id: message.user }).then(user => ({ ...user, webhookName: message.webhookName })),
     server: message.server,
     versions: permissions.has('manageMessages') || message.user === request.user.id ? versions : [versions[0]],
+    isCrosspost: message.crosspost,
     createdAt: message.createdAt,
     editedAt,
     deletedAt: message.deletedAt,
     hasReactions: async () => (await request.loaders.messageCounts.load(infoKey)).reactions > 0,
     hasEmbeds: async () => (await request.loaders.messageCounts.load(infoKey)).embeds > 0,
-    hasAttachments: async () => (await request.loaders.messageCounts.load(infoKey)).attachments > 0
+    hasAttachments: async () => (await request.loaders.messageCounts.load(infoKey)).attachments > 0,
+    hasReference: message.referencedMessage !== null
   }
 }
 
@@ -537,7 +539,47 @@ const queryResolver = {
     return {
       embeds: () => request.loaders.embeds.load(key),
       attachments: () => request.loaders.attachments.load(key),
-      reactions: () => request.loaders.reactions.load(key)
+      reactions: () => request.loaders.reactions.load(key),
+      referencedMessage: async () => {
+        if (message.referencedMessage === null) {
+          return null
+        }
+
+        const ref = await request.loaders.messages.load(message.referencedMessage)
+        if (ref === null) {
+          return null
+        }
+
+        if (ref.deletedAt !== null && !permissions.has('manageMessages') && ref.user !== request.user.id) {
+          return null
+        }
+
+        const refServer = message.referencedServer !== null
+          ? await request.loaders.servers.load(message.referencedServer)
+          : null
+        const refChannel = message.referencedChannel !== null
+          ? await request.loaders.channels.load(message.referencedChannel)
+          : null
+        const versions = await request.loaders.messageVersions.load(ref.id)
+
+        return {
+          server: message.referencedServer,
+          channel: message.referencedChannel,
+          message: prepareMessage(
+            ref,
+            [
+              {
+                timestamp: versions[0].timestamp,
+                content: versions[0].content
+              }
+            ],
+            versions.length > 1 ? versions[0].timestamp : null,
+            permissions,
+            request
+          ),
+          canLink: refServer !== null && refChannel !== null
+        }
+      }
     }
   },
   async reactors (parent, { message: messageId, type, emoji, emojiId }, { request }) {

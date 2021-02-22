@@ -93,12 +93,14 @@ type Message {
   author: User!
   server: ID!
   versions: [MessageVersion!]!
+  isCrosspost: Boolean!
   createdAt: Timestamp!
   editedAt: Timestamp
   deletedAt: Timestamp
   hasReactions: Boolean!
   hasEmbeds: Boolean!
   hasAttachments: Boolean!
+  hasReference: Boolean!
 }
 
 type MessageVersion {
@@ -110,6 +112,14 @@ type MessageDetails {
   embeds: [Embed!]!
   attachments: [Attachment!]!
   reactions: [Reaction!]!
+  referencedMessage: ReferencedMessage
+}
+
+type ReferencedMessage {
+  server: String
+  channel: String
+  message: Message!
+  canLink: Boolean!
 }
 
 type Reaction {

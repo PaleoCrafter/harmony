@@ -24,6 +24,8 @@ query ChannelMessages($channel: ID!, $paginationMode: PaginationMode!,  $paginat
       timestamp
     }
 
+    isCrosspost
+
     createdAt
     editedAt
     deletedAt
@@ -31,5 +33,6 @@ query ChannelMessages($channel: ID!, $paginationMode: PaginationMode!,  $paginat
     hasReactions
     hasEmbeds
     hasAttachments
+    hasReference
   }
 }

@@ -1,5 +1,9 @@
 <template functional>
-  <span class="bot-tag">Bot</span>
+  <span class="bot-tag">
+    <slot>
+      Bot
+    </slot>
+  </span>
 </template>
 
 <style lang="scss">

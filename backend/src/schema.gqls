@@ -118,7 +118,7 @@ type MessageDetails {
 type ReferencedMessage {
   server: String
   channel: String
-  message: Message!
+  message: Message
   canLink: Boolean!
 }
 

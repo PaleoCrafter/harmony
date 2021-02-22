@@ -551,7 +551,10 @@ const queryResolver = {
         }
 
         if (ref.deletedAt !== null && !permissions.has('manageMessages') && ref.user !== request.user.id) {
-          return null
+          return {
+            message: null,
+            canLink: false
+          }
         }
 
         const refServer = message.referencedServer !== null

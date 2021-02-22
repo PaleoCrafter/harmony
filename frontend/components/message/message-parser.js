@@ -45,42 +45,6 @@ const highlightParser = markdown.parserFor(highlightRules)
 const INLINE_CODE_ESCAPE_BACKTICKS_R = /^ (?= *`)|(` *) $/g
 
 const rules = {
-  blockQuote: Object.assign({}, markdown.defaultRules.blockQuote, {
-    match (source, state, prevSource) {
-      return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]*(\n *> [^\n]*)*\n?)/.exec(source)
-    },
-    parse (capture, parse, state) {
-      const all = capture[0]
-      const isBlock = Boolean(/^ *>>> ?/.exec(all))
-      const removeSyntaxRegex = isBlock ? /^ *>>> ?/ : /^ *> ?/gm
-      const content = all.replace(removeSyntaxRegex, '')
-
-      state.inQuote = true
-      if (!isBlock) {
-        state.inline = true
-      }
-
-      const parsed = parse(content, state)
-
-      state.inQuote = state.inQuote || false
-      state.inline = state.inline || false
-
-      return {
-        content: parsed,
-        type: 'blockQuote'
-      }
-    }
-  }),
-  codeBlock: Object.assign({}, markdown.defaultRules.codeBlock, {
-    match: markdown.inlineRegex(/^```(([a-z0-9-]+?)\n+)?\n*([^]+?)\n*```/i),
-    parse (capture, parse, state) {
-      return {
-        lang: (capture[2] || '').trim(),
-        content: highlightParser(capture[3], { inline: true }) || '',
-        inQuote: state.inQuote || false
-      }
-    }
-  }),
   newline: markdown.defaultRules.newline,
   escape: markdown.defaultRules.escape,
   autolink: Object.assign({}, markdown.defaultRules.autolink, {
@@ -142,6 +106,45 @@ const rules = {
     }
   },
   ...highlightRules
+}
+
+const blockRules = {
+  blockQuote: Object.assign({}, markdown.defaultRules.blockQuote, {
+    match (source, state, prevSource) {
+      return !/^$|\n *$/.test(prevSource) || state.inQuote ? null : /^( *>>> ([\s\S]*))|^( *> [^\n]*(\n *> [^\n]*)*\n?)/.exec(source)
+    },
+    parse (capture, parse, state) {
+      const all = capture[0]
+      const isBlock = Boolean(/^ *>>> ?/.exec(all))
+      const removeSyntaxRegex = isBlock ? /^ *>>> ?/ : /^ *> ?/gm
+      const content = all.replace(removeSyntaxRegex, '')
+
+      state.inQuote = true
+      if (!isBlock) {
+        state.inline = true
+      }
+
+      const parsed = parse(content, state)
+
+      state.inQuote = state.inQuote || false
+      state.inline = state.inline || false
+
+      return {
+        content: parsed,
+        type: 'blockQuote'
+      }
+    }
+  }),
+  codeBlock: Object.assign({}, markdown.defaultRules.codeBlock, {
+    match: markdown.inlineRegex(/^```(([a-z0-9-]+?)\n+)?\n*([^]+?)\n*```/i),
+    parse (capture, parse, state) {
+      return {
+        lang: (capture[2] || '').trim(),
+        content: highlightParser(capture[3], { inline: true }) || '',
+        inQuote: state.inQuote || false
+      }
+    }
+  })
 }
 
 const discordRules = {

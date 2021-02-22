@@ -7233,6 +7233,11 @@ map-visit@^1.0.0:
   dependencies:
     object-visit "^1.0.0"
 
+markdown-truncate@^1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/markdown-truncate/-/markdown-truncate-1.0.4.tgz#c1cb989467f56cccabc99b9583b01c7548711c9b"
+  integrity sha512-sojm7PWqbgIfUoSVyKyyUN3glbwEgfXqL75HYvGjBHQuCkNaEHglyYt3biEIZG81H/CxhTtf2DEu4tLGWoK65Q==
+
 md5.js@^1.3.4:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/md5.js/-/md5.js-1.3.5.tgz#b5d07b8e3216e3e27cd728d72f70d1e6a342005f"

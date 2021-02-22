@@ -36,6 +36,7 @@ export default {
           (currentGroup === null && lastMessage === null) ||
           msg.author.name !== lastMessage.author.name ||
           msg.author.discriminator !== lastMessage.author.discriminator ||
+          (msg.hasReference && !msg.isCrosspost) ||
           msg.createdAt - lastMessage.createdAt >= 5 * 60 * 1000
         ) {
           currentGroup = {

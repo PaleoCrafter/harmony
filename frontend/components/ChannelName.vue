@@ -1,7 +1,6 @@
 <template>
   <span class="channel-name">
-    <HashIcon v-if="channel.type === 'TEXT'" size="1.25x" class="channel-name__icon" />
-    <HashIcon v-else size="1x" class="channel-name__icon" />
+    <HashIcon size="1.25x" class="channel-name__icon" />
     <span class="channel-name__text">
       {{ channel.name }}
     </span>

@@ -15,7 +15,9 @@ import discord4j.core.event.domain.role.RoleUpdateEvent
 import discord4j.rest.util.Permission
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Duration
 import java.time.Instant
+import kotlin.concurrent.timer
 
 fun runBot(
     client: GatewayDiscordClient,
@@ -23,8 +25,11 @@ fun runBot(
     autoPublish: AutoPublishCommand
 ) {
     val publicUrl = System.getenv("PUBLIC_URL")
-    if (publicUrl != null) {
-        client.updatePresence(Presence.online(Activity.watching(publicUrl))).block()
+    val presenceTimer = publicUrl?.let {
+        timer("Update Discord presence", daemon = true, period = Duration.ofMinutes(1).toMillis()) {
+            emitter.logger.info("Updating presence in Discord")
+            client.updatePresence(Presence.online(Activity.watching(publicUrl))).block()
+        }
     }
 
     emitter.listen<GuildCreateEvent, Any> { event ->
@@ -128,7 +133,7 @@ fun runBot(
 
     autoPublish.listen()
 
-    client.onDisconnect().block()
+    client.onDisconnect().map { presenceTimer?.cancel() }.block()
 
     emitter.logger.info("Disconnected from Gateway!")
 }

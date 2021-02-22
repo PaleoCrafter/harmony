@@ -98,6 +98,7 @@ object Messages : Table() {
     val referencedServer = snowflake("referencedServer").nullable()
     val referencedChannel = snowflake("referencedChannel").nullable()
     val referencedMessage = snowflake("referencedMessage").nullable()
+    val crosspost = bool("crosspost").default(false)
     val createdAt = datetime("createdAt").nullable()
     val deletedAt = datetime("deletedAt").nullable()
 }

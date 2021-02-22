@@ -76,11 +76,12 @@ fun buildDbDumperImpl(): (
                 this[Messages.referencedServer] = ref?.guildId?.orElse(null)?.asString()
                 this[Messages.referencedChannel] = ref?.channelId?.asString()
                 this[Messages.referencedMessage] = ref?.messageId?.orElse(null)?.asString()
+                this[Messages.crosspost] = Message.Flag.IS_CROSSPOST in msg.flags
                 this[Messages.createdAt] = creationTimestamp
             }
 
             val (existingMessages, newMessages) = messages.partition { it.t1.id.asString() in existing }
-            existingMessages.forEach { (msg) ->
+            existingMessages.forEach { (msg, author) ->
                 val lastVersion = MessageVersions.select { MessageVersions.message eq msg.id.asString() }
                     .orderBy(MessageVersions.timestamp, SortOrder.DESC).limit(1).firstOrNull()
 
@@ -102,6 +103,19 @@ fun buildDbDumperImpl(): (
                         it[content] = msg.content
                         it[timestamp] = editTimestamp
                     }
+                }
+
+                val ref = msg.messageReference.orElse(null)
+                if (author.webhookName == null && ref == null) {
+                    return@forEach
+                }
+
+                Messages.update({ Messages.id eq msg.id.asString() }) {
+                    it[webhookName] = author.webhookName
+                    it[referencedServer] = ref?.guildId?.orElse(null)?.asString()
+                    it[referencedChannel] = ref?.channelId?.asString()
+                    it[referencedMessage] = ref?.messageId?.orElse(null)?.asString()
+                    it[crosspost] = Message.Flag.IS_CROSSPOST in msg.flags
                 }
             }
 

@@ -108,6 +108,7 @@ query MessageDetails($message: ID!) {
         deletedAt
 
         hasAttachments
+        hasEmbeds
       }
 
       canLink

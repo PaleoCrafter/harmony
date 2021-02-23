@@ -1,5 +1,5 @@
 <template>
-  <span :class="['spoiler', { 'spoiler--visible': visible }]" @click="visible = !visible">
+  <span :class="['spoiler', { 'spoiler--visible': visible }]" @click.stop="visible = !visible">
     <span class="spoiler__content">
       <slot />
     </span>

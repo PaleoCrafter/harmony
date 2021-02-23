@@ -1,4 +1,5 @@
 <script>
+import { ImageIcon } from 'vue-feather-icons'
 import detailsQuery from '~/apollo/queries/message-details.gql'
 import UserName from '~/components/UserName.vue'
 import LoadingSpinner from '~/components/LoadingSpinner.vue'
@@ -7,7 +8,7 @@ import BotTag from '~/components/BotTag.vue'
 
 export default {
   name: 'MessageReference',
-  components: { LoadingSpinner, UserName, Markdown, BotTag },
+  components: { LoadingSpinner, UserName, Markdown, BotTag, ImageIcon },
   props: {
     referencingMessage: {
       type: Object,
@@ -35,7 +36,7 @@ export default {
     if (this.referenceData === undefined) {
       return h('div', { class: 'message-reference' }, [h(LoadingSpinner)])
     } else if (this.referenceData === null) {
-      return h('div', { class: 'message-reference' }, [h('em', ['Original message was not archived.'])])
+      return h('div', { class: 'message-reference' }, [h('em', ['Original message was not archived or might have been deleted.'])])
     } else if (this.message === undefined || this.message === null) {
       return h('div', { class: 'message-reference' }, [h('em', ['Original message was deleted.'])])
     }
@@ -80,12 +81,26 @@ export default {
             props: {
               content: this.message.versions[0].content,
               context: this.message,
-              embed: this.message.author.discriminator === 'HOOK'
+              embed: this.message.author.discriminator === 'HOOK',
+              maxLength: 150,
+              inline: true
             },
-            class: 'message-reference__content'
+            class: 'message-reference__content',
+            nativeOn: {
+              click: (e) => {
+                if (e.target.nodeName.toLowerCase() === 'a') {
+                  return
+                }
+
+                this.$router.push(`/messages/${this.message.ref}`)
+              }
+            }
           },
           slotContent
-        )
+        ),
+        this.message.hasEmbeds || this.message.hasAttachments
+          ? h(ImageIcon, { class: 'message-reference__rich-marker', props: { size: '1x' } })
+          : undefined
       ]
     )
   }
@@ -96,6 +111,7 @@ export default {
 .message-reference {
   opacity: 0.8;
   font-size: 0.9em;
+  flex: 1;
 
   &:hover {
     opacity: 1;
@@ -114,6 +130,22 @@ export default {
   &__content {
     display: inline-block;
     margin-left: 0.5rem;
+
+    &:hover {
+      cursor: pointer;
+    }
+  }
+
+  &__note {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 0.625rem;
+  }
+
+  &__rich-marker {
+    font-size: 1.25rem;
+    margin-left: 0.25rem;
+    vertical-align: middle;
+    margin-top: -0.25rem;
   }
 }
 </style>

@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import hljs from 'highlight.js/lib/highlight'
+import hljs from 'highlight.js'
 import InfiniteScroll from '@/plugins/infinite-scroll.js'
 import Spoiler from '@/components/message/Spoiler.vue'
 import UserMention from '@/components/message/UserMention.vue'

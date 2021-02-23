@@ -1,6 +1,6 @@
 <script>
 import { parse, parseEmbed } from '@/components/message/message-parser'
-import renderNode, { expandUnicodeEmojis } from '@/components/message/message-renderer'
+import renderNode, { expandUnicodeEmojis, renderNodeInline, truncate } from '@/components/message/message-renderer'
 
 export default {
   name: 'Markdown',
@@ -26,17 +26,26 @@ export default {
       type: Object,
       default: () => {
       }
+    },
+    maxLength: {
+      type: Number,
+      default: () => null
+    },
+    inline: {
+      type: Boolean,
+      default: () => false
     }
   },
   computed: {
     parsed () {
-      return this.embed ? parseEmbed(this.content) : parse(this.content)
+      const base = (this.embed ? parseEmbed(this.content) : parse(this.content)).flatMap(expandUnicodeEmojis)
+      return this.maxLength !== null ? truncate(base, this.maxLength) : base
     }
   },
   render (h) {
-    const content = this.parsed.flatMap(expandUnicodeEmojis)
+    const content = this.parsed
     const emojisOnly = content.every(n => n.type === 'discordEmoji' || n.type === 'emoji' || (n.type === 'text' && n.content === ' '))
-    const children = content.map(node => renderNode(node, h, this.context, emojisOnly))
+    const children = content.map(node => this.inline ? renderNodeInline(node, h, this.context) : renderNode(node, h, this.context, emojisOnly))
 
     children.push(...(this.$slots.default || []))
 
@@ -81,6 +90,44 @@ export default {
       background-color: #4f545c;
       border-radius: 4px;
       width: 4px;
+    }
+  }
+
+  &__quote {
+    position: relative;
+    display: inline-block;
+    padding: 0 0.5rem 0 1rem;
+    margin-left: 0.5rem;
+    margin-right: 0.5rem;
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &:last-child {
+      margin-left: 0;
+    }
+
+    &:before {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      content: '';
+      background-color: #4f545c;
+      border-radius: 4px;
+      width: 4px;
+    }
+
+    &:after {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      content: '';
+      background-color: #4f545c;
+      border-radius: 4px;
+      width: 2px;
     }
   }
 
